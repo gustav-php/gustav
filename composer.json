@@ -1,0 +1,24 @@
+{
+    "name": "torstendittmann/gustav",
+    "description": "A modern HTTP Framework for PHP.",
+    "type": "library",
+    "require": {
+        "sabre/http": "^5.1"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.1",
+        "phpstan/phpstan": "^1.8"
+    },
+    "autoload": {
+        "psr-4": {
+            "TorstenDittmann\\Gustav\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Torsten Dittmann",
+            "email": "torsten.dittmann@googlemail.com"
+        }
+    ],
+    "minimum-stability": "stable"
+}
