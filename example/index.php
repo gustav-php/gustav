@@ -2,11 +2,13 @@
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+use Sabre\HTTP\Sapi;
 use TorstenDittmann\Gustav\Application;
+use TorstenDittmann\Gustav\Router;
 use TorstenDittmann\Gustav\Attributes\Param;
 use TorstenDittmann\Gustav\Attributes\Route;
 
-class CatsController
+/*class CatsController
 {
     protected array $cats = [
         '1' => 'mimi',
@@ -33,4 +35,13 @@ class CatsController
 $app = new Application();
 $app->register(CatsController::class);
 
-$app->start();
+$app->start();*/
+
+$request = Sapi::getRequest();
+
+Router::addRoute('/', 'index');
+Router::addRoute('/about', 'about');
+Router::addRoute('/blog', 'blog');
+Router::addRoute('/blog/author', 'blog_author');
+Router::addRoute('/blog/:post', 'blog_post');
+var_dump('found', Router::match($request->getPath()));

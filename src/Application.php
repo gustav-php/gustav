@@ -12,7 +12,6 @@ use TorstenDittmann\Gustav\Attributes\Route;
 class Application
 {
     protected array $routes = [];
-
     protected array $controllers = [];
 
     public function register(string $class): self
