@@ -16,7 +16,7 @@ enum Method: string
     case OPTIONS = 'OPTIONS';
     case TRACE = 'TRACE';
 
-    static public function fromRequest(Request $request): self
+    public static function fromRequest(Request $request): self
     {
         return Method::from($request->getMethod());
     }
