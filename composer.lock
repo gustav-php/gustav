@@ -4,29 +4,29 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7c463c16e47eef70379eb6dcad5075cb",
+    "content-hash": "4cc786a08ee57c10cf860ec71fd85767",
     "packages": [
         {
             "name": "sabre/event",
-            "version": "5.1.4",
+            "version": "6.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sabre-io/event.git",
-                "reference": "d7da22897125d34d7eddf7977758191c06a74497"
+                "reference": "adaaf1df2a0fdc9eee401770c64df8ee2d5ad8c6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sabre-io/event/zipball/d7da22897125d34d7eddf7977758191c06a74497",
-                "reference": "d7da22897125d34d7eddf7977758191c06a74497",
+                "url": "https://api.github.com/repos/sabre-io/event/zipball/adaaf1df2a0fdc9eee401770c64df8ee2d5ad8c6",
+                "reference": "adaaf1df2a0fdc9eee401770c64df8ee2d5ad8c6",
                 "shasum": ""
             },
             "require": {
-                "php": "^7.1 || ^8.0"
+                "php": "^7.4 || ^8.0"
             },
             "require-dev": {
-                "friendsofphp/php-cs-fixer": "~2.17.1",
-                "phpstan/phpstan": "^0.12",
-                "phpunit/phpunit": "^7.5 || ^8.5 || ^9.0"
+                "friendsofphp/php-cs-fixer": "^3.9",
+                "phpstan/phpstan": "^1.8",
+                "phpunit/phpunit": "^9.0"
             },
             "type": "library",
             "autoload": {
@@ -70,34 +70,34 @@
                 "issues": "https://github.com/sabre-io/event/issues",
                 "source": "https://github.com/fruux/sabre-event"
             },
-            "time": "2021-11-04T06:51:17+00:00"
+            "time": "2022-08-29T13:26:44+00:00"
         },
         {
             "name": "sabre/http",
-            "version": "5.1.6",
+            "version": "6.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sabre-io/http.git",
-                "reference": "9976ac34ced206bd6579b7b37b401de9fac98dae"
+                "reference": "62fe6b29bfc53bf222451b2fe9c1e80b71072abd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sabre-io/http/zipball/9976ac34ced206bd6579b7b37b401de9fac98dae",
-                "reference": "9976ac34ced206bd6579b7b37b401de9fac98dae",
+                "url": "https://api.github.com/repos/sabre-io/http/zipball/62fe6b29bfc53bf222451b2fe9c1e80b71072abd",
+                "reference": "62fe6b29bfc53bf222451b2fe9c1e80b71072abd",
                 "shasum": ""
             },
             "require": {
                 "ext-ctype": "*",
                 "ext-curl": "*",
                 "ext-mbstring": "*",
-                "php": "^7.1 || ^8.0",
-                "sabre/event": ">=4.0 <6.0",
-                "sabre/uri": "^2.0"
+                "php": "^7.4 || ^8.0",
+                "sabre/event": "^6.0",
+                "sabre/uri": "^2.3"
             },
             "require-dev": {
-                "friendsofphp/php-cs-fixer": "~2.17.1",
-                "phpstan/phpstan": "^0.12",
-                "phpunit/phpunit": "^7.5 || ^8.5 || ^9.0"
+                "friendsofphp/php-cs-fixer": "^3.9",
+                "phpstan/phpstan": "^1.8",
+                "phpunit/phpunit": "^9.0"
             },
             "suggest": {
                 "ext-curl": " to make http requests with the Client class"
@@ -133,7 +133,7 @@
                 "issues": "https://github.com/sabre-io/http/issues",
                 "source": "https://github.com/fruux/sabre-http"
             },
-            "time": "2022-07-15T14:51:14+00:00"
+            "time": "2022-08-31T07:42:30+00:00"
         },
         {
             "name": "sabre/uri",
