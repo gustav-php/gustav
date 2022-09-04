@@ -7,24 +7,34 @@ use Exception;
 class Router
 {
     public const WILDCARD_TOKEN = '__WILDCARD__';
-    static protected array $routes = [];
-    static protected array $placeholders = [];
 
-    static public function addRoute(string $path, string $identifier): void
+    protected static array $routes = [];
+
+    protected static array $placeholders = [];
+
+    public static function addRoute(Method $method, string $path, string $identifier): void
     {
         $path = self::preparePath($path);
 
-        if (array_key_exists($path, self::$routes)) {
-            throw new Exception("Route for ({$path}) {$identifier} already assigned to " . self::$routes[$path]['identifier']);
+        if (! array_key_exists($method->value, self::$routes)) {
+            self::$routes[$method->value] = [];
         }
 
-        self::$routes[$path] = [
-            'identifier' => $identifier
+        if (array_key_exists($path, self::$routes[$method->value])) {
+            throw new Exception("Route for ({$path}) {$identifier} already assigned to ".self::$routes[$method->value][$path]['identifier']);
+        }
+
+        self::$routes[$method->value][$path] = [
+            'identifier' => $identifier,
         ];
     }
 
-    static public function match(string $path): array
+    public static function match(Method $method, string $path): array
     {
+        if (! array_key_exists($method->value, self::$routes)) {
+            throw new Exception('Not found');
+        }
+
         $parts = array_values(array_filter(explode('/', $path)));
         $length = count($parts) - 1;
         $filtered_placeholders = array_filter(self::$placeholders, fn ($i) => $i <= $length);
@@ -39,15 +49,21 @@ class Router
                 )
             );
 
-            if (array_key_exists($match, self::$routes)) {
-                return self::$routes[$match];
+            if (array_key_exists($match, self::$routes[$method->value])) {
+                return self::$routes[$method->value][$match];
             }
         }
 
         throw new Exception('Not found');
     }
 
-    static protected function combinations(array $set): iterable
+    public static function reset(): void
+    {
+        self::$placeholders = [];
+        self::$routes = [];
+    }
+
+    protected static function combinations(array $set): iterable
     {
         yield [];
 
@@ -61,11 +77,9 @@ class Router
                 yield $ret;
             }
         }
-
-        return;
     }
 
-    static protected function preparePath(string $path): string
+    protected static function preparePath(string $path): string
     {
         $parts = array_values(array_filter(explode('/', $path)));
         $prepare = '';
@@ -78,7 +92,7 @@ class Router
             if (str_starts_with($part, ':')) {
                 $prepare .= self::WILDCARD_TOKEN;
 
-                if (!in_array($key, self::$placeholders)) {
+                if (! in_array($key, self::$placeholders)) {
                     self::$placeholders[] = $key;
                 }
             } else {

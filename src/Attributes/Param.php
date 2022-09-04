@@ -8,6 +8,7 @@ use Attribute;
 class Param
 {
     protected ?string $parameter;
+
     protected ?bool $required;
 
     public function __construct(protected string $name)

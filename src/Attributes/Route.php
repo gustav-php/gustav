@@ -10,10 +10,13 @@ use Sabre\HTTP\Request;
 class Route
 {
     public const GET = 'GET';
+
     public const POST = 'POST';
 
     protected ?string $class;
+
     protected ?string $function;
+
     protected array $params = [];
 
     public function __construct(protected string $path, protected string $method = self::GET)

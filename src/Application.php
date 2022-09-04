@@ -12,6 +12,7 @@ use TorstenDittmann\Gustav\Attributes\Route;
 class Application
 {
     protected array $routes = [];
+
     protected array $controllers = [];
 
     public function register(string $class): self
@@ -45,7 +46,7 @@ class Application
 
                 $this->addParameters($method, $instance);
 
-                if (!\array_key_exists($httpMethod, $this->routes)) {
+                if (! \array_key_exists($httpMethod, $this->routes)) {
                     $this->routes[$httpMethod] = [];
                 }
 
@@ -64,7 +65,7 @@ class Application
                 $instance = $attribute->newInstance();
                 $instance
                     ->setParameter($parameter->getName())
-                    ->setRequired(!$parameter->isOptional());
+                    ->setRequired(! $parameter->isOptional());
                 $route->addParam($instance->getParameter(), $instance);
             }
         }
@@ -74,7 +75,7 @@ class Application
     {
         $path = "/{$path}";
 
-        if (!\array_key_exists($method, $this->routes) || !\array_key_exists($path, $this->routes[$method])) {
+        if (! \array_key_exists($method, $this->routes) || ! \array_key_exists($path, $this->routes[$method])) {
             throw new \Exception(Response::$statusCodes[404], 404);
         }
 
