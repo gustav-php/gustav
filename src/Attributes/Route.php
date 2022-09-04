@@ -5,21 +5,17 @@ namespace TorstenDittmann\Gustav\Attributes;
 use Attribute;
 use Exception;
 use Sabre\HTTP\Request;
+use TorstenDittmann\Gustav\Method;
 
 #[Attribute(Attribute::TARGET_METHOD)]
 class Route
 {
-    public const GET = 'GET';
-
-    public const POST = 'POST';
-
     protected ?string $class;
-
     protected ?string $function;
-
     protected array $params = [];
+    protected array $placeholders = [];
 
-    public function __construct(protected string $path, protected string $method = self::GET)
+    public function __construct(protected string $path, protected Method $method = Method::GET)
     {
     }
 
@@ -28,7 +24,7 @@ class Route
         return $this->path;
     }
 
-    public function getMethod(): string
+    public function getMethod(): Method
     {
         return $this->method;
     }
@@ -62,16 +58,27 @@ class Route
         return $this->params[$name] ?? null;
     }
 
+    public function addPlaceholder(string $key, int $index): void
+    {
+        $this->placeholders[$key] = $index;
+    }
+
     public function generateParams(Request $request): array
     {
-        return \array_reduce($this->params, function (array $carry, Param $param) use ($request) {
-            /**
-             * Merge Query Parameters with Post Data (Query > Post).
-             */
-            $queryParams = \array_merge($request->getQueryParameters(), $request->getPostData());
+        $pathParams = [];
+        $parts = explode('/', $request->getPath());
 
-            if (\array_key_exists($param->getName(), $queryParams)) {
-                $carry[$param->getParameter()] = $queryParams[$param->getName()];
+        foreach ($this->placeholders as $key => $index) {
+            $pathParams[$key] = $parts[$index];
+        }
+        /**
+         * Merge Path and Query Parameters with Post Data (Path > Query > Post).
+         */
+        $params = \array_merge($pathParams, $request->getQueryParameters(), $request->getPostData());
+
+        return \array_reduce($this->params, function (array $carry, Param $param) use ($params) {
+            if (\array_key_exists($param->getName(), $params)) {
+                $carry[$param->getParameter()] = $params[$param->getName()];
             } elseif ($param->getRequired()) {
                 throw new Exception("Parameter '{$param->getName()}' is required.", 400);
             }

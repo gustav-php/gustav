@@ -12,7 +12,6 @@ use TorstenDittmann\Gustav\Attributes\Route;
 class Application
 {
     protected array $routes = [];
-
     protected array $controllers = [];
 
     public function register(string $class): self
@@ -41,16 +40,8 @@ class Application
                     ->setClass($reflector->getName())
                     ->setFunction($method->getName());
 
-                $httpMethod = $instance->getMethod();
-                $httpPath = $instance->getPath();
-
                 $this->addParameters($method, $instance);
-
-                if (! \array_key_exists($httpMethod, $this->routes)) {
-                    $this->routes[$httpMethod] = [];
-                }
-
-                $this->routes[$httpMethod][$httpPath] = $instance;
+                Router::addRoute($instance);
             }
         }
     }
@@ -65,21 +56,10 @@ class Application
                 $instance = $attribute->newInstance();
                 $instance
                     ->setParameter($parameter->getName())
-                    ->setRequired(! $parameter->isOptional());
+                    ->setRequired(!$parameter->isOptional());
                 $route->addParam($instance->getParameter(), $instance);
             }
         }
-    }
-
-    protected function getRoute(string $method, string $path): Route
-    {
-        $path = "/{$path}";
-
-        if (! \array_key_exists($method, $this->routes) || ! \array_key_exists($path, $this->routes[$method])) {
-            throw new \Exception(Response::$statusCodes[404], 404);
-        }
-
-        return $this->routes[$method][$path];
     }
 
     public function start()
@@ -88,7 +68,7 @@ class Application
         $response = new Response();
 
         try {
-            $route = $this->getRoute($request->getMethod(), $request->getPath());
+            $route = Router::match(Method::fromRequest($request), $request->getPath());
             $controller = $this->controllers[$route->getClass()];
             $params = $route->generateParams($request);
             $payload = $controller->{$route->getFunction()}(...$params);

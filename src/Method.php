@@ -2,6 +2,8 @@
 
 namespace TorstenDittmann\Gustav;
 
+use Sabre\HTTP\Request;
+
 enum Method: string
 {
     case GET = 'GET';
@@ -13,4 +15,9 @@ enum Method: string
     case CONNECT = 'CONNECT';
     case OPTIONS = 'OPTIONS';
     case TRACE = 'TRACE';
+
+    static public function fromRequest(Request $request): self
+    {
+        return Method::from($request->getMethod());
+    }
 }
