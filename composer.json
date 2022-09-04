@@ -2,6 +2,7 @@
     "name": "torstendittmann/gustav",
     "description": "A modern HTTP Framework for PHP.",
     "type": "library",
+    "license": "MIT",
     "require": {
         "sabre/http": "^5.1"
     },
