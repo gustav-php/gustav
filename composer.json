@@ -5,9 +5,16 @@
     "require": {
         "sabre/http": "^5.1"
     },
+    "scripts": {
+        "test": "./vendor/bin/phpunit --testdox tests",
+        "example": "php -S localhost:80 ./example/index.php",
+        "lint": "./vendor/bin/pint --test src tests",
+        "format": "./vendor/bin/pint src tests"
+    },
     "require-dev": {
         "laravel/pint": "^1.1",
-        "phpstan/phpstan": "^1.8"
+        "phpstan/phpstan": "^1.8",
+        "phpunit/phpunit": "^9.5"
     },
     "autoload": {
         "psr-4": {
