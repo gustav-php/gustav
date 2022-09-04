@@ -8,6 +8,7 @@
     "scripts": {
         "test": "./vendor/bin/phpunit --testdox tests",
         "example": "php -S localhost:80 ./example/index.php",
+        "check": "./vendor/bin/phpstan analyze",
         "lint": "./vendor/bin/pint --test src tests",
         "format": "./vendor/bin/pint src tests"
     },
