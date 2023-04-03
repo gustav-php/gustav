@@ -22,15 +22,15 @@ class Application
     }
 
     /**
-     * @var Controller[]
+     * @var \TorstenDittmann\Gustav\Controller\Base[]
      */
     protected array $controllers = [];
     /**
-     * @var Service[]
+     * @var \TorstenDittmann\Gustav\Service\Base[]
      */
     protected array $services = [];
     /**
-     * @var Middleware[]
+     * @var \TorstenDittmann\Gustav\Middleware\Base[]
      */
     protected array $middlewares = [];
 
@@ -115,7 +115,7 @@ class Application
         try {
             $route = Router::match(Method::fromRequest($request), $request->getPath());
             /**
-             * @var Controller\Base $controller
+             * @var Base $controller
              */
             $controller = $this->controllers[$route->getClass()]->getInstance();
             $controller->setMiddlewares();
