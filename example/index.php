@@ -2,8 +2,6 @@
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use Sabre\HTTP\Request;
-use Sabre\HTTP\Response;
 use TorstenDittmann\Gustav\Application;
 use TorstenDittmann\Gustav\Attribute;
 use TorstenDittmann\Gustav\Attribute\Param;

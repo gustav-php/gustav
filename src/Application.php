@@ -95,7 +95,7 @@ class Application
         }
     }
 
-    public function start()
+    public function start(): void
     {
         $this->configuration ??= new Configuration();
 
