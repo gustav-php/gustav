@@ -3,7 +3,6 @@
 namespace TorstenDittmann\Gustav\Controller;
 
 use Exception;
-use ReflectionAttribute;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionNamedType;
