@@ -1,6 +1,6 @@
 <?php
 
-namespace TorstenDittmann\Gustav;
+namespace TorstenDittmann\Gustav\Router;
 
 use Sabre\HTTP\Request;
 

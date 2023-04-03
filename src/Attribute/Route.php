@@ -1,11 +1,11 @@
 <?php
 
-namespace TorstenDittmann\Gustav\Attributes;
+namespace TorstenDittmann\Gustav\Attribute;
 
 use Attribute;
 use Exception;
 use Sabre\HTTP\Request;
-use TorstenDittmann\Gustav\Method;
+use TorstenDittmann\Gustav\Router\Method;
 
 #[Attribute(Attribute::TARGET_METHOD)]
 class Route

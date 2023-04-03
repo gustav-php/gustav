@@ -7,8 +7,8 @@
         "sabre/http": "^6.0"
     },
     "scripts": {
-        "test": "./vendor/bin/phpunit --testdox tests",
-        "example": "php -S localhost:80 ./example/index.php",
+        "test": "./vendor/bin/pest",
+        "example": "php -S localhost:1337 ./example/index.php",
         "check": "./vendor/bin/phpstan analyze",
         "lint": "./vendor/bin/pint --test src tests",
         "format": "./vendor/bin/pint src tests"
@@ -16,7 +16,7 @@
     "require-dev": {
         "laravel/pint": "^1.1",
         "phpstan/phpstan": "^1.8",
-        "phpunit/phpunit": "^9.5"
+        "pestphp/pest": "^2.4"
     },
     "autoload": {
         "psr-4": {
@@ -29,5 +29,10 @@
             "email": "torsten.dittmann@googlemail.com"
         }
     ],
-    "minimum-stability": "stable"
+    "minimum-stability": "stable",
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
 }

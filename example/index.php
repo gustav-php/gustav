@@ -2,24 +2,71 @@
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+use Sabre\HTTP\Request;
+use Sabre\HTTP\Response;
 use TorstenDittmann\Gustav\Application;
-use TorstenDittmann\Gustav\Method;
-use TorstenDittmann\Gustav\Attributes\Param;
-use TorstenDittmann\Gustav\Attributes\Route;
+use TorstenDittmann\Gustav\Attribute;
+use TorstenDittmann\Gustav\Attribute\Param;
+use TorstenDittmann\Gustav\Attribute\Route;
+use TorstenDittmann\Gustav\Context;
+use TorstenDittmann\Gustav\Controller;
+use TorstenDittmann\Gustav\Middleware;
+use TorstenDittmann\Gustav\Router\Method;
+use TorstenDittmann\Gustav\Service;
 
-class CatsController
+class Dogs extends Service\Base
+{
+    public string $name = 'wuff';
+}
+class Police extends Middleware\Base
+{
+
+    public function __construct()
+    {
+    }
+
+    public function handle(Request $request, Response $response, Context $context): void
+    {
+        var_dump("asd");
+    }
+}
+
+#[Attribute\Middleware(Police::class)]
+class CatsController extends Controller\Base
 {
     protected array $cats = [
         [
+            'id' => '1',
             'name' => 'lili'
         ],
         [
+            'id' => '2',
             'name' => 'kitty'
         ],
         [
+            'id' => '3',
             'name' => 'nala'
         ],
     ];
+
+    public function __construct(protected Dogs $dogs)
+    {
+    }
+
+    #[Route('/')]
+    public function index()
+    {
+        return true;
+    }
+
+    #[Route('/dogs/:name/:age')]
+    public function params(#[Param('name')] string $name, #[Param('age')] int $age)
+    {
+        return [
+            'name' => $name,
+            'age' => $age
+        ];
+    }
 
     #[Route('/cats')]
     public function list()
@@ -42,10 +89,10 @@ class CatsController
 
     #[Route('/cats/:cat')]
     public function get(
-        #[Param('cat')] string $name
+        #[Param('cat')] string $id
     ) {
         foreach ($this->cats as $cat) {
-            if ($cat['name'] === $name) return $cat;
+            if ($cat['id'] === $id) return $cat;
         }
 
         throw new Exception('Cat not found.', 404);
@@ -74,7 +121,6 @@ class CatsController
     }
 }
 
-$app = new Application();
-$app->register(CatsController::class);
+$app = new Application(routes: [CatsController::class]);
 
 $app->start();
