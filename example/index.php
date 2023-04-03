@@ -75,9 +75,8 @@ class CatsController extends Controller\Base
     }
 
     #[Route('/cats', Method::POST)]
-    public function create(
-        #[Param('name')] string $name
-    ) {
+    public function create(#[Param('name')] string $name)
+    {
         $cat = [
             'name' => $name
         ];
