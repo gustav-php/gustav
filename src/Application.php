@@ -4,8 +4,6 @@ namespace TorstenDittmann\Gustav;
 
 use ReflectionClass;
 use ReflectionMethod;
-use Sabre\HTTP\Response;
-use Sabre\HTTP\Sapi;
 use TorstenDittmann\Gustav\Attribute\Param;
 use TorstenDittmann\Gustav\Attribute\Route;
 use TorstenDittmann\Gustav\Controller\Base;
