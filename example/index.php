@@ -10,6 +10,8 @@ use TorstenDittmann\Gustav\Attribute\Param;
 use TorstenDittmann\Gustav\Attribute\Route;
 use TorstenDittmann\Gustav\Context;
 use TorstenDittmann\Gustav\Controller;
+use TorstenDittmann\Gustav\Message\RequestInterface;
+use TorstenDittmann\Gustav\Message\ResponseInterface;
 use TorstenDittmann\Gustav\Middleware;
 use TorstenDittmann\Gustav\Router\Method;
 use TorstenDittmann\Gustav\Service;
@@ -25,7 +27,7 @@ class Police extends Middleware\Base
     {
     }
 
-    public function handle(Request $request, Response $response, Context $context): void
+    public function handle(RequestInterface $request, ResponseInterface $response, Context $context): void
     {
         var_dump("asd");
     }

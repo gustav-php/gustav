@@ -2,7 +2,7 @@
 
 namespace TorstenDittmann\Gustav\Router;
 
-use Sabre\HTTP\Request;
+use TorstenDittmann\Gustav\Message\RequestInterface;
 
 enum Method: string
 {
@@ -16,7 +16,7 @@ enum Method: string
     case OPTIONS = 'OPTIONS';
     case TRACE = 'TRACE';
 
-    public static function fromRequest(Request $request): self
+    public static function fromRequest(RequestInterface $request): self
     {
         return Method::from($request->getMethod());
     }

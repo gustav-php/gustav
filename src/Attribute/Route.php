@@ -4,7 +4,7 @@ namespace TorstenDittmann\Gustav\Attribute;
 
 use Attribute;
 use Exception;
-use Sabre\HTTP\Request;
+use TorstenDittmann\Gustav\Message\RequestInterface;
 use TorstenDittmann\Gustav\Router\Method;
 
 #[Attribute(Attribute::TARGET_METHOD)]
@@ -63,7 +63,7 @@ class Route
         $this->placeholders[$key] = $index;
     }
 
-    public function generateParams(Request $request): array
+    public function generateParams(RequestInterface $request): array
     {
         $pathParams = [];
         $parts = explode('/', $request->getPath());

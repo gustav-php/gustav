@@ -109,8 +109,8 @@ class Application
         }
 
         $context = new Context();
-        $response = new Response();
-        $request = Sapi::getRequest();
+        $response = $this->configuration->driver::buildResponse();
+        $request = $this->configuration->driver::buildRequest();
 
         try {
             $route = Router::match(Method::fromRequest($request), $request->getPath());
@@ -125,15 +125,16 @@ class Application
             $controller->setContext($context);
             $params = $route->generateParams($request);
             $payload = $controller->{$route->getFunction()}(...$params);
-            if ($payload instanceof Response) {
+            if ($payload instanceof $response) {
                 $response = $payload;
             } else {
                 $body = \json_encode($payload);
+                $response->setHeader('Content-Type', 'application/json');
                 $response->setStatus(200);
                 $response->setBody($body);
             }
         } catch (\Throwable $th) {
-            $response = new Response();
+            $response = $this->configuration->driver::buildResponse();
             $body = \json_encode([
                 'error' => $th->getMessage(),
                 'file' => $th->getFile(),
@@ -141,11 +142,12 @@ class Application
                 'code' => $th->getCode(),
                 'trace' => $th->getTrace(),
             ]);
+            $response->setHeader('Content-Type', 'application/json');
             $response->setStatus(500);
             $response->setBody($body);
         } finally {
             $response->setHeader('Content-Type', 'application/json');
-            Sapi::sendResponse($response);
+            $response->send();
         }
     }
 }
