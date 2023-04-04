@@ -7,17 +7,19 @@ use TorstenDittmann\Gustav\Attribute\Route;
 
 class Router
 {
-    public const WILDCARD_TOKEN = '__WILDCARD__';
+    public const PLACEHOLDER_TOKEN = ':::';
 
     /**
-     * @var array<string, Route[]>
+     * @var array<string,Route[]>
      */
     protected static array $routes = [];
 
     /**
+     * Contains the positions of all params in the paths of all registered Routes.
+     *
      * @var array<int>
      */
-    protected static array $placeholders = [];
+    protected static array $params = [];
 
     public static function addRoute(Route $route): void
     {
@@ -46,15 +48,15 @@ class Router
 
         $parts = array_values(array_filter(explode('/', $path)));
         $length = count($parts) - 1;
-        $filteredPlaceholders = array_filter(self::$placeholders, fn ($i) => $i <= $length);
+        $filteredParams = array_filter(self::$params, fn ($i) => $i <= $length);
 
-        foreach (self::combinations($filteredPlaceholders) as $sample) {
+        foreach (self::combinations($filteredParams) as $sample) {
             $sample = array_filter($sample, fn ($i) => $i <= $length);
             $match = implode(
                 '/',
                 array_replace(
                     $parts,
-                    array_fill_keys($sample, self::WILDCARD_TOKEN)
+                    array_fill_keys($sample, self::PLACEHOLDER_TOKEN)
                 )
             );
 
@@ -68,7 +70,7 @@ class Router
 
     public static function reset(): void
     {
-        self::$placeholders = [];
+        self::$params = [];
         self::$routes = [];
     }
 
@@ -92,7 +94,7 @@ class Router
     {
         $parts = array_values(array_filter(explode('/', $path)));
         $prepare = '';
-        $placeholders = [];
+        $params = [];
 
         foreach ($parts as $key => $part) {
             if ($key !== 0) {
@@ -100,16 +102,16 @@ class Router
             }
 
             if (str_starts_with($part, ':')) {
-                $prepare .= self::WILDCARD_TOKEN;
-                $placeholders[ltrim($part, ':')] = $key;
-                if (!in_array($key, self::$placeholders)) {
-                    self::$placeholders[] = $key;
+                $prepare .= self::PLACEHOLDER_TOKEN;
+                $params[ltrim($part, ':')] = $key;
+                if (!in_array($key, self::$params)) {
+                    self::$params[] = $key;
                 }
             } else {
                 $prepare .= $part;
             }
         }
 
-        return [$prepare, $placeholders];
+        return [$prepare, $params];
     }
 }
