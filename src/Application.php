@@ -6,7 +6,7 @@ use ReflectionClass;
 use ReflectionMethod;
 use TorstenDittmann\Gustav\Attribute\Param;
 use TorstenDittmann\Gustav\Attribute\Route;
-use TorstenDittmann\Gustav\Controller\Base;
+use TorstenDittmann\Gustav\Controller\ControllerFactory;
 use TorstenDittmann\Gustav\Router\Method;
 use TorstenDittmann\Gustav\Router\Router;
 
@@ -20,7 +20,7 @@ class Application
     }
 
     /**
-     * @var \TorstenDittmann\Gustav\Controller\Base[]
+     * @var \TorstenDittmann\Gustav\Controller\ControllerFactory[]
      */
     protected array $controllers = [];
     /**
@@ -43,10 +43,12 @@ class Application
 
     protected function registerRoute(string $class): void
     {
-        $controller = new Base($class);
+        $controller = new ControllerFactory($class);
         $reflector = new ReflectionClass($class);
         $constructor = $reflector->getConstructor();
-        $controller->setInjections($constructor);
+        if ($constructor !== null) {
+            $controller->setInjections($constructor);
+        }
         $this->addMethods($reflector);
         $this->controllers[$class] = $controller;
     }
@@ -99,30 +101,28 @@ class Application
     {
         $this->configuration ??= new Configuration();
 
-        foreach ($this->services as $class => $service) {
-            $service->initialize($class);
-        }
         foreach ($this->controllers as $controller) {
             $controller->initialize(...array_map(fn (string $class) => new $class(), $controller->getInjections()));
         }
 
-        $context = new Context();
+        $context = new $this->configuration->context();
         $response = $this->configuration->driver::buildResponse();
         $request = $this->configuration->driver::buildRequest();
 
         try {
             $route = Router::match(Method::fromRequest($request), $request->getPath());
             /**
-             * @var Base $controller
+             * @var ControllerFactory $controller
              */
-            $controller = $this->controllers[$route->getClass()]->getInstance();
+            $controller = $this->controllers[$route->getClass()];
             $controller->setMiddlewares();
-            foreach ($this->middlewares as $middleware) {
+            foreach ($controller->getMiddlewares() as $middleware) {
                 $middleware->handle($request, $response, $context);
             }
             $controller->setContext($context);
             $params = $route->generateParams($request);
-            $payload = $controller->{$route->getFunction()}(...$params);
+            $instance = $controller->getInstance();
+            $payload = $instance->{$route->getFunction()}(...$params);
             if ($payload instanceof $response) {
                 $response = $payload;
             } else {

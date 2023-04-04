@@ -21,7 +21,8 @@
   },
   "autoload": {
     "psr-4": {
-      "TorstenDittmann\\Gustav\\": "src/"
+      "TorstenDittmann\\Gustav\\": "src/",
+      "TorstenDittmann\\Example\\": "example/"
     }
   },
   "authors": [
