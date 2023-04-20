@@ -5,10 +5,15 @@ namespace TorstenDittmann\Example;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use TorstenDittmann\Example\Routes\CatsController;
 use TorstenDittmann\Gustav\Application;
+use TorstenDittmann\Gustav\Configuration;
 
+$configuration = new Configuration(
+    routeNamespaces: [
+        'TorstenDittmann\Example\Routes'
+    ],
+);
 
-$app = new Application(routes: [CatsController::class]);
+$app = new Application(configuration: $configuration);
 
 $app->start();

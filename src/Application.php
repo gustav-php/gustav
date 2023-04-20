@@ -2,6 +2,7 @@
 
 namespace TorstenDittmann\Gustav;
 
+use HaydenPierce\ClassFinder\ClassFinder;
 use ReflectionClass;
 use ReflectionMethod;
 use TorstenDittmann\Gustav\Attribute\Param;
@@ -17,6 +18,19 @@ class Application
         array $routes = []
     ) {
         $this->addRoutes($routes);
+        if ($configuration) {
+            if ($configuration->routeNamespaces) {
+                foreach ($configuration->routeNamespaces as $namespace) {
+                    $classes = ClassFinder::getClassesInNamespace($namespace, ClassFinder::STANDARD_MODE);
+                    foreach ($classes as $class) {
+                        if (is_subclass_of($class, Controller\Base::class)) {
+                            error_log("adding {$class}");
+                            $this->addRoutes([$class]);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
