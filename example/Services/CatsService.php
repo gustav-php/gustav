@@ -1,8 +1,8 @@
 <?php
 
-namespace TorstenDittmann\Example\Services;
+namespace GustavPHP\Example\Services;
 
-use TorstenDittmann\Gustav\Service;
+use GustavPHP\Gustav\Service;
 
 class CatsService extends Service\Base
 {

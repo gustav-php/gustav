@@ -3,7 +3,7 @@
 <?php
 
 use Symfony\Component\Console\Application;
-use TorstenDittmann\Gustav\Internal\Dev\ServerCommand;
+use GustavPHP\Gustav\Internal\Dev\ServerCommand;
 
 require __DIR__ . '/../vendor/autoload.php';
 

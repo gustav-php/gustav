@@ -1,11 +1,11 @@
 <?php
 
-namespace TorstenDittmann\Gustav\Attribute;
+namespace GustavPHP\Gustav\Attribute;
 
 use Attribute;
 use Exception;
-use TorstenDittmann\Gustav\Message\RequestInterface;
-use TorstenDittmann\Gustav\Router\Method;
+use GustavPHP\Gustav\Message\RequestInterface;
+use GustavPHP\Gustav\Router\Method;
 
 #[Attribute(Attribute::TARGET_METHOD)]
 class Route

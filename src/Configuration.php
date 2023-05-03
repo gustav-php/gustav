@@ -1,9 +1,9 @@
 <?php
 
-namespace TorstenDittmann\Gustav;
+namespace GustavPHP\Gustav;
 
-use TorstenDittmann\Gustav\Message\DriverInterface;
-use TorstenDittmann\Gustav\Message\SAPI;
+use GustavPHP\Gustav\Message\DriverInterface;
+use GustavPHP\Gustav\Message\SAPI;
 
 class Configuration
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace TorstenDittmann\Gustav\Service;
+namespace GustavPHP\Gustav\Service;
 
 class Base
 {

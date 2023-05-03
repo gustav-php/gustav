@@ -1,9 +1,9 @@
 <?php
 
-namespace TorstenDittmann\Gustav\Attribute;
+namespace GustavPHP\Gustav\Attribute;
 
 use Attribute;
-use TorstenDittmann\Gustav\Middleware\Base;
+use GustavPHP\Gustav\Middleware\Base;
 
 #[Attribute(Attribute::TARGET_CLASS)]
 class Middleware

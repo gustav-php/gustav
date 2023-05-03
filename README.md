@@ -7,7 +7,7 @@ Gustav is a PHP framework for building web applications. It is designed to be si
 Controllers are the heart of the framework. They are responsible for handling incoming requests and returning a response. All controllers must extend the `Controller\Base` class.
 
 ```php
-use TorstenDittmann\Gustav\Controller;
+use GustavPHP\Gustav\Controller;
 
 class DogsController extends Controller\Base
 {
@@ -18,7 +18,7 @@ Routes can be defined by attaching the Route Attributes to public controller fun
 
 ```php
 //...
-use TorstenDittmann\Gustav\Attribute\Route;
+use GustavPHP\Gustav\Attribute\Route;
 
 class DogsController extends Controller\Base
 {
@@ -42,8 +42,8 @@ The `name` argument in the `Param` attribute is used to define the parameter map
 
 ```php
 //...
-use TorstenDittmann\Gustav\Attribute\Param;
-use TorstenDittmann\Gustav\Router\Method;
+use GustavPHP\Gustav\Attribute\Param;
+use GustavPHP\Gustav\Router\Method;
 
 class DogsController extends Controller\Base
 {
@@ -61,7 +61,7 @@ class DogsController extends Controller\Base
 Now we just need to inizialize the framework and we are ready to go.
 
 ```php
-use TorstenDittmann\Gustav\Application;
+use GustavPHP\Gustav\Application;
 
 //...
 
@@ -73,11 +73,11 @@ $app->start();
 Full example:
 
 ```php
-use TorstenDittmann\Gustav\Application;
-use TorstenDittmann\Gustav\Attribute\Param;
-use TorstenDittmann\Gustav\Attribute\Route;
-use TorstenDittmann\Gustav\Controller;
-use TorstenDittmann\Gustav\Router\Method;
+use GustavPHP\Gustav\Application;
+use GustavPHP\Gustav\Attribute\Param;
+use GustavPHP\Gustav\Attribute\Route;
+use GustavPHP\Gustav\Controller;
+use GustavPHP\Gustav\Router\Method;
 
 class DogsController extends Controller\Base
 {
@@ -133,7 +133,7 @@ public function get(#[Param('dog')] string $id, #[Param('collar')] string $colla
 Services are classes that can be injected into controllers. They are defined by extending the `Service\Base` class.
 
 ```php
-use TorstenDittmann\Gustav\Service;
+use GustavPHP\Gustav\Service;
 
 class Police extends Service\Base
 {
@@ -180,7 +180,7 @@ class Security extends Middleware\Base
 To add a middleware to a controller, you need to add the `Middleware` attribute to the controllers class.
 
 ```php
-use TorstenDittmann\Gustav\Attribute;
+use GustavPHP\Gustav\Attribute;
 
 #[Attribute\Middleware(Security::class)]
 class CatsController extends Controller\Base

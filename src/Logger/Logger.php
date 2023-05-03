@@ -1,6 +1,6 @@
 <?php
 
-namespace TorstenDittmann\Gustav\Logger;
+namespace GustavPHP\Gustav\Logger;
 
 use Symfony\Component\Console\Output\ConsoleOutput;
 

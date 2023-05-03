@@ -1,16 +1,16 @@
 <?php
 
 
-namespace TorstenDittmann\Example;
+namespace GustavPHP\Example;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use TorstenDittmann\Gustav\Application;
-use TorstenDittmann\Gustav\Configuration;
+use GustavPHP\Gustav\Application;
+use GustavPHP\Gustav\Configuration;
 
 $configuration = new Configuration(
     routeNamespaces: [
-        'TorstenDittmann\Example\Routes'
+        'GustavPHP\Example\Routes'
     ],
 );
 

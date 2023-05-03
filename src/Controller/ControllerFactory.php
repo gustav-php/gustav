@@ -1,14 +1,14 @@
 <?php
 
-namespace TorstenDittmann\Gustav\Controller;
+namespace GustavPHP\Gustav\Controller;
 
 use Exception;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionNamedType;
-use TorstenDittmann\Gustav\Attribute\Middleware;
-use TorstenDittmann\Gustav\Context;
-use TorstenDittmann\Gustav\Service;
+use GustavPHP\Gustav\Attribute\Middleware;
+use GustavPHP\Gustav\Context;
+use GustavPHP\Gustav\Service;
 
 class ControllerFactory
 {

@@ -1,10 +1,10 @@
 <?php
 
-namespace TorstenDittmann\Gustav\Message\SAPI;
+namespace GustavPHP\Gustav\Message\SAPI;
 
-use TorstenDittmann\Gustav\Message\DriverInterface;
-use TorstenDittmann\Gustav\Message\RequestInterface;
-use TorstenDittmann\Gustav\Message\ResponseInterface;
+use GustavPHP\Gustav\Message\DriverInterface;
+use GustavPHP\Gustav\Message\RequestInterface;
+use GustavPHP\Gustav\Message\ResponseInterface;
 
 class Driver implements DriverInterface
 {

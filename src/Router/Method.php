@@ -1,8 +1,8 @@
 <?php
 
-namespace TorstenDittmann\Gustav\Router;
+namespace GustavPHP\Gustav\Router;
 
-use TorstenDittmann\Gustav\Message\RequestInterface;
+use GustavPHP\Gustav\Message\RequestInterface;
 
 enum Method: string
 {

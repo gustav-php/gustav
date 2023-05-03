@@ -1,6 +1,6 @@
 <?php
 
-namespace TorstenDittmann\Gustav\Message;
+namespace GustavPHP\Gustav\Message;
 
 interface DriverInterface
 {

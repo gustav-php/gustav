@@ -1,9 +1,9 @@
 <?php
 
-namespace TorstenDittmann\Gustav\Router;
+namespace GustavPHP\Gustav\Router;
 
 use Exception;
-use TorstenDittmann\Gustav\Attribute\Route;
+use GustavPHP\Gustav\Attribute\Route;
 
 class Router
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace TorstenDittmann\Gustav\Attribute;
+namespace GustavPHP\Gustav\Attribute;
 
 use Attribute;
 

@@ -1,10 +1,10 @@
 <?php
 
-namespace TorstenDittmann\Gustav\Middleware;
+namespace GustavPHP\Gustav\Middleware;
 
-use TorstenDittmann\Gustav\Context;
-use TorstenDittmann\Gustav\Message\RequestInterface;
-use TorstenDittmann\Gustav\Message\ResponseInterface;
+use GustavPHP\Gustav\Context;
+use GustavPHP\Gustav\Message\RequestInterface;
+use GustavPHP\Gustav\Message\ResponseInterface;
 
 abstract class Base
 {

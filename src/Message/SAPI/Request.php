@@ -1,8 +1,8 @@
 <?php
 
-namespace TorstenDittmann\Gustav\Message\SAPI;
+namespace GustavPHP\Gustav\Message\SAPI;
 
-use TorstenDittmann\Gustav\Message\RequestInterface;
+use GustavPHP\Gustav\Message\RequestInterface;
 
 class Request implements RequestInterface
 {

@@ -1,15 +1,15 @@
 <?php
 
-namespace TorstenDittmann\Example\Routes;
+namespace GustavPHP\Example\Routes;
 
 use Exception;
-use TorstenDittmann\Example\Middlewares\Logger;
-use TorstenDittmann\Example\Services\CatsService;
-use TorstenDittmann\Gustav\Attribute;
-use TorstenDittmann\Gustav\Attribute\Param;
-use TorstenDittmann\Gustav\Attribute\Route;
-use TorstenDittmann\Gustav\Controller;
-use TorstenDittmann\Gustav\Router\Method;
+use GustavPHP\Example\Middlewares\Logger;
+use GustavPHP\Example\Services\CatsService;
+use GustavPHP\Gustav\Attribute;
+use GustavPHP\Gustav\Attribute\Param;
+use GustavPHP\Gustav\Attribute\Route;
+use GustavPHP\Gustav\Controller;
+use GustavPHP\Gustav\Router\Method;
 
 #[Attribute\Middleware(Logger::class)]
 class CatsController extends Controller\Base

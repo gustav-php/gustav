@@ -1,6 +1,6 @@
 <?php
 
-namespace TorstenDittmann\Gustav\Internal\Dev;
+namespace GustavPHP\Gustav\Internal\Dev;
 
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;

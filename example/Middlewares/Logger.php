@@ -1,11 +1,11 @@
 <?php
 
-namespace TorstenDittmann\Example\Middlewares;
+namespace GustavPHP\Example\Middlewares;
 
-use TorstenDittmann\Gustav\Context;
-use TorstenDittmann\Gustav\Message\RequestInterface;
-use TorstenDittmann\Gustav\Message\ResponseInterface;
-use TorstenDittmann\Gustav\Middleware;
+use GustavPHP\Gustav\Context;
+use GustavPHP\Gustav\Message\RequestInterface;
+use GustavPHP\Gustav\Message\ResponseInterface;
+use GustavPHP\Gustav\Middleware;
 
 class Logger extends Middleware\Base
 {

@@ -1,15 +1,15 @@
 <?php
 
-namespace TorstenDittmann\Gustav;
+namespace GustavPHP\Gustav;
 
 use HaydenPierce\ClassFinder\ClassFinder;
 use ReflectionClass;
 use ReflectionMethod;
-use TorstenDittmann\Gustav\Attribute\Param;
-use TorstenDittmann\Gustav\Attribute\Route;
-use TorstenDittmann\Gustav\Controller\ControllerFactory;
-use TorstenDittmann\Gustav\Router\Method;
-use TorstenDittmann\Gustav\Router\Router;
+use GustavPHP\Gustav\Attribute\Param;
+use GustavPHP\Gustav\Attribute\Route;
+use GustavPHP\Gustav\Controller\ControllerFactory;
+use GustavPHP\Gustav\Router\Method;
+use GustavPHP\Gustav\Router\Router;
 
 class Application
 {
@@ -33,15 +33,15 @@ class Application
     }
 
     /**
-     * @var \TorstenDittmann\Gustav\Controller\ControllerFactory[]
+     * @var \GustavPHP\Gustav\Controller\ControllerFactory[]
      */
     protected array $controllers = [];
     /**
-     * @var \TorstenDittmann\Gustav\Service\Base[]
+     * @var \GustavPHP\Gustav\Service\Base[]
      */
     protected array $services = [];
     /**
-     * @var \TorstenDittmann\Gustav\Middleware\Base[]
+     * @var \GustavPHP\Gustav\Middleware\Base[]
      */
     protected array $middlewares = [];
 

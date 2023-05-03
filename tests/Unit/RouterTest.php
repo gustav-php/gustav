@@ -1,8 +1,8 @@
 <?php
 
-use TorstenDittmann\Gustav\Attribute\Route;
-use TorstenDittmann\Gustav\Router\Method;
-use TorstenDittmann\Gustav\Router\Router;
+use GustavPHP\Gustav\Attribute\Route;
+use GustavPHP\Gustav\Router\Method;
+use GustavPHP\Gustav\Router\Router;
 
 beforeEach(function () {
     Router::reset();

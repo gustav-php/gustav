@@ -1,8 +1,8 @@
 <?php
 
-namespace TorstenDittmann\Gustav\Message\SAPI;
+namespace GustavPHP\Gustav\Message\SAPI;
 
-use TorstenDittmann\Gustav\Message\ResponseInterface;
+use GustavPHP\Gustav\Message\ResponseInterface;
 
 class Response implements ResponseInterface
 {

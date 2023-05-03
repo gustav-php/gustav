@@ -1,6 +1,6 @@
 <?php
 
-namespace TorstenDittmann\Gustav\Controller;
+namespace GustavPHP\Gustav\Controller;
 
 class Base
 {

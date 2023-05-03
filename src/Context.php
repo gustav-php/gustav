@@ -1,6 +1,6 @@
 <?php
 
-namespace TorstenDittmann\Gustav;
+namespace GustavPHP\Gustav;
 
 class Context
 {
