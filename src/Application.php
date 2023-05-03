@@ -24,7 +24,6 @@ class Application
                     $classes = ClassFinder::getClassesInNamespace($namespace, ClassFinder::STANDARD_MODE);
                     foreach ($classes as $class) {
                         if (is_subclass_of($class, Controller\Base::class)) {
-                            error_log("adding {$class}");
                             $this->addRoutes([$class]);
                         }
                     }

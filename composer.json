@@ -6,11 +6,12 @@
   "require": {
     "php": "^8.1",
     "sabre/http": "^6.0",
-    "haydenpierce/class-finder": "^0.5.1"
+    "haydenpierce/class-finder": "^0.5.1",
+    "symfony/console": "^6.2"
   },
   "scripts": {
     "test": "./vendor/bin/pest",
-    "example": "./bin/server 4200 ./example/index.php",
+    "example": "./bin/dev start 0.0.0.0:4201 ./example/index.php",
     "check": "./vendor/bin/phpstan analyze",
     "lint": "./vendor/bin/pint --test src tests",
     "format": "./vendor/bin/pint src tests"

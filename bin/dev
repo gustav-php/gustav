@@ -1,0 +1,13 @@
+#!/usr/bin/env php
+
+<?php
+
+use Symfony\Component\Console\Application;
+use TorstenDittmann\Gustav\Internal\Dev\ServerCommand;
+
+require __DIR__ . '/../vendor/autoload.php';
+
+$command = new ServerCommand();
+$application = new Application();
+$application->add($command);
+$application->run();
