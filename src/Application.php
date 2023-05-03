@@ -10,6 +10,8 @@ use GustavPHP\Gustav\Attribute\Route;
 use GustavPHP\Gustav\Controller\ControllerFactory;
 use GustavPHP\Gustav\Router\Method;
 use GustavPHP\Gustav\Router\Router;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 class Application
 {
@@ -29,6 +31,18 @@ class Application
                     }
                 }
             }
+
+            if ($configuration->files) {
+                $path = realpath(getcwd() . DIRECTORY_SEPARATOR . $configuration->files);
+                $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path));
+                foreach ($iterator as $file) {
+                    if ($file->isDir()) {
+                        continue;
+                    }
+                    $relative = ltrim($file->getPathname(), $path);
+                    $this->files[$relative] = true;
+                }
+            }
         }
     }
 
@@ -44,6 +58,10 @@ class Application
      * @var \GustavPHP\Gustav\Middleware\Base[]
      */
     protected array $middlewares = [];
+    /**
+     * @var array<string,bool>
+     */
+    protected array $files = [];
 
     public function addRoutes(array $classes): self
     {
@@ -123,6 +141,13 @@ class Application
         $request = $this->configuration->driver::buildRequest();
 
         try {
+            if (array_key_exists($request->getPath(), $this->files)) {
+                $path = realpath(getcwd() . DIRECTORY_SEPARATOR . $this->configuration->files . DIRECTORY_SEPARATOR . $request->getPath());
+                $response->setBody(file_get_contents($path));
+                $response->setStatus(200);
+                $response->setHeader('Content-Type', mime_content_type($path));
+                return;
+            }
             $route = Router::match(Method::fromRequest($request), $request->getPath());
             /**
              * @var ControllerFactory $controller

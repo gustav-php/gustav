@@ -9,9 +9,10 @@ use GustavPHP\Gustav\Application;
 use GustavPHP\Gustav\Configuration;
 
 $configuration = new Configuration(
+    files: 'public',
     routeNamespaces: [
         'GustavPHP\Example\Routes'
-    ],
+    ]
 );
 
 $app = new Application(configuration: $configuration);

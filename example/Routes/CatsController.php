@@ -3,7 +3,7 @@
 namespace GustavPHP\Example\Routes;
 
 use Exception;
-use GustavPHP\Example\Middlewares\Logger;
+use GustavPHP\Example\Middlewares\Logs;
 use GustavPHP\Example\Services\CatsService;
 use GustavPHP\Gustav\Attribute;
 use GustavPHP\Gustav\Attribute\Param;
@@ -11,7 +11,7 @@ use GustavPHP\Gustav\Attribute\Route;
 use GustavPHP\Gustav\Controller;
 use GustavPHP\Gustav\Router\Method;
 
-#[Attribute\Middleware(Logger::class)]
+#[Attribute\Middleware(Logs::class)]
 class CatsController extends Controller\Base
 {
     public function __construct(protected CatsService $catsService)

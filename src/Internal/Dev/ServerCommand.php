@@ -24,7 +24,7 @@ class ServerCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $address = $input->getArgument('address');
-        $entrypoint = realpath(getcwd() . "/" . $input->getArgument('entrypoint'));
+        $entrypoint = realpath(getcwd() . DIRECTORY_SEPARATOR . $input->getArgument('entrypoint'));
 
         passthru(PHP_BINARY . " -q -S {$address} {$entrypoint}");
 
