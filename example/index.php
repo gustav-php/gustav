@@ -9,7 +9,7 @@ use GustavPHP\Gustav\Application;
 use GustavPHP\Gustav\Configuration;
 
 $configuration = new Configuration(
-    files: 'public',
+    files: __DIR__ . '/public/',
     routeNamespaces: [
         'GustavPHP\Example\Routes'
     ]

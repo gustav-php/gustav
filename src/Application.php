@@ -8,10 +8,12 @@ use ReflectionMethod;
 use GustavPHP\Gustav\Attribute\Param;
 use GustavPHP\Gustav\Attribute\Route;
 use GustavPHP\Gustav\Controller\ControllerFactory;
+use GustavPHP\Gustav\Logger\Logger;
 use GustavPHP\Gustav\Router\Method;
 use GustavPHP\Gustav\Router\Router;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use SplFileInfo;
 
 class Application
 {
@@ -33,14 +35,16 @@ class Application
             }
 
             if ($configuration->files) {
-                $path = realpath(getcwd() . DIRECTORY_SEPARATOR . $configuration->files);
-                $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path));
-                foreach ($iterator as $file) {
-                    if ($file->isDir()) {
-                        continue;
+                if (\is_dir($configuration->files)) {
+                    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($configuration->files));
+                    foreach ($iterator as $file) {
+                        /** @var SplFileInfo $file */
+                        if ($file->isDir()) {
+                            continue;
+                        }
+                        $relative = substr($file->getPathname(), strlen($configuration->files));
+                        $this->files[$relative] = $file->getRealPath();
                     }
-                    $relative = ltrim($file->getPathname(), $path);
-                    $this->files[$relative] = true;
                 }
             }
         }
@@ -59,7 +63,7 @@ class Application
      */
     protected array $middlewares = [];
     /**
-     * @var array<string,bool>
+     * @var array<string,string>
      */
     protected array $files = [];
 
@@ -142,16 +146,14 @@ class Application
 
         try {
             if (array_key_exists($request->getPath(), $this->files)) {
-                $path = realpath(getcwd() . DIRECTORY_SEPARATOR . $this->configuration->files . DIRECTORY_SEPARATOR . $request->getPath());
+                $path = $this->files[$request->getPath()];
                 $response->setBody(file_get_contents($path));
                 $response->setStatus(200);
                 $response->setHeader('Content-Type', mime_content_type($path));
                 return;
             }
             $route = Router::match(Method::fromRequest($request), $request->getPath());
-            /**
-             * @var ControllerFactory $controller
-             */
+            /** @var ControllerFactory $controller */
             $controller = $this->controllers[$route->getClass()];
             $controller->setMiddlewares();
             foreach ($controller->getMiddlewares() as $middleware) {
@@ -182,7 +184,6 @@ class Application
             $response->setStatus(500);
             $response->setBody($body);
         } finally {
-            $response->setHeader('Content-Type', 'application/json');
             $response->send();
         }
     }
