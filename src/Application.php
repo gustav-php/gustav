@@ -8,7 +8,6 @@ use ReflectionMethod;
 use GustavPHP\Gustav\Attribute\Param;
 use GustavPHP\Gustav\Attribute\Route;
 use GustavPHP\Gustav\Controller\ControllerFactory;
-use GustavPHP\Gustav\Logger\Logger;
 use GustavPHP\Gustav\Router\Method;
 use GustavPHP\Gustav\Router\Router;
 use RecursiveDirectoryIterator;
