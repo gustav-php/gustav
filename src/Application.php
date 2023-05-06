@@ -8,6 +8,8 @@ use ReflectionMethod;
 use GustavPHP\Gustav\Attribute\Param;
 use GustavPHP\Gustav\Attribute\Route;
 use GustavPHP\Gustav\Controller\ControllerFactory;
+use GustavPHP\Gustav\Logger\Logger;
+use GustavPHP\Gustav\Middleware\Lifecycle;
 use GustavPHP\Gustav\Router\Method;
 use GustavPHP\Gustav\Router\Router;
 use RecursiveDirectoryIterator;
@@ -155,13 +157,16 @@ class Application
             /** @var ControllerFactory $controller */
             $controller = $this->controllers[$route->getClass()];
             $controller->setMiddlewares();
-            foreach ($controller->getMiddlewares() as $middleware) {
+            foreach ($controller->getMiddlewares(Lifecycle::Before) as $middleware) {
                 $middleware->handle($request, $response, $context);
             }
             $controller->setContext($context);
             $params = $route->generateParams($request);
             $instance = $controller->getInstance();
             $payload = $instance->{$route->getFunction()}(...$params);
+            foreach ($controller->getMiddlewares(Lifecycle::After) as $middleware) {
+                $middleware->handle($request, $response, $context);
+            }
             if ($payload instanceof $response) {
                 $response = $payload;
             } else {
@@ -171,6 +176,9 @@ class Application
                 $response->setBody($body);
             }
         } catch (\Throwable $th) {
+            foreach ($controller->getMiddlewares(Lifecycle::Error) as $middleware) {
+                $middleware->handle($request, $response, $context);
+            }
             $response = $this->configuration->driver::buildResponse();
             $body = \json_encode([
                 'error' => $th->getMessage(),

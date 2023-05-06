@@ -8,6 +8,8 @@ use ReflectionMethod;
 use ReflectionNamedType;
 use GustavPHP\Gustav\Attribute\Middleware;
 use GustavPHP\Gustav\Context;
+use GustavPHP\Gustav\Logger\Logger;
+use GustavPHP\Gustav\Middleware\Lifecycle;
 use GustavPHP\Gustav\Service;
 
 class ControllerFactory
@@ -15,7 +17,9 @@ class ControllerFactory
     protected ?Context $context = null;
     protected ?object $instance = null;
     protected array $injections = [];
-    protected array $middlewares = [];
+    protected array $before = [];
+    protected array $after = [];
+    protected array $error = [];
     public function __construct(protected string $class)
     {
     }
@@ -50,15 +54,33 @@ class ControllerFactory
         $attributes = $reflection->getAttributes(Middleware::class);
 
         foreach ($attributes as $attribute) {
-            $this->middlewares[] = $attribute->newInstance()->initialize();
+            /**
+             * @var Middleware $instance
+             */
+            $instance = $attribute->newInstance();
+            switch ($instance->getLifecycle()) {
+                case Lifecycle::After:
+                    $this->after[] = $instance->initialize();
+                    break;
+                case Lifecycle::Before:
+                    $this->before[] = $instance->initialize();
+                    break;
+                case Lifecycle::Error:
+                    $this->error[] = $instance->initialize();
+                    break;
+            }
         }
 
         return $this;
     }
 
-    public function getMiddlewares(): array
+    public function getMiddlewares(Lifecycle $lifecycle): array
     {
-        return $this->middlewares;
+        return match($lifecycle) {
+            Lifecycle::After => $this->after,
+            Lifecycle::Before => $this->before,
+            Lifecycle::Error => $this->error
+        };
     }
 
     public function getInstance(): object
