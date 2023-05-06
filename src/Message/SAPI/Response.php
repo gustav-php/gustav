@@ -11,25 +11,9 @@ class Response implements ResponseInterface
     {
         $this->response = new \Sabre\HTTP\Response();
     }
-    public function getStatus(): int
-    {
-        return $this->response->getStatus();
-    }
-    public function getStatusText(): string
-    {
-        return $this->response->getStatusText();
-    }
-    public function setStatus($status): void
-    {
-        $this->response->setStatus($status);
-    }
     public function getBody()
     {
         return $this->response->getBody();
-    }
-    public function setBody($body): void
-    {
-        $this->response->setBody($body);
     }
     public function getHeader(string $name): ?string
     {
@@ -39,17 +23,17 @@ class Response implements ResponseInterface
     {
         return $this->response->getHeaders();
     }
+    public function getStatus(): int
+    {
+        return $this->response->getStatus();
+    }
+    public function getStatusText(): string
+    {
+        return $this->response->getStatusText();
+    }
     public function hasHeader(string $name): bool
     {
         return $this->response->hasHeader($name);
-    }
-    public function setHeader(string $name, $value): void
-    {
-        $this->response->setHeader($name, $value);
-    }
-    public function setHeaders(array $headers): void
-    {
-        $this->response->setHeaders($headers);
     }
     public function removeHeader(string $name): bool
     {
@@ -59,5 +43,21 @@ class Response implements ResponseInterface
     public function send(): void
     {
         \Sabre\HTTP\Sapi::sendResponse($this->response);
+    }
+    public function setBody($body): void
+    {
+        $this->response->setBody($body);
+    }
+    public function setHeader(string $name, $value): void
+    {
+        $this->response->setHeader($name, $value);
+    }
+    public function setHeaders(array $headers): void
+    {
+        $this->response->setHeaders($headers);
+    }
+    public function setStatus($status): void
+    {
+        $this->response->setStatus($status);
     }
 }

@@ -15,10 +15,6 @@ class Request implements RequestInterface
     {
         return $this->request->getBody();
     }
-    public function setBody($body): void
-    {
-        $this->request->setBody($body);
-    }
     public function getHeader(string $name): ?string
     {
         return $this->request->getHeader($name);
@@ -27,9 +23,33 @@ class Request implements RequestInterface
     {
         return $this->request->getHeaders();
     }
+    public function getMethod(): string
+    {
+        return $this->request->getMethod();
+    }
+    public function getPath(): string
+    {
+        return $this->request->getPath();
+    }
+    public function getPostData(): array
+    {
+        return $this->request->getPostData();
+    }
+    public function getQueryParameters(): array
+    {
+        return $this->request->getQueryParameters();
+    }
+    public function getUrl(): string
+    {
+        return $this->request->getUrl();
+    }
     public function hasHeader(string $name): bool
     {
         return $this->request->hasHeader($name);
+    }
+    public function setBody($body): void
+    {
+        $this->request->setBody($body);
     }
     public function setHeader(string $name, $value): void
     {
@@ -39,36 +59,16 @@ class Request implements RequestInterface
     {
         $this->request->setHeaders($headers);
     }
-    public function getMethod(): string
-    {
-        return $this->request->getMethod();
-    }
     public function setMethod(string $method): void
     {
         $this->request->setMethod($method);
     }
-    public function getUrl(): string
+    public function setPostData(array $postData): void
     {
-        return $this->request->getUrl();
+        $this->request->setPostData($postData);
     }
     public function setUrl(string $url): void
     {
         $this->request->setUrl($url);
-    }
-    public function getPath(): string
-    {
-        return $this->request->getPath();
-    }
-    public function getQueryParameters(): array
-    {
-        return $this->request->getQueryParameters();
-    }
-    public function getPostData(): array
-    {
-        return $this->request->getPostData();
-    }
-    public function setPostData(array $postData): void
-    {
-        $this->request->setPostData($postData);
     }
 }

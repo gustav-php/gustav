@@ -3,30 +3,58 @@
 namespace GustavPHP\Gustav\Controller;
 
 use Exception;
+use GustavPHP\Gustav\Attribute\Middleware;
+use GustavPHP\Gustav\Context;
+use GustavPHP\Gustav\Middleware\Lifecycle;
+use GustavPHP\Gustav\Service;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionNamedType;
-use GustavPHP\Gustav\Attribute\Middleware;
-use GustavPHP\Gustav\Context;
-use GustavPHP\Gustav\Logger\Logger;
-use GustavPHP\Gustav\Middleware\Lifecycle;
-use GustavPHP\Gustav\Service;
 
 class ControllerFactory
 {
-    protected ?Context $context = null;
-    protected ?object $instance = null;
-    protected array $injections = [];
-    protected array $before = [];
     protected array $after = [];
+    protected array $before = [];
+    protected ?Context $context = null;
     protected array $error = [];
+    protected array $injections = [];
+    protected ?object $instance = null;
     public function __construct(protected string $class)
     {
+    }
+
+    public function getClass(): string
+    {
+        return $this->class;
     }
 
     public function getInjections(): array
     {
         return $this->injections;
+    }
+
+    public function getInstance(): object
+    {
+        return $this->instance;
+    }
+
+    public function getMiddlewares(Lifecycle $lifecycle): array
+    {
+        return match($lifecycle) {
+            Lifecycle::After => $this->after,
+            Lifecycle::Before => $this->before,
+            Lifecycle::Error => $this->error
+        };
+    }
+
+    public function initialize(...$args)
+    {
+        $this->instance = new $this->class(...$args);
+    }
+
+    public function setContext(Context $context)
+    {
+        $this->context = $context;
     }
 
     public function setInjections(ReflectionMethod $constructor): self
@@ -72,34 +100,5 @@ class ControllerFactory
         }
 
         return $this;
-    }
-
-    public function getMiddlewares(Lifecycle $lifecycle): array
-    {
-        return match($lifecycle) {
-            Lifecycle::After => $this->after,
-            Lifecycle::Before => $this->before,
-            Lifecycle::Error => $this->error
-        };
-    }
-
-    public function getInstance(): object
-    {
-        return $this->instance;
-    }
-
-    public function getClass(): string
-    {
-        return $this->class;
-    }
-
-    public function setContext(Context $context)
-    {
-        $this->context = $context;
-    }
-
-    public function initialize(...$args)
-    {
-        $this->instance = new $this->class(...$args);
     }
 }

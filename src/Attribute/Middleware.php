@@ -16,13 +16,13 @@ class Middleware
         }
     }
 
-    public function initialize(): Base
-    {
-        return new $this->class();
-    }
-
     public function getLifecycle(): Lifecycle
     {
         return $this->lifecycle;
+    }
+
+    public function initialize(): Base
+    {
+        return new $this->class();
     }
 }

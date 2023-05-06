@@ -2,22 +2,37 @@
 
 namespace GustavPHP\Gustav;
 
-use HaydenPierce\ClassFinder\ClassFinder;
-use ReflectionClass;
-use ReflectionMethod;
 use GustavPHP\Gustav\Attribute\Param;
 use GustavPHP\Gustav\Attribute\Route;
 use GustavPHP\Gustav\Controller\ControllerFactory;
-use GustavPHP\Gustav\Logger\Logger;
 use GustavPHP\Gustav\Middleware\Lifecycle;
 use GustavPHP\Gustav\Router\Method;
 use GustavPHP\Gustav\Router\Router;
+use HaydenPierce\ClassFinder\ClassFinder;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use ReflectionClass;
+use ReflectionMethod;
 use SplFileInfo;
 
 class Application
 {
+    /**
+     * @var \GustavPHP\Gustav\Controller\ControllerFactory[]
+     */
+    protected array $controllers = [];
+    /**
+     * @var array<string,string>
+     */
+    protected array $files = [];
+    /**
+     * @var \GustavPHP\Gustav\Middleware\Base[]
+     */
+    protected array $middlewares = [];
+    /**
+     * @var \GustavPHP\Gustav\Service\Base[]
+     */
+    protected array $services = [];
     public function __construct(
         protected ?Configuration $configuration = null,
         array $routes = []
@@ -51,44 +66,6 @@ class Application
         }
     }
 
-    /**
-     * @var \GustavPHP\Gustav\Controller\ControllerFactory[]
-     */
-    protected array $controllers = [];
-    /**
-     * @var \GustavPHP\Gustav\Service\Base[]
-     */
-    protected array $services = [];
-    /**
-     * @var \GustavPHP\Gustav\Middleware\Base[]
-     */
-    protected array $middlewares = [];
-    /**
-     * @var array<string,string>
-     */
-    protected array $files = [];
-
-    public function addRoutes(array $classes): self
-    {
-        foreach ($classes as $class) {
-            $this->registerRoute($class);
-        }
-
-        return $this;
-    }
-
-    protected function registerRoute(string $class): void
-    {
-        $controller = new ControllerFactory($class);
-        $reflector = new ReflectionClass($class);
-        $constructor = $reflector->getConstructor();
-        if ($constructor !== null) {
-            $controller->setInjections($constructor);
-        }
-        $this->addMethods($reflector);
-        $this->controllers[$class] = $controller;
-    }
-
     public function addMiddlewares(array $classes): self
     {
         foreach ($classes as $class) {
@@ -98,39 +75,13 @@ class Application
         return $this;
     }
 
-
-    protected function addMethods(ReflectionClass $reflector): void
+    public function addRoutes(array $classes): self
     {
-        foreach ($reflector->getMethods() as $method) {
-            $routes = $method->getAttributes(Route::class);
-
-            foreach ($routes as $route) {
-                /**
-                 * @var Route $instance
-                 */
-                $instance = $route->newInstance();
-                $instance
-                    ->setClass($reflector->getName())
-                    ->setFunction($method->getName());
-
-                $this->addParameters($method, $instance);
-                Router::addRoute($instance);
-            }
+        foreach ($classes as $class) {
+            $this->registerRoute($class);
         }
-    }
 
-    protected function addParameters(ReflectionMethod $method, Route $route): void
-    {
-        foreach ($method->getParameters() as $parameter) {
-            foreach ($parameter->getAttributes(Param::class) as $attribute) {
-                /** @var Param $instance */
-                $instance = $attribute->newInstance();
-                $instance
-                    ->setParameter($parameter->getName())
-                    ->setRequired(!$parameter->isOptional());
-                $route->addParam($instance->getParameter(), $instance);
-            }
-        }
+        return $this;
     }
 
     public function start(): void
@@ -193,5 +144,52 @@ class Application
         } finally {
             $response->send();
         }
+    }
+
+
+    protected function addMethods(ReflectionClass $reflector): void
+    {
+        foreach ($reflector->getMethods() as $method) {
+            $routes = $method->getAttributes(Route::class);
+
+            foreach ($routes as $route) {
+                /**
+                 * @var Route $instance
+                 */
+                $instance = $route->newInstance();
+                $instance
+                    ->setClass($reflector->getName())
+                    ->setFunction($method->getName());
+
+                $this->addParameters($method, $instance);
+                Router::addRoute($instance);
+            }
+        }
+    }
+
+    protected function addParameters(ReflectionMethod $method, Route $route): void
+    {
+        foreach ($method->getParameters() as $parameter) {
+            foreach ($parameter->getAttributes(Param::class) as $attribute) {
+                /** @var Param $instance */
+                $instance = $attribute->newInstance();
+                $instance
+                    ->setParameter($parameter->getName())
+                    ->setRequired(!$parameter->isOptional());
+                $route->addParam($instance->getParameter(), $instance);
+            }
+        }
+    }
+
+    protected function registerRoute(string $class): void
+    {
+        $controller = new ControllerFactory($class);
+        $reflector = new ReflectionClass($class);
+        $constructor = $reflector->getConstructor();
+        if ($constructor !== null) {
+            $controller->setInjections($constructor);
+        }
+        $this->addMethods($reflector);
+        $this->controllers[$class] = $controller;
     }
 }

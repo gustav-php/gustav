@@ -10,16 +10,16 @@ class Router
     public const PLACEHOLDER_TOKEN = ':::';
 
     /**
-     * @var array<string,Route[]>
-     */
-    protected static array $routes = [];
-
-    /**
      * Contains the positions of all params in the paths of all registered Routes.
      *
      * @var array<int>
      */
     protected static array $params = [];
+
+    /**
+     * @var array<string,Route[]>
+     */
+    protected static array $routes = [];
 
     public static function addRoute(Route $route): void
     {

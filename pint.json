@@ -1,3 +1,12 @@
 {
-    "preset": "psr12"
+    "preset": "psr12",
+    "rules": {
+        "array_indentation": true,
+        "ordered_class_elements": {
+            "sort_algorithm": "alpha"
+        },
+        "ordered_imports": {
+            "sort_algorithm": "alpha"
+        }
+    }
 }

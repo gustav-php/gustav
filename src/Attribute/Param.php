@@ -24,16 +24,16 @@ class Param
         return $this->parameter;
     }
 
+    public function getRequired(): bool
+    {
+        return $this->required;
+    }
+
     public function setParameter(string $parameter): self
     {
         $this->parameter = $parameter;
 
         return $this;
-    }
-
-    public function getRequired(): bool
-    {
-        return $this->required;
     }
 
     public function setRequired(bool $required): self

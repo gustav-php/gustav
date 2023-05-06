@@ -19,43 +19,11 @@ class Route
     {
     }
 
-    public function getPath(): string
+    public function addParam(string $name, Param $param): self
     {
-        return $this->path;
-    }
-
-    public function getMethod(): Method
-    {
-        return $this->method;
-    }
-
-    public function getClass(): string
-    {
-        return $this->class;
-    }
-
-    public function setClass(string $class): self
-    {
-        $this->class = $class;
+        $this->params[$name] = $param;
 
         return $this;
-    }
-
-    public function getFunction(): string
-    {
-        return $this->function;
-    }
-
-    public function setFunction(string $function): self
-    {
-        $this->function = $function;
-
-        return $this;
-    }
-
-    public function getParam(string $name): ?Param
-    {
-        return $this->params[$name] ?? null;
     }
 
     public function addPlaceholder(string $key, int $index): void
@@ -87,9 +55,41 @@ class Route
         }, []);
     }
 
-    public function addParam(string $name, Param $param): self
+    public function getClass(): string
     {
-        $this->params[$name] = $param;
+        return $this->class;
+    }
+
+    public function getFunction(): string
+    {
+        return $this->function;
+    }
+
+    public function getMethod(): Method
+    {
+        return $this->method;
+    }
+
+    public function getParam(string $name): ?Param
+    {
+        return $this->params[$name] ?? null;
+    }
+
+    public function getPath(): string
+    {
+        return $this->path;
+    }
+
+    public function setClass(string $class): self
+    {
+        $this->class = $class;
+
+        return $this;
+    }
+
+    public function setFunction(string $function): self
+    {
+        $this->function = $function;
 
         return $this;
     }
