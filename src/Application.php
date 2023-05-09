@@ -127,8 +127,10 @@ class Application
                 $response->setBody($body);
             }
         } catch (\Throwable $th) {
-            foreach ($controller->getMiddlewares(Lifecycle::Error) as $middleware) {
-                $middleware->handle($request, $response, $context);
+            if ($controller ?? null) {
+                foreach ($controller->getMiddlewares(Lifecycle::Error) as $middleware) {
+                    $middleware->handle($request, $response, $context);
+                }
             }
             $response = $this->configuration->driver::buildResponse();
             $body = \json_encode([
