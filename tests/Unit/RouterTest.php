@@ -9,7 +9,6 @@ beforeEach(function () {
 });
 
 test('can match url', function () {
-    expect(true)->toBeTrue();
     $routeIndex = new Route('/');
     $routeAbout = new Route('/about');
     $routeAboutMe = new Route('/about/me');
