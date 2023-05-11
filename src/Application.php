@@ -92,7 +92,6 @@ class Application
             $controller->initialize(...array_map(fn (string $class) => new $class(), $controller->getInjections()));
         }
 
-        $context = new $this->configuration->context();
         $response = $this->configuration->driver::buildResponse();
         $request = $this->configuration->driver::buildRequest();
 
@@ -109,14 +108,13 @@ class Application
             $controller = $this->controllers[$route->getClass()];
             $controller->setMiddlewares();
             foreach ($controller->getMiddlewares(Lifecycle::Before) as $middleware) {
-                $middleware->handle($request, $response, $context);
+                $middleware->handle($request, $response);
             }
-            $controller->setContext($context);
             $params = $route->generateParams($request);
             $instance = $controller->getInstance();
             $payload = $instance->{$route->getFunction()}(...$params);
             foreach ($controller->getMiddlewares(Lifecycle::After) as $middleware) {
-                $middleware->handle($request, $response, $context);
+                $middleware->handle($request, $response);
             }
             if ($payload instanceof $response) {
                 $response = $payload;
@@ -129,7 +127,7 @@ class Application
         } catch (\Throwable $th) {
             if ($controller ?? null) {
                 foreach ($controller->getMiddlewares(Lifecycle::Error) as $middleware) {
-                    $middleware->handle($request, $response, $context);
+                    $middleware->handle($request, $response);
                 }
             }
             $response = $this->configuration->driver::buildResponse();

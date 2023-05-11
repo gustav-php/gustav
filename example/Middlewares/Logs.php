@@ -14,7 +14,7 @@ class Logs extends Middleware\Base
     {
     }
 
-    public function handle(RequestInterface $request, ResponseInterface $response, Context $context): void
+    public function handle(RequestInterface $request, ResponseInterface $response): void
     {
         Logger::log('Request: ' . $request->getUrl());
     }

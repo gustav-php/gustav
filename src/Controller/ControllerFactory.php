@@ -4,7 +4,6 @@ namespace GustavPHP\Gustav\Controller;
 
 use Exception;
 use GustavPHP\Gustav\Attribute\Middleware;
-use GustavPHP\Gustav\Context;
 use GustavPHP\Gustav\Middleware\Lifecycle;
 use GustavPHP\Gustav\Service;
 use ReflectionClass;
@@ -15,7 +14,6 @@ class ControllerFactory
 {
     protected array $after = [];
     protected array $before = [];
-    protected ?Context $context = null;
     protected array $error = [];
     protected array $injections = [];
     protected ?object $instance = null;
@@ -50,11 +48,6 @@ class ControllerFactory
     public function initialize(...$args)
     {
         $this->instance = new $this->class(...$args);
-    }
-
-    public function setContext(Context $context)
-    {
-        $this->context = $context;
     }
 
     public function setInjections(ReflectionMethod $constructor): self
