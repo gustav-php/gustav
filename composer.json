@@ -22,7 +22,7 @@
     "pestphp/pest": "^2.4"
   },
   "bin": [
-		"./bin/server"
+		"./bin/dev"
 	],
   "autoload": {
     "psr-4": {
