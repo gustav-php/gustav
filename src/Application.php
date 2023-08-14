@@ -113,17 +113,13 @@ class Application
             $params = $route->generateParams($request);
             $instance = $controller->getInstance();
             $payload = $instance->{$route->getFunction()}(...$params);
+            if (!$payload instanceof Controller\Response) {
+                throw new \Exception('Controller needs to return a Response object');
+            }
             foreach ($controller->getMiddlewares(Lifecycle::After) as $middleware) {
                 $middleware->handle($request, $response);
             }
-            if ($payload instanceof $response) {
-                $response = $payload;
-            } else {
-                $body = \json_encode($payload);
-                $response->setHeader('Content-Type', 'application/json');
-                $response->setStatus(200);
-                $response->setBody($body);
-            }
+            $response->importControllerResponse($payload);
         } catch (\Throwable $th) {
             if ($controller ?? null) {
                 foreach ($controller->getMiddlewares(Lifecycle::Error) as $middleware) {

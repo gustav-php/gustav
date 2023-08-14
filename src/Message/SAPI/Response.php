@@ -2,6 +2,7 @@
 
 namespace GustavPHP\Gustav\Message\SAPI;
 
+use GustavPHP\Gustav\Controller;
 use GustavPHP\Gustav\Message\ResponseInterface;
 
 class Response implements ResponseInterface
@@ -35,6 +36,12 @@ class Response implements ResponseInterface
     {
         return $this->response->hasHeader($name);
     }
+    public function importControllerResponse(Controller\Response $response): void
+    {
+        $this->setBody($response->body);
+        $this->setStatus($response->code);
+        $this->setHeaders($response->headers);
+    }
     public function removeHeader(string $name): bool
     {
         return $this->response->removeHeader($name);
@@ -44,7 +51,7 @@ class Response implements ResponseInterface
     {
         \Sabre\HTTP\Sapi::sendResponse($this->response);
     }
-    public function setBody($body): void
+    public function setBody(string $body): void
     {
         $this->response->setBody($body);
     }
@@ -56,7 +63,7 @@ class Response implements ResponseInterface
     {
         $this->response->setHeaders($headers);
     }
-    public function setStatus($status): void
+    public function setStatus(int $status): void
     {
         $this->response->setStatus($status);
     }
