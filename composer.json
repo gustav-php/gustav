@@ -12,7 +12,10 @@
   },
   "scripts": {
     "test": "./vendor/bin/pest",
-    "example": "./bin/gustav-php serve 0.0.0.0:4201 ./example/index.php",
+    "example": [
+      "Composer\\Config::disableProcessTimeout",
+      "./bin/gustav-php serve 0.0.0.0:4201 ./example/index.php"
+    ],
     "check": "./vendor/bin/phpstan analyze",
     "lint": "./vendor/bin/pint --test src tests",
     "format": "./vendor/bin/pint src tests"
@@ -23,8 +26,8 @@
     "pestphp/pest": "^2.4"
   },
   "bin": [
-		"./bin/gustav-php"
-	],
+    "./bin/gustav-php"
+  ],
   "autoload": {
     "psr-4": {
       "GustavPHP\\Gustav\\": "src/",
