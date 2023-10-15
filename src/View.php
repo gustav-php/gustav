@@ -11,11 +11,12 @@ class View
     {
         return self::getEngine()->renderToString($template, $params);
     }
+
     protected static function getEngine(): Engine
     {
         if (self::$engine === null) {
             self::$engine = new Engine();
-            self::$engine->setTempDirectory(__DIR__ . '/../cache');
+            self::$engine->setTempDirectory(Application::$configuration->cache . DIRECTORY_SEPARATOR . 'latte');
             self::$engine->setautoRefresh();
         }
         return self::$engine;

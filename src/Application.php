@@ -5,7 +5,8 @@ namespace GustavPHP\Gustav;
 use GustavPHP\Gustav\Attribute\Param;
 use GustavPHP\Gustav\Attribute\Route;
 use GustavPHP\Gustav\Controller\ControllerFactory;
-use GustavPHP\Gustav\Middleware\Lifecycle;
+use GustavPHP\Gustav\Middleware;
+use GustavPHP\Gustav\Service;
 use GustavPHP\Gustav\Router\Method;
 use GustavPHP\Gustav\Router\Router;
 use HaydenPierce\ClassFinder\ClassFinder;
@@ -18,7 +19,11 @@ use SplFileInfo;
 class Application
 {
     /**
-     * @var \GustavPHP\Gustav\Controller\ControllerFactory[]
+     * @var Configuration
+     */
+    public static Configuration $configuration;
+    /**
+     * @var ControllerFactory[]
      */
     protected array $controllers = [];
     /**
@@ -26,15 +31,15 @@ class Application
      */
     protected array $files = [];
     /**
-     * @var \GustavPHP\Gustav\Middleware\Base[]
+     * @var Middleware\Base[]
      */
     protected array $middlewares = [];
     /**
-     * @var \GustavPHP\Gustav\Service\Base[]
+     * @var Service\Base[]
      */
     protected array $services = [];
     public function __construct(
-        protected Configuration $configuration
+        Configuration $configuration
     ) {
         if ($configuration->routeNamespaces) {
             foreach ($configuration->routeNamespaces as $namespace) {
@@ -72,6 +77,7 @@ class Application
                 }
             }
         }
+        self::$configuration = $configuration;
     }
 
     public function addMiddlewares(array $classes): self
@@ -98,8 +104,8 @@ class Application
             $controller->initialize(...array_map(fn (string $class) => new $class(), $controller->getInjections()));
         }
 
-        $response = $this->configuration->driver::buildResponse();
-        $request = $this->configuration->driver::buildRequest();
+        $response = self::$configuration->driver::buildResponse();
+        $request = self::$configuration->driver::buildRequest();
 
         try {
             if (array_key_exists($request->getPath(), $this->files)) {
@@ -112,7 +118,7 @@ class Application
             $route = Router::match(Method::fromRequest($request), $request->getPath());
             $controller = $this->controllers[$route->getClass()];
             $controller->setMiddlewares();
-            foreach ($controller->getMiddlewares(Lifecycle::Before) as $middleware) {
+            foreach ($controller->getMiddlewares(Middleware\Lifecycle::Before) as $middleware) {
                 $middleware->handle($request, $response);
             }
             $params = $route->generateParams($request);
@@ -121,17 +127,17 @@ class Application
             if (!$payload instanceof Controller\Response) {
                 throw new \Exception('Controller needs to return a Response object');
             }
-            foreach ($controller->getMiddlewares(Lifecycle::After) as $middleware) {
+            foreach ($controller->getMiddlewares(Middleware\Lifecycle::After) as $middleware) {
                 $middleware->handle($request, $response);
             }
             $response->importControllerResponse($payload);
         } catch (\Throwable $th) {
             if ($controller ?? null) {
-                foreach ($controller->getMiddlewares(Lifecycle::Error) as $middleware) {
+                foreach ($controller->getMiddlewares(Middleware\Lifecycle::Error) as $middleware) {
                     $middleware->handle($request, $response);
                 }
             }
-            $response = $this->configuration->driver::buildResponse();
+            $response = self::$configuration->driver::buildResponse();
             $body = \json_encode([
                 'error' => $th->getMessage(),
                 'file' => $th->getFile(),
