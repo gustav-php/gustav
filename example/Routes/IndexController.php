@@ -16,7 +16,11 @@ class IndexController extends Controller\Base
     #[Route('/')]
     public function index()
     {
-        Manager::dispatch('test', ['test' => 'test']);
-        return $this->html('<h1>Hello GustavPHP</h1>');
+        Manager::dispatch('test', [
+            'test' => 'test'
+        ]);
+        return $this->view(__DIR__ . '/../views/index.latte', [
+            'test' => 'lorem ipsum'
+        ]);
     }
 }

@@ -2,6 +2,8 @@
 
 namespace GustavPHP\Gustav\Controller;
 
+use GustavPHP\Gustav\View;
+
 class Base
 {
     protected function redirect(string $url, int $code = 302): Response
@@ -9,6 +11,16 @@ class Base
         return new Response(
             code: $code,
             headers: ['Location' => $url]
+        );
+    }
+    protected function view(string $template, array $params): Response
+    {
+        $view = View::render($template, $params);
+
+        return new Response(
+            code: 200,
+            body: $view,
+            headers: ['Content-Type' => 'text/html']
         );
     }
     protected function html(string $body, int $code = 200): Response
