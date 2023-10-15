@@ -6,8 +6,12 @@ use Latte\Engine;
 
 class View
 {
-    static protected ?Engine $engine = null;
-    static protected function getEngine(): Engine
+    protected static ?Engine $engine = null;
+    public static function render(string $template, array $params = []): string
+    {
+        return self::getEngine()->renderToString($template, $params);
+    }
+    protected static function getEngine(): Engine
     {
         if (self::$engine === null) {
             self::$engine = new Engine();
@@ -15,9 +19,5 @@ class View
             self::$engine->setautoRefresh();
         }
         return self::$engine;
-    }
-    static public function render(string $template, array $params = []): string
-    {
-        return self::getEngine()->renderToString($template, $params);
     }
 }

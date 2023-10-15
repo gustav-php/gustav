@@ -6,6 +6,22 @@ use GustavPHP\Gustav\View;
 
 class Base
 {
+    protected function html(string $body, int $code = 200): Response
+    {
+        return new Response(
+            code: $code,
+            body: $body,
+            headers: ['Content-Type' => 'text/html']
+        );
+    }
+    protected function json(array|\stdClass $data, int $code = 200): Response
+    {
+        return new Response(
+            code: $code,
+            body: \json_encode($data),
+            headers: ['Content-Type' => 'application/json']
+        );
+    }
     protected function redirect(string $url, int $code = 302): Response
     {
         return new Response(
@@ -21,22 +37,6 @@ class Base
             code: 200,
             body: $view,
             headers: ['Content-Type' => 'text/html']
-        );
-    }
-    protected function html(string $body, int $code = 200): Response
-    {
-        return new Response(
-            code: $code,
-            body: $body,
-            headers: ['Content-Type' => 'text/html']
-        );
-    }
-    protected function json(array|\stdClass $data, int $code = 200): Response
-    {
-        return new Response(
-            code: $code,
-            body: \json_encode($data),
-            headers: ['Content-Type' => 'application/json']
         );
     }
 
