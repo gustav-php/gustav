@@ -18,7 +18,7 @@ class ServerCommand extends Command
         $this
             ->setHelp('This command starts the development server.')
             ->addArgument('address', InputArgument::OPTIONAL, 'Address to listen on', '0.0.0.0:4200')
-            ->addArgument('entrypoint', InputArgument::OPTIONAL, 'Entrypoint file', 'index.php');
+            ->addArgument('entrypoint', InputArgument::OPTIONAL, 'Entrypoint file', './app/index.php');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
