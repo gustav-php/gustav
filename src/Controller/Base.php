@@ -4,6 +4,13 @@ namespace GustavPHP\Gustav\Controller;
 
 class Base
 {
+    protected function redirect(string $url, int $code = 302): Response
+    {
+        return new Response(
+            code: $code,
+            headers: ['Location' => $url]
+        );
+    }
     protected function html(string $body, int $code = 200): Response
     {
         return new Response(
