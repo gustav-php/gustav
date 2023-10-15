@@ -49,12 +49,24 @@ class Application
                     }
                 }
             }
+            if ($configuration->eventNamespaces) {
+                foreach ($configuration->eventNamespaces as $namespace) {
+                    $classes = ClassFinder::getClassesInNamespace($namespace, ClassFinder::STANDARD_MODE);
+                    foreach ($classes as $class) {
+                        if (is_subclass_of($class, Event\Base::class)) {
+                            Event\Manager::addListener($class);
+                        }
+                    }
+                }
+            }
 
             if ($configuration->files) {
                 if (\is_dir($configuration->files)) {
                     $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($configuration->files));
                     foreach ($iterator as $file) {
-                        /** @var SplFileInfo $file */
+                        /**
+                         * @var SplFileInfo $file
+                         */
                         if ($file->isDir()) {
                             continue;
                         }

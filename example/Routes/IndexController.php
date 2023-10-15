@@ -8,6 +8,7 @@ use GustavPHP\Gustav\Attribute\{
     Route
 };
 use GustavPHP\Gustav\Controller;
+use GustavPHP\Gustav\Event\Manager;
 
 #[Middleware(Logs::class)]
 class IndexController extends Controller\Base
@@ -15,6 +16,7 @@ class IndexController extends Controller\Base
     #[Route('/')]
     public function index()
     {
+        Manager::dispatch('test', ['test' => 'test']);
         return $this->html('<h1>Hello GustavPHP</h1>');
     }
 }

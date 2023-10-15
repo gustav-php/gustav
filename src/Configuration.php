@@ -11,6 +11,7 @@ class Configuration
         public readonly string $mode = 'development',
         public readonly DriverInterface $driver = new SAPI\Driver(),
         public readonly array $routeNamespaces = [],
+        public readonly array $eventNamespaces = [],
         public readonly ?string $files = null
     ) {
     }
