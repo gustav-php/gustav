@@ -10,9 +10,12 @@ use GustavPHP\Gustav\Configuration;
 
 $configuration = new Configuration(
     files: __DIR__ . '/public/',
+    eventNamespaces: [
+        'GustavPHP\Example\Events'
+    ],
     routeNamespaces: [
         'GustavPHP\Example\Routes'
-    ]
+    ],
 );
 
 $app = new Application(configuration: $configuration);

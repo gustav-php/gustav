@@ -26,7 +26,7 @@ class ServerCommand extends Command
         $address = $input->getArgument('address');
         $entrypoint = realpath(getcwd() . DIRECTORY_SEPARATOR . $input->getArgument('entrypoint'));
 
-        passthru(PHP_BINARY . " -q -S {$address} {$entrypoint}");
+        passthru(\escapeshellarg(PHP_BINARY . " -q -S {$address} {$entrypoint}"));
 
         return Command::SUCCESS;
     }
