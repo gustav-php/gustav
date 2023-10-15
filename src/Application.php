@@ -34,45 +34,41 @@ class Application
      */
     protected array $services = [];
     public function __construct(
-        protected ?Configuration $configuration = null,
-        array $routes = []
+        protected Configuration $configuration
     ) {
-        $this->addRoutes($routes);
-        if ($configuration) {
-            if ($configuration->routeNamespaces) {
-                foreach ($configuration->routeNamespaces as $namespace) {
-                    $classes = ClassFinder::getClassesInNamespace($namespace, ClassFinder::STANDARD_MODE);
-                    foreach ($classes as $class) {
-                        if (is_subclass_of($class, Controller\Base::class)) {
-                            $this->addRoutes([$class]);
-                        }
+        if ($configuration->routeNamespaces) {
+            foreach ($configuration->routeNamespaces as $namespace) {
+                $classes = ClassFinder::getClassesInNamespace($namespace, ClassFinder::STANDARD_MODE);
+                foreach ($classes as $class) {
+                    if (is_subclass_of($class, Controller\Base::class)) {
+                        $this->addRoutes([$class]);
                     }
                 }
             }
-            if ($configuration->eventNamespaces) {
-                foreach ($configuration->eventNamespaces as $namespace) {
-                    $classes = ClassFinder::getClassesInNamespace($namespace, ClassFinder::STANDARD_MODE);
-                    foreach ($classes as $class) {
-                        if (is_subclass_of($class, Event\Base::class)) {
-                            Event\Manager::addListener($class);
-                        }
+        }
+        if ($configuration->eventNamespaces) {
+            foreach ($configuration->eventNamespaces as $namespace) {
+                $classes = ClassFinder::getClassesInNamespace($namespace, ClassFinder::STANDARD_MODE);
+                foreach ($classes as $class) {
+                    if (is_subclass_of($class, Event\Base::class)) {
+                        Event\Manager::addListener($class);
                     }
                 }
             }
+        }
 
-            if ($configuration->files) {
-                if (\is_dir($configuration->files)) {
-                    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($configuration->files));
-                    foreach ($iterator as $file) {
-                        /**
-                         * @var SplFileInfo $file
-                         */
-                        if ($file->isDir()) {
-                            continue;
-                        }
-                        $relative = substr($file->getPathname(), strlen($configuration->files));
-                        $this->files[$relative] = $file->getRealPath();
+        if ($configuration->files) {
+            if (\is_dir($configuration->files)) {
+                $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($configuration->files));
+                foreach ($iterator as $file) {
+                    /**
+                     * @var SplFileInfo $file
+                     */
+                    if ($file->isDir()) {
+                        continue;
                     }
+                    $relative = substr($file->getPathname(), strlen($configuration->files));
+                    $this->files[$relative] = $file->getRealPath();
                 }
             }
         }
@@ -98,8 +94,6 @@ class Application
 
     public function start(): void
     {
-        $this->configuration ??= new Configuration();
-
         foreach ($this->controllers as $controller) {
             $controller->initialize(...array_map(fn (string $class) => new $class(), $controller->getInjections()));
         }
@@ -116,7 +110,6 @@ class Application
                 return;
             }
             $route = Router::match(Method::fromRequest($request), $request->getPath());
-            /** @var ControllerFactory $controller */
             $controller = $this->controllers[$route->getClass()];
             $controller->setMiddlewares();
             foreach ($controller->getMiddlewares(Lifecycle::Before) as $middleware) {
