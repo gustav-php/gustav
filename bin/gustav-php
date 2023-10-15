@@ -2,12 +2,17 @@
 
 <?php
 
+use GustavPHP\Gustav\Internal\Dev\{
+    ServeCommand,
+    InstalledCommand
+};
 use Symfony\Component\Console\Application;
-use GustavPHP\Gustav\Internal\Dev\ServerCommand;
 
 include $_composer_autoload_path ?? __DIR__ . '/../vendor/autoload.php';
 
-$command = new ServerCommand();
+$serve = new ServeCommand();
+$installed = new InstalledCommand();
 $application = new Application();
-$application->add($command);
+$application->add($serve);
+$application->add($installed);
 $application->run();
