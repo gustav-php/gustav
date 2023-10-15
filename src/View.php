@@ -16,7 +16,7 @@ class View
     {
         if (self::$engine === null) {
             self::$engine = new Engine();
-            self::$engine->setTempDirectory(Application::$configuration->cache . DIRECTORY_SEPARATOR . 'latte');
+            self::$engine->setTempDirectory(Application::$configuration->cache);
             self::$engine->setautoRefresh();
         }
         return self::$engine;
