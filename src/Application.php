@@ -222,7 +222,6 @@ class Application
             $path = $this->getPath($request);
             $request = $request->withAttribute('Gustav-Path', $path);
             $route = Router::match(Method::fromRequest($request), $path);
-            Logger::log($route->getClass(), $this->controllers);
             $controller = $this->controllers[$route->getClass()];
             $request = $request
                 ->withAttribute('Gustav-Route', $route)
