@@ -222,13 +222,16 @@ class Application
             $path = $this->getPath($request);
             $request = $request->withAttribute('Gustav-Path', $path);
             $route = Router::match(Method::fromRequest($request), $path);
+            Logger::log($route->getClass(), $this->controllers);
             $controller = $this->controllers[$route->getClass()];
             $request = $request
                 ->withAttribute('Gustav-Route', $route)
                 ->withAttribute('Gustav-Controller', $controller)
                 ->withAttribute('Gustav-Middlewares', $controller->getMiddlewares());
         } catch (\Throwable $th) {
-            $request = $request->withAttribute('Gustav-Route', null);
+            $request = $request
+                ->withAttribute('Gustav-Route', null)
+                ->withAttribute('Gustav-Exception', $th);
         }
 
         return $next($request);
@@ -264,6 +267,10 @@ class Application
          * @var Route $route
          */
         $route = $request->getAttribute('Gustav-Route');
+        /**
+         * @var ControllerFactory $controller
+         */
+        $controller = $request->getAttribute('Gustav-Controller');
         try {
             if ($request->getMethod() === 'GET' && array_key_exists($path, $this->files)) {
                 $path = $this->files[$path];
@@ -275,7 +282,13 @@ class Application
                     body: file_get_contents($path)
                 );
             }
-            $controller = $this->controllers[$route->getClass()];
+            if ($route === null) {
+                if ($request->getAttribute('Gustav-Exception') !== null) {
+                    throw $request->getAttribute('Gustav-Exception');
+                } else {
+                    throw new \Exception(code: Response::STATUS_INTERNAL_SERVER_ERROR);
+                }
+            }
             $params = $route->generateParams($request);
             $instance = $controller->getInstance();
             $payload = $instance->{$route->getFunction()}(...$params);
