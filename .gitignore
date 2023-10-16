@@ -1,5 +1,6 @@
 /vendor
 /cache
+/example/cache
 .env
 .envrc
 .vscode/

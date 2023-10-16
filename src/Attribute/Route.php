@@ -4,8 +4,8 @@ namespace GustavPHP\Gustav\Attribute;
 
 use Attribute;
 use Exception;
-use GustavPHP\Gustav\Message\RequestInterface;
 use GustavPHP\Gustav\Router\Method;
+use Psr\Http\Message\ServerRequestInterface;
 
 #[Attribute(Attribute::TARGET_METHOD)]
 class Route
@@ -31,10 +31,10 @@ class Route
         $this->placeholders[$key] = $index;
     }
 
-    public function generateParams(RequestInterface $request): array
+    public function generateParams(ServerRequestInterface $request): array
     {
         $pathParams = [];
-        $parts = explode('/', $request->getPath());
+        $parts = explode('/', $request->getUri());
 
         foreach ($this->placeholders as $key => $index) {
             $pathParams[$key] = $parts[$index];
@@ -42,7 +42,7 @@ class Route
         /**
          * Merge Path and Query Parameters with Post Data (Path > Query > Post).
          */
-        $params = \array_merge($pathParams, $request->getQueryParameters(), $request->getPostData());
+        $params = \array_merge($pathParams, $request->getQueryParams(), $request->getParsedBody() ?? []);
 
         return \array_reduce($this->params, function (array $carry, Param $param) use ($params) {
             if (\array_key_exists($param->getName(), $params)) {

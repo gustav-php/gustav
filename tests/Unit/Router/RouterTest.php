@@ -4,9 +4,7 @@ use GustavPHP\Gustav\Attribute\Route;
 use GustavPHP\Gustav\Router\Method;
 use GustavPHP\Gustav\Router\Router;
 
-beforeEach(function () {
-    Router::reset();
-});
+beforeEach(fn () => Router::reset());
 
 test('can match url', function () {
     $routeIndex = new Route('/');

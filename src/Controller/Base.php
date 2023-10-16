@@ -6,26 +6,26 @@ use GustavPHP\Gustav\View;
 
 class Base
 {
-    protected function html(string $body, int $code = 200): Response
+    protected function html(string $body, int $status = Response::STATUS_OK): Response
     {
         return new Response(
-            code: $code,
+            status: $status,
             body: $body,
             headers: ['Content-Type' => 'text/html']
         );
     }
-    protected function json(array|\stdClass $data, int $code = 200): Response
+    protected function json(array|\stdClass $data, int $status = Response::STATUS_OK): Response
     {
         return new Response(
-            code: $code,
+            status: $status,
             body: \json_encode($data),
             headers: ['Content-Type' => 'application/json']
         );
     }
-    protected function redirect(string $url, int $code = 302): Response
+    protected function redirect(string $url, int $status = Response::STATUS_FOUND): Response
     {
         return new Response(
-            code: $code,
+            status: $status,
             headers: ['Location' => $url]
         );
     }
@@ -34,16 +34,16 @@ class Base
         $view = View::render($template, $params);
 
         return new Response(
-            code: 200,
+            status: Response::STATUS_OK,
             body: $view,
             headers: ['Content-Type' => 'text/html']
         );
     }
 
-    protected function xml(string $body, int $code = 200): Response
+    protected function xml(string $body, int $status = Response::STATUS_OK): Response
     {
         return new Response(
-            code: $code,
+            status: $status,
             body: $body,
             headers: ['Content-Type' => 'text/xml']
         );

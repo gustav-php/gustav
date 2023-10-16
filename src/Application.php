@@ -5,9 +5,16 @@ namespace GustavPHP\Gustav;
 use GustavPHP\Gustav\Attribute\Param;
 use GustavPHP\Gustav\Attribute\Route;
 use GustavPHP\Gustav\Controller\ControllerFactory;
+use GustavPHP\Gustav\Controller\Response;
+use GustavPHP\Gustav\Logger\Logger;
 use GustavPHP\Gustav\Router\Method;
 use GustavPHP\Gustav\Router\Router;
 use HaydenPierce\ClassFinder\ClassFinder;
+use InvalidArgumentException;
+use Psr\Http\Message\ServerRequestInterface;
+use React\Http\HttpServer;
+use React\Http\Message\Response as MessageResponse;
+use React\Socket\SocketServer;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
@@ -32,10 +39,12 @@ class Application
      * @var Middleware\Base[]
      */
     protected array $middlewares = [];
+    protected ?HttpServer $server = null;
     /**
      * @var Service\Base[]
      */
     protected array $services = [];
+    protected ?SocketServer $socket = null;
     public function __construct(
         Configuration $configuration
     ) {
@@ -119,53 +128,33 @@ class Application
             $controller->initialize(...array_map(fn (string $class) => new $class(), $controller->getInjections()));
         }
 
-        $response = self::$configuration->driver::buildResponse();
-        $request = self::$configuration->driver::buildRequest();
-
-        try {
-            if (array_key_exists($request->getPath(), $this->files)) {
-                $path = $this->files[$request->getPath()];
-                $response->setBody(file_get_contents($path));
-                $response->setStatus(200);
-                $response->setHeader('Content-Type', mime_content_type($path));
-                return;
+        $this->server = new HttpServer(
+            function (ServerRequestInterface $request, callable $next) {
+                return $this->initMiddelware($request, $next);
+            },
+            function (ServerRequestInterface $request, callable $next) {
+                return $this->customMiddleware($request, $next);
+            },
+            function ($request) {
+                return $this->handleRequest($request);
             }
-            $route = Router::match(Method::fromRequest($request), $request->getPath());
-            $controller = $this->controllers[$route->getClass()];
-            $controller->setMiddlewares();
-            foreach ($controller->getMiddlewares(Middleware\Lifecycle::Before) as $middleware) {
-                $middleware->handle($request, $response);
-            }
-            $params = $route->generateParams($request);
-            $instance = $controller->getInstance();
-            $payload = $instance->{$route->getFunction()}(...$params);
-            if (!$payload instanceof Controller\Response) {
-                throw new \Exception('Controller needs to return a Response object');
-            }
-            foreach ($controller->getMiddlewares(Middleware\Lifecycle::After) as $middleware) {
-                $middleware->handle($request, $response);
-            }
-            $response->importControllerResponse($payload);
-        } catch (\Throwable $th) {
-            if ($controller ?? null) {
-                foreach ($controller->getMiddlewares(Middleware\Lifecycle::Error) as $middleware) {
-                    $middleware->handle($request, $response);
-                }
-            }
-            $response = self::$configuration->driver::buildResponse();
-            $body = \json_encode([
+        );
+        $this->server->on('error', function (\Throwable $th) {
+            $error = \json_encode([
                 'error' => $th->getMessage(),
                 'file' => $th->getFile(),
                 'line' => $th->getLine(),
-                'code' => $th->getCode(),
-                'trace' => $th->getTrace(),
+                'code' => $th->getCode()
             ]);
-            $response->setHeader('Content-Type', 'application/json');
-            $response->setStatus(500);
-            $response->setBody($body);
-        } finally {
-            $response->send();
-        }
+            Logger::log($error);
+        });
+        $host = self::$configuration->host;
+        $port = self::$configuration->port;
+        $socket = new SocketServer("{$host}:{$port}");
+        Logger::log("<comment>Gustav PHP Framework</comment>");
+        Logger::log('');
+        Logger::log("<info>Server running on <href=http://{$host}:{$port}>http://{$host}:{$port}</></info>");
+        $this->server->listen($socket);
     }
 
     /**
@@ -213,6 +202,113 @@ class Application
                 $route->addParam($instance->getParameter(), $instance);
             }
         }
+    }
+
+    protected function customMiddleware(ServerRequestInterface $request, callable $next)
+    {
+        /**
+         * @var Middleware\Base[] $middlewares
+         */
+        $middlewares = $request->getAttribute('Gustav-Middlewares', []);
+        foreach ($middlewares as $middleware) {
+            $request = $middleware->handle($request);
+        }
+        return $next($request);
+    }
+
+    /**
+     * Gets the path from a given request.
+     *
+     * @param ServerRequestInterface $request
+     * @return string
+     */
+    protected function getPath(ServerRequestInterface $request): string
+    {
+        $parts = parse_url($request->getUri());
+        return $parts['path'];
+    }
+
+    /**
+     * Handles a given request.
+     *
+     * @param ServerRequestInterface $request
+     * @return Response|MessageResponse|void
+     * @throws InvalidArgumentException
+     */
+    protected function handleRequest(ServerRequestInterface $request)
+    {
+        $response = new Response();
+        /**
+         * @var string $path
+         */
+        $path = $request->getAttribute('Gustav-Path');
+        /**
+         * @var Route|null $route
+         */
+        $route = $request->getAttribute('Gustav-Route', null);
+        /**
+         * @var ControllerFactory|null $controller
+         */
+        $controller = $request->getAttribute('Gustav-Controller', null);
+        try {
+            if ($request->getMethod() === 'GET' && array_key_exists($path, $this->files)) {
+                $path = $this->files[$path];
+                return new Response(
+                    status: Response::STATUS_OK,
+                    headers: [
+                        'Content-Type' => mime_content_type($path),
+                    ],
+                    body: file_get_contents($path)
+                );
+            }
+            if ($route === null) {
+                if ($request->getAttribute('Gustav-Exception') !== null) {
+                    throw $request->getAttribute('Gustav-Exception');
+                } else {
+                    throw new \Exception(code: Response::STATUS_INTERNAL_SERVER_ERROR);
+                }
+            }
+            $params = $route->generateParams($request);
+            $instance = $controller->getInstance();
+            $payload = $instance->{$route->getFunction()}(...$params);
+            if (!$payload instanceof Controller\Response) {
+                throw new \Exception('Controller needs to return a Response object');
+            }
+            return $response->merge($payload)->build();
+        } catch (\Throwable $th) {
+            if ($th->getCode() === 0) {
+                $response->setStatus(Response::STATUS_INTERNAL_SERVER_ERROR);
+            } else {
+                $response->setStatus($th->getCode());
+            }
+            $response->setBody([
+                'error' => $th->getMessage(),
+                'file' => $th->getFile(),
+                'line' => $th->getLine(),
+                'code' => $th->getCode()
+            ]);
+            return $response->buildJson();
+        }
+    }
+
+    protected function initMiddelware(ServerRequestInterface $request, callable $next)
+    {
+        try {
+            $path = $this->getPath($request);
+            $request = $request->withAttribute('Gustav-Path', $path);
+            $route = Router::match(Method::fromRequest($request), $path);
+            $controller = $this->controllers[$route->getClass()];
+            $request = $request
+                ->withAttribute('Gustav-Route', $route)
+                ->withAttribute('Gustav-Controller', $controller)
+                ->withAttribute('Gustav-Middlewares', $controller->getMiddlewares());
+        } catch (\Throwable $th) {
+            $request = $request
+                ->withAttribute('Gustav-Route', null)
+                ->withAttribute('Gustav-Exception', $th);
+        }
+
+        return $next($request);
     }
 
     /**

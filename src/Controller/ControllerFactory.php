@@ -4,7 +4,6 @@ namespace GustavPHP\Gustav\Controller;
 
 use Exception;
 use GustavPHP\Gustav\Attribute\Middleware;
-use GustavPHP\Gustav\Middleware\Lifecycle;
 use GustavPHP\Gustav\Service;
 use ReflectionClass;
 use ReflectionMethod;
@@ -12,9 +11,6 @@ use ReflectionNamedType;
 
 class ControllerFactory
 {
-    protected array $after = [];
-    protected array $before = [];
-    protected array $error = [];
     protected array $injections = [];
     protected ?object $instance = null;
     public function __construct(protected string $class)
@@ -36,13 +32,12 @@ class ControllerFactory
         return $this->instance;
     }
 
-    public function getMiddlewares(Lifecycle $lifecycle): array
+    public function getMiddlewares(): array
     {
-        return match($lifecycle) {
-            Lifecycle::After => $this->after,
-            Lifecycle::Before => $this->before,
-            Lifecycle::Error => $this->error
-        };
+        $reflection = new ReflectionClass($this->class);
+        $attributes = $reflection->getAttributes(Middleware::class);
+
+        return array_map(fn ($attribute) => $attribute->newInstance()->initialize(), $attributes);
     }
 
     public function initialize(...$args)
@@ -64,32 +59,6 @@ class ControllerFactory
             }
 
             $this->injections[$parameter->getPosition()] = $name;
-        }
-
-        return $this;
-    }
-
-    public function setMiddlewares(): self
-    {
-        $reflection = new ReflectionClass($this->class);
-        $attributes = $reflection->getAttributes(Middleware::class);
-
-        foreach ($attributes as $attribute) {
-            /**
-             * @var Middleware $instance
-             */
-            $instance = $attribute->newInstance();
-            switch ($instance->getLifecycle()) {
-                case Lifecycle::After:
-                    $this->after[] = $instance->initialize();
-                    break;
-                case Lifecycle::Before:
-                    $this->before[] = $instance->initialize();
-                    break;
-                case Lifecycle::Error:
-                    $this->error[] = $instance->initialize();
-                    break;
-            }
         }
 
         return $this;

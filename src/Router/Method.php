@@ -2,7 +2,7 @@
 
 namespace GustavPHP\Gustav\Router;
 
-use GustavPHP\Gustav\Message\RequestInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 enum Method: string
 {
@@ -16,7 +16,7 @@ enum Method: string
     case PUT = 'PUT';
     case TRACE = 'TRACE';
 
-    public static function fromRequest(RequestInterface $request): self
+    public static function fromRequest(ServerRequestInterface $request): self
     {
         return Method::from($request->getMethod());
     }

@@ -2,9 +2,9 @@
 
 namespace GustavPHP\Gustav\Middleware;
 
-enum Lifecycle
+enum Lifecycle: string
 {
-    case After;
-    case Before;
-    case Error;
+    case After = 'after';
+    case Before = 'before';
+    case Error = 'error';
 }
