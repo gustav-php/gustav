@@ -17,7 +17,6 @@ class ServeCommand extends Command
     {
         $this
             ->setHelp('This command starts the development server.')
-            ->addArgument('address', InputArgument::OPTIONAL, 'Address to listen on', '0.0.0.0:4200')
             ->addArgument('entrypoint', InputArgument::OPTIONAL, 'Entrypoint file', './app/index.php');
     }
 
@@ -26,7 +25,7 @@ class ServeCommand extends Command
         $address = $input->getArgument('address');
         $entrypoint = escapeshellarg(realpath(getcwd() . DIRECTORY_SEPARATOR . $input->getArgument('entrypoint')));
 
-        passthru(escapeshellarg(PHP_BINARY) . " -q -S {$address} {$entrypoint}");
+        passthru(escapeshellarg(PHP_BINARY) . " {$entrypoint}");
 
         return Command::SUCCESS;
     }
