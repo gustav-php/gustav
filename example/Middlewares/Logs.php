@@ -2,7 +2,6 @@
 
 namespace GustavPHP\Example\Middlewares;
 
-use GustavPHP\Gustav\Controller\Response;
 use GustavPHP\Gustav\Logger\Logger;
 use GustavPHP\Gustav\Middleware;
 use Psr\Http\Message\ServerRequestInterface;
@@ -13,8 +12,10 @@ class Logs extends Middleware\Base
     {
     }
 
-    public function handle(ServerRequestInterface $request, Response $response): void
+    public function handle(ServerRequestInterface $request): ServerRequestInterface
     {
         Logger::log('Request: ' . $request->getUri());
+
+        return $request;
     }
 }

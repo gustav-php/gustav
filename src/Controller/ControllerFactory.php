@@ -4,7 +4,6 @@ namespace GustavPHP\Gustav\Controller;
 
 use Exception;
 use GustavPHP\Gustav\Attribute\Middleware;
-use GustavPHP\Gustav\Middleware\Base;
 use GustavPHP\Gustav\Middleware\Lifecycle;
 use GustavPHP\Gustav\Service;
 use ReflectionClass;
@@ -13,9 +12,6 @@ use ReflectionNamedType;
 
 class ControllerFactory
 {
-    protected array $after = [];
-    protected array $before = [];
-    protected array $error = [];
     protected array $injections = [];
     protected ?object $instance = null;
     public function __construct(protected string $class)
@@ -35,19 +31,6 @@ class ControllerFactory
     public function getInstance(): object
     {
         return $this->instance;
-    }
-
-    /**
-     * @param Lifecycle $lifecycle
-     * @return array<Base>
-     */
-    public function getMiddlewares(Lifecycle $lifecycle): array
-    {
-        return match($lifecycle) {
-            Lifecycle::After => $this->after,
-            Lifecycle::Before => $this->before,
-            Lifecycle::Error => $this->error
-        };
     }
 
     public function initialize(...$args)
@@ -74,29 +57,11 @@ class ControllerFactory
         return $this;
     }
 
-    public function setMiddlewares(): self
+    public function getMiddlewares(): array
     {
         $reflection = new ReflectionClass($this->class);
         $attributes = $reflection->getAttributes(Middleware::class);
 
-        foreach ($attributes as $attribute) {
-            /**
-             * @var Middleware $instance
-             */
-            $instance = $attribute->newInstance();
-            switch ($instance->getLifecycle()) {
-                case Lifecycle::After:
-                    $this->after[] = $instance->initialize();
-                    break;
-                case Lifecycle::Before:
-                    $this->before[] = $instance->initialize();
-                    break;
-                case Lifecycle::Error:
-                    $this->error[] = $instance->initialize();
-                    break;
-            }
-        }
-
-        return $this;
+        return array_map(fn ($attribute) => $attribute->newInstance()->initialize(), $attributes);
     }
 }

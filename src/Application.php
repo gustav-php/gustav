@@ -128,11 +128,25 @@ class Application
             $controller->initialize(...array_map(fn (string $class) => new $class(), $controller->getInjections()));
         }
 
-        $this->server = new HttpServer(function ($request) {
-            return $this->handleRequest($request);
-        });
-        $this->server->on('error', function (\Throwable $error) {
-            Logger::log($error->getMessage());
+        $this->server = new HttpServer(
+            function (ServerRequestInterface $request, callable $next) {
+                return $this->initMiddelware($request, $next);
+            },
+            function (ServerRequestInterface $request, callable $next) {
+                return $this->customMiddleware($request, $next);
+            },
+            function ($request) {
+                return $this->handleRequest($request);
+            }
+        );
+        $this->server->on('error', function (\Throwable $th) {
+            $error = \json_encode([
+                'error' => $th->getMessage(),
+                'file' => $th->getFile(),
+                'line' => $th->getLine(),
+                'code' => $th->getCode()
+            ]);
+            Logger::log($error);
         });
         $host = self::$configuration->host;
         $port = self::$configuration->port;
@@ -202,6 +216,36 @@ class Application
         return $parts['path'];
     }
 
+    protected function initMiddelware(ServerRequestInterface $request, callable $next)
+    {
+        try {
+            $path = $this->getPath($request);
+            $request = $request->withAttribute('Gustav-Path', $path);
+            $route = Router::match(Method::fromRequest($request), $path);
+            $controller = $this->controllers[$route->getClass()];
+            $request = $request
+                ->withAttribute('Gustav-Route', $route)
+                ->withAttribute('Gustav-Controller', $controller)
+                ->withAttribute('Gustav-Middlewares', $controller->getMiddlewares());
+        } catch (\Throwable $th) {
+            $request = $request->withAttribute('Gustav-Route', null);
+        }
+
+        return $next($request);
+    }
+
+    protected function customMiddleware(ServerRequestInterface $request, callable $next)
+    {
+        /**
+         * @var Middleware\Base[] $middlewares
+         */
+        $middlewares = $request->getAttribute('Gustav-Middlewares', []);
+        foreach ($middlewares as $middleware) {
+            $request = $middleware->handle($request);
+        }
+        return $next($request);
+    }
+
     /**
      * Handles a given request.
      *
@@ -212,7 +256,14 @@ class Application
     protected function handleRequest(ServerRequestInterface $request)
     {
         $response = new Response();
-        $path = $this->getPath($request);
+        /**
+         * @var string $path
+         */
+        $path = $request->getAttribute('Gustav-Path');
+        /**
+         * @var Route $route
+         */
+        $route = $request->getAttribute('Gustav-Route');
         try {
             if ($request->getMethod() === 'GET' && array_key_exists($path, $this->files)) {
                 $path = $this->files[$path];
@@ -224,20 +275,12 @@ class Application
                     body: file_get_contents($path)
                 );
             }
-            $route = Router::match(Method::fromRequest($request), $path);
             $controller = $this->controllers[$route->getClass()];
-            $controller->setMiddlewares();
-            foreach ($controller->getMiddlewares(Middleware\Lifecycle::Before) as $middleware) {
-                $middleware->handle($request, $response);
-            }
             $params = $route->generateParams($request);
             $instance = $controller->getInstance();
             $payload = $instance->{$route->getFunction()}(...$params);
             if (!$payload instanceof Controller\Response) {
                 throw new \Exception('Controller needs to return a Response object');
-            }
-            foreach ($controller->getMiddlewares(Middleware\Lifecycle::After) as $middleware) {
-                $middleware->handle($request, $response);
             }
             return $response->merge($payload)->build();
         } catch (\Throwable $th) {
