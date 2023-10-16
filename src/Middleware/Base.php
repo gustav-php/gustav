@@ -2,11 +2,11 @@
 
 namespace GustavPHP\Gustav\Middleware;
 
-use GustavPHP\Gustav\Message\RequestInterface;
-use GustavPHP\Gustav\Message\ResponseInterface;
+use GustavPHP\Gustav\Controller\Response;
+use Psr\Http\Message\ServerRequestInterface;
 
 abstract class Base
 {
     abstract public function __construct();
-    abstract public function handle(RequestInterface $request, ResponseInterface $response): void;
+    abstract public function handle(ServerRequestInterface $request, Response $response): void;
 }

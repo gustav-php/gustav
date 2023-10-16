@@ -4,6 +4,7 @@ namespace GustavPHP\Gustav\Controller;
 
 use Exception;
 use GustavPHP\Gustav\Attribute\Middleware;
+use GustavPHP\Gustav\Middleware\Base;
 use GustavPHP\Gustav\Middleware\Lifecycle;
 use GustavPHP\Gustav\Service;
 use ReflectionClass;
@@ -36,6 +37,10 @@ class ControllerFactory
         return $this->instance;
     }
 
+    /**
+     * @param Lifecycle $lifecycle
+     * @return array<Base>
+     */
     public function getMiddlewares(Lifecycle $lifecycle): array
     {
         return match($lifecycle) {
