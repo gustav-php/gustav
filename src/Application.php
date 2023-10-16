@@ -81,7 +81,7 @@ class Application
     /**
      * Adds middleware classes to the application.
      *
-     * @param array $classes The classes to add as middleware.
+     * @param Middleware\Base[] $classes The classes to add as middleware.
      * @return self Returns the application instance.
      */
     public function addMiddlewares(array $classes): self
