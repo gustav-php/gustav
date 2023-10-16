@@ -5,8 +5,6 @@ namespace GustavPHP\Gustav;
 use GustavPHP\Gustav\Attribute\Param;
 use GustavPHP\Gustav\Attribute\Route;
 use GustavPHP\Gustav\Controller\ControllerFactory;
-use GustavPHP\Gustav\Middleware;
-use GustavPHP\Gustav\Service;
 use GustavPHP\Gustav\Router\Method;
 use GustavPHP\Gustav\Router\Router;
 use HaydenPierce\ClassFinder\ClassFinder;
