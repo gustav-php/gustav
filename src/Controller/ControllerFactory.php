@@ -4,7 +4,6 @@ namespace GustavPHP\Gustav\Controller;
 
 use Exception;
 use GustavPHP\Gustav\Attribute\Middleware;
-use GustavPHP\Gustav\Middleware\Lifecycle;
 use GustavPHP\Gustav\Service;
 use ReflectionClass;
 use ReflectionMethod;
@@ -33,6 +32,14 @@ class ControllerFactory
         return $this->instance;
     }
 
+    public function getMiddlewares(): array
+    {
+        $reflection = new ReflectionClass($this->class);
+        $attributes = $reflection->getAttributes(Middleware::class);
+
+        return array_map(fn ($attribute) => $attribute->newInstance()->initialize(), $attributes);
+    }
+
     public function initialize(...$args)
     {
         $this->instance = new $this->class(...$args);
@@ -55,13 +62,5 @@ class ControllerFactory
         }
 
         return $this;
-    }
-
-    public function getMiddlewares(): array
-    {
-        $reflection = new ReflectionClass($this->class);
-        $attributes = $reflection->getAttributes(Middleware::class);
-
-        return array_map(fn ($attribute) => $attribute->newInstance()->initialize(), $attributes);
     }
 }

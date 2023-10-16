@@ -204,38 +204,6 @@ class Application
         }
     }
 
-    /**
-     * Gets the path from a given request.
-     *
-     * @param ServerRequestInterface $request
-     * @return string
-     */
-    protected function getPath(ServerRequestInterface $request): string
-    {
-        $parts = parse_url($request->getUri());
-        return $parts['path'];
-    }
-
-    protected function initMiddelware(ServerRequestInterface $request, callable $next)
-    {
-        try {
-            $path = $this->getPath($request);
-            $request = $request->withAttribute('Gustav-Path', $path);
-            $route = Router::match(Method::fromRequest($request), $path);
-            $controller = $this->controllers[$route->getClass()];
-            $request = $request
-                ->withAttribute('Gustav-Route', $route)
-                ->withAttribute('Gustav-Controller', $controller)
-                ->withAttribute('Gustav-Middlewares', $controller->getMiddlewares());
-        } catch (\Throwable $th) {
-            $request = $request
-                ->withAttribute('Gustav-Route', null)
-                ->withAttribute('Gustav-Exception', $th);
-        }
-
-        return $next($request);
-    }
-
     protected function customMiddleware(ServerRequestInterface $request, callable $next)
     {
         /**
@@ -246,6 +214,18 @@ class Application
             $request = $middleware->handle($request);
         }
         return $next($request);
+    }
+
+    /**
+     * Gets the path from a given request.
+     *
+     * @param ServerRequestInterface $request
+     * @return string
+     */
+    protected function getPath(ServerRequestInterface $request): string
+    {
+        $parts = parse_url($request->getUri());
+        return $parts['path'];
     }
 
     /**
@@ -263,13 +243,13 @@ class Application
          */
         $path = $request->getAttribute('Gustav-Path');
         /**
-         * @var Route $route
+         * @var Route|null $route
          */
-        $route = $request->getAttribute('Gustav-Route');
+        $route = $request->getAttribute('Gustav-Route', null);
         /**
-         * @var ControllerFactory $controller
+         * @var ControllerFactory|null $controller
          */
-        $controller = $request->getAttribute('Gustav-Controller');
+        $controller = $request->getAttribute('Gustav-Controller', null);
         try {
             if ($request->getMethod() === 'GET' && array_key_exists($path, $this->files)) {
                 $path = $this->files[$path];
@@ -309,6 +289,26 @@ class Application
             ]);
             return $response->buildJson();
         }
+    }
+
+    protected function initMiddelware(ServerRequestInterface $request, callable $next)
+    {
+        try {
+            $path = $this->getPath($request);
+            $request = $request->withAttribute('Gustav-Path', $path);
+            $route = Router::match(Method::fromRequest($request), $path);
+            $controller = $this->controllers[$route->getClass()];
+            $request = $request
+                ->withAttribute('Gustav-Route', $route)
+                ->withAttribute('Gustav-Controller', $controller)
+                ->withAttribute('Gustav-Middlewares', $controller->getMiddlewares());
+        } catch (\Throwable $th) {
+            $request = $request
+                ->withAttribute('Gustav-Route', null)
+                ->withAttribute('Gustav-Exception', $th);
+        }
+
+        return $next($request);
     }
 
     /**
