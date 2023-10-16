@@ -22,7 +22,6 @@ class ServeCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $address = $input->getArgument('address');
         $entrypoint = escapeshellarg(realpath(getcwd() . DIRECTORY_SEPARATOR . $input->getArgument('entrypoint')));
 
         passthru(escapeshellarg(PHP_BINARY) . " {$entrypoint}");
