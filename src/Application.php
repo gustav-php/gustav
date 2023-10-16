@@ -80,6 +80,12 @@ class Application
         self::$configuration = $configuration;
     }
 
+    /**
+     * Adds middleware classes to the application.
+     *
+     * @param array $classes The classes to add as middleware.
+     * @return self Returns the application instance.
+     */
     public function addMiddlewares(array $classes): self
     {
         foreach ($classes as $class) {
@@ -89,6 +95,12 @@ class Application
         return $this;
     }
 
+    /**
+     * Adds route classes to the application.
+     *
+     * @param array $classes The classes to add as routes.
+     * @return self Returns the application instance.
+     */
     public function addRoutes(array $classes): self
     {
         foreach ($classes as $class) {
@@ -98,6 +110,11 @@ class Application
         return $this;
     }
 
+    /**
+     * Starts the application.
+     *
+     * @return void
+     */
     public function start(): void
     {
         foreach ($this->controllers as $controller) {
@@ -153,7 +170,12 @@ class Application
         }
     }
 
-
+    /**
+     * Adds methods from a given reflection class to the application.
+     *
+     * @param ReflectionClass $reflector The reflection class to add methods from.
+     * @return void
+     */
     protected function addMethods(ReflectionClass $reflector): void
     {
         foreach ($reflector->getMethods() as $method) {
@@ -174,6 +196,13 @@ class Application
         }
     }
 
+    /**
+     * Adds parameters from a given reflection method to a route.
+     *
+     * @param ReflectionMethod $method The reflection method to add parameters from.
+     * @param Route $route The route to add parameters to.
+     * @return void
+     */
     protected function addParameters(ReflectionMethod $method, Route $route): void
     {
         foreach ($method->getParameters() as $parameter) {
@@ -188,6 +217,12 @@ class Application
         }
     }
 
+    /**
+     * Registers a route in the application.
+     *
+     * @param string $class The class to register as a route.
+     * @return void
+     */
     protected function registerRoute(string $class): void
     {
         $controller = new ControllerFactory($class);
