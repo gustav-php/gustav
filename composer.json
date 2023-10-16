@@ -15,7 +15,7 @@
     "test": "./vendor/bin/pest",
     "example": [
       "Composer\\Config::disableProcessTimeout",
-      "./bin/gustav-php serve 0.0.0.0:4201 ./example/index.php"
+      "./bin/gustav-php serve ./example/index.php"
     ],
     "check": "./vendor/bin/phpstan analyze",
     "lint": "./vendor/bin/pint --test src tests",
