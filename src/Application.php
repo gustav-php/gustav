@@ -126,6 +126,16 @@ class Application
     }
 
     /**
+     * Checks if the application is running in production mode.
+     *
+     * @return bool
+     */
+    public static function isProduction(): bool
+    {
+        return self::$configuration->mode === Mode::Production;
+    }
+
+    /**
      * Starts the application.
      *
      * @return void
@@ -330,15 +340,5 @@ class Application
         $reflector = new ReflectionClass($class);
         $this->addMethods($reflector);
         $this->controllers[$class] = $controller;
-    }
-
-    /**
-     * Checks if the application is running in production mode.
-     *
-     * @return bool 
-     */
-    static public function isProduction(): bool
-    {
-        return self::$configuration->mode === Mode::Production;
     }
 }
