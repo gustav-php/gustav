@@ -4,7 +4,6 @@ namespace GustavPHP\Gustav\Service;
 
 use DI;
 use DI\Definition\Exception\InvalidDefinition;
-use DI\Definition\Helper\CreateDefinitionHelper;
 use DI\Definition\Source\DefinitionSource;
 use DI\DependencyException;
 use Exception;
@@ -16,8 +15,8 @@ use LogicException;
 
 class Container
 {
-    protected ?DI\Container $container;
     protected DI\ContainerBuilder $builder;
+    protected ?DI\Container $container;
 
     /**
      * Container constructor.
@@ -49,10 +48,10 @@ class Container
 
     /**
      * Add a dependency to the container.
-     * 
-     * @param (string|callable|DefinitionSource)[] $definitions 
-     * @return void 
-     * @throws LogicException 
+     *
+     * @param (string|callable|DefinitionSource)[] $definitions
+     * @return void
+     * @throws LogicException
      */
     public function addDependency(string|array|DefinitionSource ...$definitions): void
     {
