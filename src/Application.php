@@ -331,4 +331,14 @@ class Application
         $this->addMethods($reflector);
         $this->controllers[$class] = $controller;
     }
+
+    /**
+     * Checks if the application is running in production mode.
+     *
+     * @return bool 
+     */
+    static public function isProduction(): bool
+    {
+        return self::$configuration->mode === Mode::Production;
+    }
 }

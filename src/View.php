@@ -37,8 +37,11 @@ class View
     {
         if (self::$engine === null) {
             self::$engine = new Engine();
-            self::$engine->setTempDirectory(Application::$configuration->cache);
-            self::$engine->setautoRefresh();
+            if (Application::isProduction()) {
+                self::$engine
+                    ->setTempDirectory(Application::$configuration->cache)
+                    ->setAutoRefresh(false);
+            }
         }
         return self::$engine;
     }

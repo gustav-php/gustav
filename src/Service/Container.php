@@ -34,7 +34,13 @@ class Container
         $this->builder = new DI\ContainerBuilder();
         $this->builder
             ->useAttributes(true)
-            ->writeProxiesToFile(true, Application::$configuration->cache);
+            ->useAutowiring(false);
+
+        if (Application::isProduction()) {
+            $this->builder
+                ->writeProxiesToFile(true, Application::$configuration->cache)
+                ->enableCompilation(Application::$configuration->cache);
+        }
 
         foreach ($namespaces as $namespace) {
             $classes = ClassFinder::getClassesInNamespace($namespace, ClassFinder::STANDARD_MODE);
