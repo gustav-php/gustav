@@ -10,6 +10,7 @@ use GustavPHP\Gustav\Controller\Response;
 use GustavPHP\Gustav\Logger\Logger;
 use GustavPHP\Gustav\Router\Method;
 use GustavPHP\Gustav\Router\Router;
+use GustavPHP\Gustav\Service\Container;
 use HaydenPierce\ClassFinder\ClassFinder;
 use InvalidArgumentException;
 use Psr\Http\Message\ServerRequestInterface;
@@ -29,6 +30,10 @@ class Application
      */
     public static Configuration $configuration;
     /**
+     * @var Container
+     */
+    protected Container $dependencies;
+    /**
      * @var ControllerFactory[]
      */
     protected array $controllers = [];
@@ -43,15 +48,11 @@ class Application
     /**
      * @var null|HttpServer
      */
-    protected ?HttpServer $server = null;
-    /**
-     * @var Service\Base[]
-     */
-    protected array $services = [];
+    protected ?HttpServer $server;
     /**
      * @var null|SocketServer
      */
-    protected ?SocketServer $socket = null;
+    protected ?SocketServer $socket;
 
     /**
      * Creates a new application instance.
@@ -63,6 +64,7 @@ class Application
     public function __construct(
         Configuration $configuration
     ) {
+        self::$configuration = $configuration;
         if ($configuration->routeNamespaces) {
             foreach ($configuration->routeNamespaces as $namespace) {
                 $classes = ClassFinder::getClassesInNamespace($namespace, ClassFinder::STANDARD_MODE);
@@ -83,6 +85,7 @@ class Application
                 }
             }
         }
+        $this->dependencies = new Container($configuration->serviceNamespaces);
 
         if ($configuration->files) {
             if (\is_dir($configuration->files)) {
@@ -99,7 +102,6 @@ class Application
                 }
             }
         }
-        self::$configuration = $configuration;
     }
 
     /**
@@ -140,7 +142,7 @@ class Application
     public function start(): void
     {
         foreach ($this->controllers as $controller) {
-            $controller->initialize(...array_map(fn (string $class) => new $class(), $controller->getInjections()));
+            $controller->initialize($this->dependencies);
         }
 
         $this->server = new HttpServer(

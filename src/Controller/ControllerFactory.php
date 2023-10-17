@@ -5,6 +5,7 @@ namespace GustavPHP\Gustav\Controller;
 use Exception;
 use GustavPHP\Gustav\Attribute\Middleware;
 use GustavPHP\Gustav\Service;
+use GustavPHP\Gustav\Service\Container;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionNamedType;
@@ -22,11 +23,6 @@ class ControllerFactory
         return $this->class;
     }
 
-    public function getInjections(): array
-    {
-        return $this->injections;
-    }
-
     public function getInstance(): object
     {
         return $this->instance;
@@ -40,9 +36,9 @@ class ControllerFactory
         return array_map(fn ($attribute) => $attribute->newInstance()->initialize(), $attributes);
     }
 
-    public function initialize(...$args)
+    public function initialize(Container $dependencies)
     {
-        $this->instance = new $this->class(...$args);
+        $this->instance = $dependencies->make($this->class);
     }
 
     public function setInjections(ReflectionMethod $constructor): self

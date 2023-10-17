@@ -36,6 +36,10 @@ class Configuration
          */
         public readonly array $eventNamespaces = [],
         /**
+         * Namespace containing the services.
+         */
+        public readonly array $serviceNamespaces = [],
+        /**
          * Path to the directory containing static files to serve.
          */
         public readonly ?string $files = null

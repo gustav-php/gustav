@@ -3,9 +3,12 @@
 namespace GustavPHP\Gustav\Controller;
 
 use GustavPHP\Gustav\View;
+use Psr\Http\Message\ServerRequestInterface;
 
 class Base
 {
+    public ServerRequestInterface $request;
+
     /**
      * Returns a HTML Response.
      *

@@ -2,33 +2,22 @@
 
 namespace GustavPHP\Example\Services;
 
+use DI\Attribute\Inject;
 use GustavPHP\Gustav\Service;
 
 class CatsService extends Service\Base
 {
-    protected array $database = [
-        [
-            'id' => '1',
-            'name' => 'lili'
-        ],
-        [
-            'id' => '2',
-            'name' => 'kitty'
-        ],
-        [
-            'id' => '3',
-            'name' => 'nala'
-        ],
-    ];
+    #[Inject]
+    protected DataService $dataService;
 
     public function list(): array
     {
-        return $this->database;
+        return $this->dataService->cats;
     }
 
     public function get(string $id): array|null
     {
-        foreach ($this->database as $cat) {
+        foreach ($this->dataService->cats as $cat) {
             if ($cat['id'] === $id) return $cat;
         }
 
@@ -38,11 +27,11 @@ class CatsService extends Service\Base
     public function create(string $name): array
     {
         $cat = [
-            'id' => (string) count($this->database) + 1,
+            'id' => (string) count($this->dataService->cats) + 1,
             'name' => $name
         ];
 
-        $this->database[] = $cat;
+        $this->dataService->cats[] = $cat;
 
         return $cat;
     }

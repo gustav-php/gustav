@@ -2,6 +2,7 @@
 
 namespace GustavPHP\Example\Routes;
 
+use DI\Attribute\Inject;
 use Exception;
 use GustavPHP\Example\Middlewares\Logs;
 use GustavPHP\Example\Services\CatsService;
@@ -16,9 +17,8 @@ use GustavPHP\Gustav\Router\Method;
 #[Middleware(Logs::class)]
 class CatsController extends Controller\Base
 {
-    public function __construct(protected CatsService $catsService)
-    {
-    }
+    #[Inject]
+    protected CatsService $catsService;
 
     #[Route('/cats')]
     public function list()
