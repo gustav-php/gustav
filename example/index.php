@@ -1,6 +1,5 @@
 <?php
 
-
 namespace GustavPHP\Example;
 
 require_once __DIR__ . '/../vendor/autoload.php';
