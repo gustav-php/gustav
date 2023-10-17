@@ -2,6 +2,7 @@
 
 namespace GustavPHP\Gustav\Logger;
 
+use Stringable;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
 class Logger
@@ -19,9 +20,9 @@ class Logger
      * @param string $text
      * @return void
      */
-    public static function log(string $text): void
+    public static function log(string|Stringable $text): void
     {
-        self::output()->writeln("{$text}");
+        self::output()->writeln($text);
     }
 
     /**

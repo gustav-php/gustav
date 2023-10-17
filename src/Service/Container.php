@@ -8,8 +8,8 @@ use HaydenPierce\ClassFinder\ClassFinder;
 
 class Container
 {
-    protected DI\Container $container;
     protected DI\ContainerBuilder $builder;
+    protected DI\Container $container;
 
     public function __construct(array $namespaces)
     {
@@ -17,6 +17,7 @@ class Container
         $this->builder
             ->useAttributes(true)
             ->writeProxiesToFile(true, Application::$configuration->cache);
+
         foreach ($namespaces as $namespace) {
             $classes = ClassFinder::getClassesInNamespace($namespace, ClassFinder::STANDARD_MODE);
             foreach ($classes as $class) {

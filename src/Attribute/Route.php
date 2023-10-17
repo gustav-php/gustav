@@ -34,7 +34,7 @@ class Route
     public function generateParams(ServerRequestInterface $request): array
     {
         $pathParams = [];
-        $path = trim(\parse_url($request->getUri(), PHP_URL_PATH), "/");
+        $path = trim($request->getUri()->getPath(), "/");
         $parts = explode('/', $path);
         foreach ($this->placeholders as $key => $index) {
             $pathParams[$key] = $parts[$index];

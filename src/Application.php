@@ -30,13 +30,13 @@ class Application
      */
     public static Configuration $configuration;
     /**
-     * @var Container
-     */
-    protected Container $dependencies;
-    /**
      * @var ControllerFactory[]
      */
     protected array $controllers = [];
+    /**
+     * @var Container
+     */
+    protected Container $dependencies;
     /**
      * @var array<string,string>
      */
@@ -241,17 +241,6 @@ class Application
     }
 
     /**
-     * Gets the path from a given request.
-     *
-     * @param ServerRequestInterface $request
-     * @return string
-     */
-    protected function getPath(ServerRequestInterface $request): string
-    {
-        return parse_url($request->getUri(), PHP_URL_PATH);
-    }
-
-    /**
      * Handles a given request.
      *
      * @param ServerRequestInterface $request
@@ -293,6 +282,7 @@ class Application
             }
             $params = $route->generateParams($request);
             $instance = $controller->getInstance();
+            $instance->request = $request;
             $payload = $instance->{$route->getFunction()}(...$params);
             if (!$payload instanceof Controller\Response) {
                 throw new \Exception('Controller needs to return a Response object');
@@ -324,7 +314,7 @@ class Application
     protected function initMiddelware(ServerRequestInterface $request, callable $next): mixed
     {
         try {
-            $path = $this->getPath($request);
+            $path = $request->getUri()->getPath();
             $request = $request->withAttribute('Gustav-Path', $path);
             $route = Router::match(Method::fromRequest($request), $path);
             $controller = $this->controllers[$route->getClass()];
@@ -351,10 +341,6 @@ class Application
     {
         $controller = new ControllerFactory($class);
         $reflector = new ReflectionClass($class);
-        $constructor = $reflector->getConstructor();
-        if ($constructor !== null) {
-            $controller->setInjections($constructor);
-        }
         $this->addMethods($reflector);
         $this->controllers[$class] = $controller;
     }

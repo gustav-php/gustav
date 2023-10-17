@@ -15,7 +15,6 @@ class Response implements StatusCodeInterface
         protected mixed $body = '',
     ) {
     }
-
     /**
      * Build a InternalResponse from the Response.
      *
@@ -29,7 +28,6 @@ class Response implements StatusCodeInterface
             $this->body
         );
     }
-
     /**
      * Build a Response with a JSON body.
      *
@@ -39,7 +37,6 @@ class Response implements StatusCodeInterface
     {
         return InternalResponse::html($this->body);
     }
-
     /**
      * Build a Response with a JSON body.
      *
@@ -50,7 +47,6 @@ class Response implements StatusCodeInterface
     {
         return InternalResponse::json($this->body);
     }
-
     /**
      * Build a Response with a plaintext body.
      *
@@ -60,7 +56,6 @@ class Response implements StatusCodeInterface
     {
         return InternalResponse::plaintext($this->body);
     }
-
     public function getBody(): string|ReadableStreamInterface|StreamInterface
     {
         return $this->body;

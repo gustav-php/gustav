@@ -2,12 +2,14 @@
 
 namespace GustavPHP\Gustav\Controller;
 
+use GustavPHP\Gustav\Traits\Logger;
+use GustavPHP\Gustav\Traits\Request;
 use GustavPHP\Gustav\View;
-use Psr\Http\Message\ServerRequestInterface;
 
 class Base
 {
-    public ServerRequestInterface $request;
+    use Logger;
+    use Request;
 
     /**
      * Returns a HTML Response.
