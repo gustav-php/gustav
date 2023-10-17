@@ -68,7 +68,7 @@ class Base
      * @throws \Latte\RuntimeException
      * @throws \Throwable
      */
-    protected function view(string $template, array $params): Response
+    protected function view(string $template, array $params = []): Response
     {
         $view = View::render($template, $params);
 
