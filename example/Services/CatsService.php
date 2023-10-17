@@ -10,6 +10,20 @@ class CatsService extends Service\Base
     #[Inject]
     protected DataService $dataService;
 
+    public function list(): array
+    {
+        return $this->dataService->cats;
+    }
+
+    public function get(string $id): array|null
+    {
+        foreach ($this->dataService->cats as $cat) {
+            if ($cat['id'] === $id) return $cat;
+        }
+
+        return null;
+    }
+
     public function create(string $name): array
     {
         $cat = [
@@ -20,21 +34,5 @@ class CatsService extends Service\Base
         $this->dataService->cats[] = $cat;
 
         return $cat;
-    }
-
-    public function get(string $id): array|null
-    {
-        foreach ($this->dataService->cats as $cat) {
-            if ($cat['id'] === $id) {
-                return $cat;
-            }
-        }
-
-        return null;
-    }
-
-    public function list(): array
-    {
-        return $this->dataService->cats;
     }
 }
