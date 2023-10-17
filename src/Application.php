@@ -265,13 +265,13 @@ class Application
         try {
             if ($request->getMethod() === 'GET' && array_key_exists($path, $this->files)) {
                 $path = $this->files[$path];
-                return new Response(
+                return (new Response(
                     status: Response::STATUS_OK,
                     headers: [
                         'Content-Type' => mime_content_type($path),
                     ],
                     body: file_get_contents($path)
-                );
+                ))->build();
             }
             if ($route === null) {
                 if ($request->getAttribute('Gustav-Exception') !== null) {
@@ -314,7 +314,7 @@ class Application
     protected function initMiddelware(ServerRequestInterface $request, callable $next): mixed
     {
         try {
-            $path = $request->getUri()->getPath();
+            $path = trim($request->getUri()->getPath(), '/');
             $request = $request->withAttribute('Gustav-Path', $path);
             $route = Router::match(Method::fromRequest($request), $path);
             $controller = $this->controllers[$route->getClass()];
