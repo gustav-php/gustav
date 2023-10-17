@@ -149,7 +149,7 @@ class Router
                 $prepare .= $part;
             }
         }
-        \var_dump($prepare, $params);
+
         return [$prepare, $params];
     }
 }
