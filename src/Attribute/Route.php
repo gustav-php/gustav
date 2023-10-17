@@ -3,7 +3,6 @@
 namespace GustavPHP\Gustav\Attribute;
 
 use Attribute;
-use Exception;
 use GustavPHP\Gustav\Router\Method;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -61,7 +60,7 @@ class Route
             if (\array_key_exists($param->getName(), $params)) {
                 $carry[$param->getParameter()] = $params[$param->getName()];
             } elseif ($param->getRequired()) {
-                throw new Exception("Parameter '{$param->getName()}' is required.", 400);
+                throw new \Exception("Parameter '{$param->getName()}' is required.", 400);
             }
 
             return $carry;
@@ -70,11 +69,17 @@ class Route
 
     public function getClass(): string
     {
+        if ($this->class === null) {
+            throw new \Exception('Class not set');
+        }
         return $this->class;
     }
 
     public function getFunction(): string
     {
+        if ($this->function === null) {
+            throw new \Exception('Function not set');
+        }
         return $this->function;
     }
 

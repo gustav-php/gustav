@@ -21,11 +21,17 @@ class Param
 
     public function getParameter(): string
     {
+        if ($this->parameter === null) {
+            throw new \Exception("Parameter {$this->name} has not been initialized");
+        }
         return $this->parameter;
     }
 
     public function getRequired(): bool
     {
+        if ($this->required === null) {
+            throw new \Exception("Parameter {$this->name} has not been initialized");
+        }
         return $this->required;
     }
 

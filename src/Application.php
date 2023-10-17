@@ -273,7 +273,7 @@ class Application
                     body: file_get_contents($path)
                 ))->build();
             }
-            if ($route === null) {
+            if ($route === null || $controller === null) {
                 if ($request->getAttribute('Gustav-Exception') !== null) {
                     throw $request->getAttribute('Gustav-Exception');
                 } else {

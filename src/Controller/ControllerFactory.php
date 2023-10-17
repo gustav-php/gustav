@@ -41,6 +41,9 @@ class ControllerFactory
      */
     public function getInstance(): Base
     {
+        if ($this->instance === null) {
+            throw new \Exception("Controller {$this->class} has not been initialized");
+        }
         return $this->instance;
     }
 
