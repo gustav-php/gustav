@@ -17,11 +17,8 @@ use Psr\Http\Message\ServerRequestInterface;
 use React\Http\HttpServer;
 use React\Http\Message\Response as MessageResponse;
 use React\Socket\SocketServer;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 use ReflectionClass;
 use ReflectionMethod;
-use SplFileInfo;
 
 class Application
 {
@@ -89,10 +86,10 @@ class Application
 
         if ($configuration->files) {
             if (\is_dir($configuration->files)) {
-                $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($configuration->files));
+                $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($configuration->files));
                 foreach ($iterator as $file) {
                     /**
-                     * @var SplFileInfo $file
+                     * @var \SplFileInfo $file
                      */
                     if ($file->isDir()) {
                         continue;
@@ -107,7 +104,7 @@ class Application
     /**
      * Adds middleware classes to the application.
      *
-     * @param array $classes The classes to add as middleware.
+     * @param array<string> $classes The classes to add as middleware.
      * @return self Returns the application instance.
      */
     public function addMiddlewares(array $classes): self

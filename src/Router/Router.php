@@ -103,8 +103,8 @@ class Router
     /**
      * Generate all possible combinations of the given set.
      *
-     * @param array $set
-     * @return iterable
+     * @param array<int> $set
+     * @return iterable<array<int>>
      */
     protected static function combinations(array $set): iterable
     {
@@ -126,7 +126,7 @@ class Router
      * Prepare the given path with placeholder tokens.
      * .
      * @param string $path
-     * @return array
+     * @return array{string,array<string,int>}
      */
     protected static function preparePath(string $path): array
     {
@@ -149,7 +149,7 @@ class Router
                 $prepare .= $part;
             }
         }
-
+        \var_dump($prepare, $params);
         return [$prepare, $params];
     }
 }

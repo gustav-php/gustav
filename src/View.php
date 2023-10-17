@@ -17,7 +17,7 @@ class View
      * Render a template.
      *
      * @param string $template
-     * @param array $params
+     * @param array<mixed> $params
      * @return string
      * @throws \LogicException
      * @throws RuntimeException

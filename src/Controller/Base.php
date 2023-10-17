@@ -30,11 +30,11 @@ class Base
     /**
      * Returns a JSON Response.
      *
-     * @param array|\stdClass $data
+     * @param array<mixed>|object $data
      * @param int $status
      * @return Response
      */
-    protected function json(array|\stdClass $data, int $status = Response::STATUS_OK): Response
+    protected function json(array|object $data, int $status = Response::STATUS_OK): Response
     {
         return new Response(
             status: $status,
@@ -62,7 +62,7 @@ class Base
      * Returns a HTML View.
      *
      * @param string $template
-     * @param array $params
+     * @param array<mixed> $params
      * @return Response
      * @throws \LogicException
      * @throws \Latte\RuntimeException

@@ -4,6 +4,13 @@ namespace GustavPHP\Gustav\Event;
 
 class Payload
 {
+    /**
+     * Payload constructor.
+     *
+     * @param string $event
+     * @param array<mixed> $data
+     * @return void
+     */
     public function __construct(
         protected string $event,
         protected array $data = []
@@ -13,7 +20,7 @@ class Payload
     /**
      * Get the payload data.
      *
-     * @return array
+     * @return array<mixed>
      */
     public function getData(): array
     {

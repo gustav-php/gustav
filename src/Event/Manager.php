@@ -32,7 +32,7 @@ class Manager
      * Dispatch an event.
      *
      * @param string $event
-     * @param array $payload
+     * @param array<mixed> $payload
      * @return void
      */
     public static function dispatch(string $event, array $payload): void

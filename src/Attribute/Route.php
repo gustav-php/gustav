@@ -12,7 +12,13 @@ class Route
 {
     protected ?string $class;
     protected ?string $function;
+    /**
+     * @var array<string,Param>
+     */
     protected array $params = [];
+    /**
+     * @var array<string,int>
+     */
     protected array $placeholders = [];
 
     public function __construct(protected string $path, protected Method $method = Method::GET)
@@ -31,6 +37,12 @@ class Route
         $this->placeholders[$key] = $index;
     }
 
+    /**
+     * Generate the parameters for the Route.
+     * 
+     * @param ServerRequestInterface $request 
+     * @return array<string,mixed>
+     */
     public function generateParams(ServerRequestInterface $request): array
     {
         $pathParams = [];

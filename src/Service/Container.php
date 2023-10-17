@@ -3,14 +3,30 @@
 namespace GustavPHP\Gustav\Service;
 
 use DI;
+use DI\Definition\Exception\InvalidDefinition;
+use DI\DependencyException;
+use Exception;
 use GustavPHP\Gustav\Application;
 use HaydenPierce\ClassFinder\ClassFinder;
+use InvalidArgumentException;
+use LogicException;
 
 class Container
 {
     protected DI\ContainerBuilder $builder;
     protected DI\Container $container;
 
+    /**
+     * Container constructor.
+     *
+     * @param array<string> $namespaces
+     * @return void
+     * @throws LogicException
+     * @throws InvalidArgumentException
+     * @throws Exception
+     * @throws InvalidDefinition
+     * @throws DependencyException
+     */
     public function __construct(array $namespaces)
     {
         $this->builder = new DI\ContainerBuilder();

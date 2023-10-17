@@ -19,5 +19,9 @@ class DataService extends Service\Base
             'id' => '3',
             'name' => 'nala'
         ],
+        [
+            'id' => 'a',
+            'name' => 'nala'
+        ],
     ];
 }
