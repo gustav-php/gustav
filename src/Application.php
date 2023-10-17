@@ -31,10 +31,6 @@ class Application
      */
     protected array $controllers = [];
     /**
-     * @var Container
-     */
-    protected Container $dependencies;
-    /**
      * @var array<string,string>
      */
     protected array $files = [];
@@ -82,8 +78,6 @@ class Application
                 }
             }
         }
-        $this->dependencies = new Container($configuration->serviceNamespaces);
-
         if ($configuration->files) {
             if (\is_dir($configuration->files)) {
                 $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($configuration->files));
@@ -138,10 +132,6 @@ class Application
      */
     public function start(): void
     {
-        foreach ($this->controllers as $controller) {
-            $controller->initialize($this->dependencies);
-        }
-
         $this->server = new HttpServer(
             function (ServerRequestInterface $request, callable $next) {
                 return $this->initMiddelware($request, $next);
@@ -249,21 +239,15 @@ class Application
     protected function handleRequest(ServerRequestInterface $request)
     {
         $response = new Response();
-        /**
-         * @var string $path
-         */
-        $path = $request->getAttribute('Gustav-Path');
-        /**
-         * @var Route|null $route
-         */
-        $route = $request->getAttribute('Gustav-Route', null);
-        /**
-         * @var ControllerFactory|null $controller
-         */
-        $controller = $request->getAttribute('Gustav-Controller', null);
+        $context = new Context(
+            container: new Container(self::$configuration->serviceNamespaces),
+            path: $request->getAttribute('Gustav-Path'),
+            route: $request->getAttribute('Gustav-Route'),
+            controllerFactory: $request->getAttribute('Gustav-Controller')
+        );
         try {
-            if ($request->getMethod() === 'GET' && array_key_exists($path, $this->files)) {
-                $path = $this->files[$path];
+            if ($request->getMethod() === 'GET' && array_key_exists($context->path, $this->files)) {
+                $path = $this->files[$context->path];
                 $contentType = mime_content_type($path);
                 return (new Response(
                     status: Response::STATUS_OK,
@@ -273,17 +257,20 @@ class Application
                     body: file_get_contents($path)
                 ))->build();
             }
-            if ($route === null || $controller === null) {
+            if ($context->route === null || $context->controllerFactory === null) {
                 if ($request->getAttribute('Gustav-Exception') !== null) {
                     throw $request->getAttribute('Gustav-Exception');
                 } else {
                     throw new \Exception(code: Response::STATUS_INTERNAL_SERVER_ERROR);
                 }
             }
-            $params = $route->generateParams($request);
-            $instance = $controller->getInstance();
+            $dependencies = new Container(self::$configuration->serviceNamespaces);
+            $dependencies->addDependency([ServerRequestInterface::class => fn () => $request]);
+            $dependencies->build();
+            $instance = $dependencies->make($context->controllerFactory->getClass());
             $instance->request = $request;
-            $payload = $instance->{$route->getFunction()}(...$params);
+            $params = $context->route->generateParams($request);
+            $payload = $instance->{$context->route->getFunction()}(...$params);
             if (!$payload instanceof Controller\Response) {
                 throw new \Exception('Controller needs to return a Response object');
             }
