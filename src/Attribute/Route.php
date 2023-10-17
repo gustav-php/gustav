@@ -34,11 +34,12 @@ class Route
     public function generateParams(ServerRequestInterface $request): array
     {
         $pathParams = [];
-        $parts = explode('/', $request->getUri());
-
+        $path = trim(\parse_url($request->getUri(), PHP_URL_PATH), "/");
+        $parts = explode('/', $path);
         foreach ($this->placeholders as $key => $index) {
             $pathParams[$key] = $parts[$index];
         }
+
         /**
          * Merge Path and Query Parameters with Post Data (Path > Query > Post).
          */

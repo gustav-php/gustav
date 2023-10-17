@@ -13,6 +13,8 @@ class Manager
     protected static array $listeners = [];
 
     /**
+     * Add a listener to the manager.
+     *
      * @param string $class
      * @return void
      */
@@ -27,6 +29,8 @@ class Manager
     }
 
     /**
+     * Dispatch an event.
+     *
      * @param string $event
      * @param array $payload
      * @return void

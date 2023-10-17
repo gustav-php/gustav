@@ -2,6 +2,7 @@
 
 namespace GustavPHP\Gustav;
 
+use Exception;
 use GustavPHP\Gustav\Attribute\Param;
 use GustavPHP\Gustav\Attribute\Route;
 use GustavPHP\Gustav\Controller\ControllerFactory;
@@ -39,12 +40,26 @@ class Application
      * @var Middleware\Base[]
      */
     protected array $middlewares = [];
+    /**
+     * @var null|HttpServer
+     */
     protected ?HttpServer $server = null;
     /**
      * @var Service\Base[]
      */
     protected array $services = [];
+    /**
+     * @var null|SocketServer
+     */
     protected ?SocketServer $socket = null;
+
+    /**
+     * Creates a new application instance.
+     *
+     * @param Configuration $configuration
+     * @return void
+     * @throws Exception
+     */
     public function __construct(
         Configuration $configuration
     ) {
@@ -204,7 +219,14 @@ class Application
         }
     }
 
-    protected function customMiddleware(ServerRequestInterface $request, callable $next)
+    /**
+     * Handles custom middlewares.
+     *
+     * @param ServerRequestInterface $request
+     * @param callable $next
+     * @return mixed
+     */
+    protected function customMiddleware(ServerRequestInterface $request, callable $next): mixed
     {
         /**
          * @var Middleware\Base[] $middlewares
@@ -224,8 +246,7 @@ class Application
      */
     protected function getPath(ServerRequestInterface $request): string
     {
-        $parts = parse_url($request->getUri());
-        return $parts['path'];
+        return parse_url($request->getUri(), PHP_URL_PATH);
     }
 
     /**
@@ -291,7 +312,14 @@ class Application
         }
     }
 
-    protected function initMiddelware(ServerRequestInterface $request, callable $next)
+    /**
+     * Initializes the application middleware.
+     *
+     * @param ServerRequestInterface $request
+     * @param callable $next
+     * @return mixed
+     */
+    protected function initMiddelware(ServerRequestInterface $request, callable $next): mixed
     {
         try {
             $path = $this->getPath($request);

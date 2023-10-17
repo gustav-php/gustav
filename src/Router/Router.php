@@ -8,6 +8,9 @@ use GustavPHP\Gustav\Controller\Response;
 
 class Router
 {
+    /**
+     * Placeholder token.
+     */
     public const PLACEHOLDER_TOKEN = ':::';
 
     /**
@@ -18,10 +21,19 @@ class Router
     protected static array $params = [];
 
     /**
+     * Contains all registered Routes.
+     *
      * @var array<string,Route[]>
      */
     protected static array $routes = [];
 
+    /**
+     * Add a Route to the Router.
+     *
+     * @param Route $route
+     * @return void
+     * @throws Exception
+     */
     public static function addRoute(Route $route): void
     {
         [$path, $placeholders] = self::preparePath($route->getPath());
@@ -41,6 +53,14 @@ class Router
         self::$routes[$route->getMethod()->value][$path] = $route;
     }
 
+    /**
+     * Match a Route to the given Method and Path.
+     *
+     * @param Method $method
+     * @param string $path
+     * @return Route
+     * @throws Exception
+     */
     public static function match(Method $method, string $path): Route
     {
         if (!array_key_exists($method->value, self::$routes)) {
@@ -69,12 +89,23 @@ class Router
         throw new Exception('Not found', Response::STATUS_NOT_FOUND);
     }
 
+    /**
+     * Reset the Router.
+     *
+     * @return void
+     */
     public static function reset(): void
     {
         self::$params = [];
         self::$routes = [];
     }
 
+    /**
+     * Generate all possible combinations of the given set.
+     *
+     * @param array $set
+     * @return iterable
+     */
     protected static function combinations(array $set): iterable
     {
         yield [];
@@ -91,6 +122,12 @@ class Router
         }
     }
 
+    /**
+     * Prepare the given path with placeholder tokens.
+     * .
+     * @param string $path
+     * @return array
+     */
     protected static function preparePath(string $path): array
     {
         $parts = array_values(array_filter(explode('/', $path)));

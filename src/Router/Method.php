@@ -16,6 +16,12 @@ enum Method: string
     case PUT = 'PUT';
     case TRACE = 'TRACE';
 
+    /**
+     * Return a Method from a Request.
+     *
+     * @param ServerRequestInterface $request
+     * @return Method
+     */
     public static function fromRequest(ServerRequestInterface $request): self
     {
         return Method::from($request->getMethod());

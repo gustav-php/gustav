@@ -4,37 +4,63 @@ namespace GustavPHP\Gustav\Controller;
 
 use Fig\Http\Message\StatusCodeInterface;
 use Psr\Http\Message\StreamInterface;
-use React\Http\Message\Response as ReactResponse;
+use React\Http\Message\Response as InternalResponse;
 use React\Stream\ReadableStreamInterface;
 
 class Response implements StatusCodeInterface
 {
     public function __construct(
-        protected int $status = ReactResponse::STATUS_OK,
+        protected int $status = InternalResponse::STATUS_OK,
         protected array $headers = [],
         protected mixed $body = '',
     ) {
     }
-    public function build(): ReactResponse
+
+    /**
+     * Build a InternalResponse from the Response.
+     *
+     * @return InternalResponse
+     */
+    public function build(): InternalResponse
     {
-        return new ReactResponse(
+        return new InternalResponse(
             $this->status,
             $this->headers,
             $this->body
         );
     }
-    public function buildHtml(): ReactResponse
+
+    /**
+     * Build a Response with a JSON body.
+     *
+     * @return InternalResponse
+     */
+    public function buildHtml(): InternalResponse
     {
-        return ReactResponse::html($this->body);
+        return InternalResponse::html($this->body);
     }
-    public function buildJson(): ReactResponse
+
+    /**
+     * Build a Response with a JSON body.
+     *
+     * @return InternalResponse
+     * @throws \InvalidArgumentException
+     */
+    public function buildJson(): InternalResponse
     {
-        return ReactResponse::json($this->body);
+        return InternalResponse::json($this->body);
     }
-    public function buildPlaintext(): ReactResponse
+
+    /**
+     * Build a Response with a plaintext body.
+     *
+     * @return InternalResponse
+     */
+    public function buildPlaintext(): InternalResponse
     {
-        return ReactResponse::plaintext($this->body);
+        return InternalResponse::plaintext($this->body);
     }
+
     public function getBody(): string|ReadableStreamInterface|StreamInterface
     {
         return $this->body;
