@@ -15,7 +15,7 @@ class Manager
     /**
      * Add a listener to the manager.
      *
-     * @param string $class
+     * @param class-string<Base> $class
      * @return void
      */
     public static function addListener(string $class): void

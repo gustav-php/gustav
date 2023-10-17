@@ -12,12 +12,12 @@ use ReflectionClass;
 
 class ControllerFactory
 {
-    protected ?object $instance = null;
+    protected ?Base $instance = null;
 
     /**
      * ControllerFactory constructor.
      *
-     * @param string $class
+     * @param class-string<Base> $class
      * @return void
      */
     public function __construct(protected string $class)
@@ -68,6 +68,10 @@ class ControllerFactory
      */
     public function initialize(Container $dependencies): void
     {
-        $this->instance = $dependencies->make($this->class);
+        /**
+         * @var Base $instance
+         */
+        $instance = $dependencies->make($this->class);
+        $this->instance = $instance;
     }
 }

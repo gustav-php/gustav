@@ -22,7 +22,12 @@ class ServeCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $entrypoint = escapeshellarg(realpath(getcwd() . DIRECTORY_SEPARATOR . $input->getArgument('entrypoint')));
+        $entrypoint = realpath(getcwd() . DIRECTORY_SEPARATOR . $input->getArgument('entrypoint'));
+        if (!$entrypoint) {
+            $output->writeln('<error>Entrypoint file not found.</error>');
+            return Command::FAILURE;
+        }
+        $entrypoint = escapeshellarg($entrypoint);
 
         passthru(escapeshellarg(PHP_BINARY) . " {$entrypoint}");
 

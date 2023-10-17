@@ -104,7 +104,7 @@ class Application
     /**
      * Adds middleware classes to the application.
      *
-     * @param array<string> $classes The classes to add as middleware.
+     * @param array<class-string<Middleware\Base>> $classes The classes to add as middleware.
      * @return self Returns the application instance.
      */
     public function addMiddlewares(array $classes): self
@@ -119,7 +119,7 @@ class Application
     /**
      * Adds route classes to the application.
      *
-     * @param array<string> $classes The classes to add as routes.
+     * @param array<class-string<Controller\Base>> $classes The classes to add as routes.
      * @return self Returns the application instance.
      */
     public function addRoutes(array $classes): self
@@ -160,7 +160,9 @@ class Application
                 'line' => $th->getLine(),
                 'code' => $th->getCode()
             ]);
-            Logger::log($error);
+            if ($error) {
+                Logger::log($error);
+            }
         });
         $host = self::$configuration->host;
         $port = self::$configuration->port;
@@ -262,10 +264,11 @@ class Application
         try {
             if ($request->getMethod() === 'GET' && array_key_exists($path, $this->files)) {
                 $path = $this->files[$path];
+                $contentType = mime_content_type($path);
                 return (new Response(
                     status: Response::STATUS_OK,
                     headers: [
-                        'Content-Type' => mime_content_type($path),
+                        'Content-Type' => $contentType ?: 'application/octet-stream',
                     ],
                     body: file_get_contents($path)
                 ))->build();
@@ -311,7 +314,7 @@ class Application
     protected function initMiddelware(ServerRequestInterface $request, callable $next): mixed
     {
         try {
-            $path = trim($request->getUri()->getPath(), '/');
+            $path = ltrim($request->getUri()->getPath(), '/');
             $request = $request->withAttribute('Gustav-Path', $path);
             $route = Router::match(Method::fromRequest($request), $path);
             $controller = $this->controllers[$route->getClass()];
@@ -331,7 +334,7 @@ class Application
     /**
      * Registers a route in the application.
      *
-     * @param string $class The class to register as a route.
+     * @param class-string<Controller\Base> $class The class to register as a route.
      * @return void
      */
     protected function registerRoute(string $class): void

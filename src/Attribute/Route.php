@@ -39,8 +39,8 @@ class Route
 
     /**
      * Generate the parameters for the Route.
-     * 
-     * @param ServerRequestInterface $request 
+     *
+     * @param ServerRequestInterface $request
      * @return array<string,mixed>
      */
     public function generateParams(ServerRequestInterface $request): array
@@ -55,7 +55,7 @@ class Route
         /**
          * Merge Path and Query Parameters with Post Data (Path > Query > Post).
          */
-        $params = \array_merge($pathParams, $request->getQueryParams(), $request->getParsedBody() ?? []);
+        $params = \array_merge($pathParams, $request->getQueryParams(), (array) ($request->getParsedBody() ?? []));
 
         return \array_reduce($this->params, function (array $carry, Param $param) use ($params) {
             if (\array_key_exists($param->getName(), $params)) {
