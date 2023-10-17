@@ -2,10 +2,15 @@
 
 namespace GustavPHP\Gustav\Controller;
 
+use GustavPHP\Gustav\Traits\Logger;
+use GustavPHP\Gustav\Traits\Request;
 use GustavPHP\Gustav\View;
 
 class Base
 {
+    use Logger;
+    use Request;
+
     /**
      * Returns a HTML Response.
      *
@@ -63,7 +68,7 @@ class Base
      * @throws \Latte\RuntimeException
      * @throws \Throwable
      */
-    protected function view(string $template, array $params): Response
+    protected function view(string $template, array $params = []): Response
     {
         $view = View::render($template, $params);
 

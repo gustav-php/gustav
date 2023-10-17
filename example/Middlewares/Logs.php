@@ -14,7 +14,7 @@ class Logs extends Middleware\Base
 
     public function handle(ServerRequestInterface $request): ServerRequestInterface
     {
-        Logger::log('Request: ' . $request->getUri());
+        Logger::log('Request: ' . $request->getUri()->getPath());
 
         return $request;
     }

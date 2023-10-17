@@ -8,7 +8,8 @@
     "haydenpierce/class-finder": "^0.5.1",
     "symfony/console": "^6.2",
     "latte/latte": "^3.0",
-    "react/http": "^1.9"
+    "react/http": "^1.9",
+    "php-di/php-di": "^7.0"
   },
   "scripts": {
     "test": "./vendor/bin/pest",
