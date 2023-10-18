@@ -2,12 +2,6 @@
 
 namespace GustavPHP\Gustav;
 
-enum Mode
-{
-    case Development;
-    case Production;
-}
-
 class Configuration
 {
     public function __construct(
