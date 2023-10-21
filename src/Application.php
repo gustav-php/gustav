@@ -3,7 +3,6 @@
 namespace GustavPHP\Gustav;
 
 use Exception;
-use GustavPHP\Gustav\Attribute\{Param, Route};
 use GustavPHP\Gustav\Controller\{ControllerFactory, Response};
 use GustavPHP\Gustav\Logger\Logger;
 use GustavPHP\Gustav\Router\{Method, Router};
@@ -16,6 +15,7 @@ use React\Http\Message\Response as MessageResponse;
 use React\Socket\SocketServer;
 use ReflectionClass;
 use ReflectionMethod;
+use ReflectionNamedType;
 
 class Application
 {
@@ -183,40 +183,19 @@ class Application
     protected function addMethods(ReflectionClass $reflector): void
     {
         foreach ($reflector->getMethods() as $method) {
-            $routes = $method->getAttributes(Route::class);
+            $routes = $method->getAttributes(Attribute\Route::class);
 
             foreach ($routes as $route) {
                 /**
-                 * @var Route $instance
+                 * @var Attribute\Route $instance
                  */
                 $instance = $route->newInstance();
                 $instance
                     ->setClass($reflector->getName())
                     ->setFunction($method->getName());
 
-                $this->addParameters($method, $instance);
+                $this->prepareRoute($method, $instance);
                 Router::addRoute($instance);
-            }
-        }
-    }
-
-    /**
-     * Adds parameters from a given reflection method to a route.
-     *
-     * @param ReflectionMethod $method The reflection method to add parameters from.
-     * @param Route $route The route to add parameters to.
-     * @return void
-     */
-    protected function addParameters(ReflectionMethod $method, Route $route): void
-    {
-        foreach ($method->getParameters() as $parameter) {
-            foreach ($parameter->getAttributes(Param::class) as $attribute) {
-                /** @var Param $instance */
-                $instance = $attribute->newInstance();
-                $instance
-                    ->setParameter($parameter->getName())
-                    ->setRequired(!$parameter->isOptional());
-                $route->addParam($instance->getParameter(), $instance);
             }
         }
     }
@@ -280,8 +259,7 @@ class Application
             $dependencies->build();
             $instance = $dependencies->make($context->controllerFactory->getClass());
             $instance->request = $request;
-            $params = $context->route->generateParams($request);
-            $payload = $instance->{$context->route->getFunction()}(...$params);
+            $payload = $instance->{$context->route->getFunction()}(...$context->route->generateArguments($request));
             if (!$payload instanceof Controller\Response) {
                 throw new \Exception('Controller needs to return a Response object');
             }
@@ -346,5 +324,50 @@ class Application
         $reflector = new ReflectionClass($class);
         $this->addMethods($reflector);
         $this->controllers[$class] = $controller;
+    }
+
+    /**
+     * Adds parameters from a given reflection method to a route.
+     *
+     * @param ReflectionMethod $method The reflection method to add parameters from.
+     * @param Attribute\Route $route The route to add parameters to.
+     * @return void
+     */
+    private function prepareRoute(ReflectionMethod $method, Attribute\Route $route): void
+    {
+        foreach ($method->getParameters() as $parameter) {
+            $param = $parameter->getAttributes(Attribute\Param::class)[0] ?? null;
+            if ($param) {
+                /** @var Attribute\Param $instance */
+                $instance = $param->newInstance();
+                $instance->setParameter($parameter->getName());
+                $route->addArgument($parameter->getName(), $instance);
+                continue;
+            }
+            $body = $parameter->getAttributes(Attribute\Body::class)[0] ?? null;
+            if ($body) {
+                /** @var Attribute\Body $instance */
+                $instance = $body->newInstance();
+                $instance->setRequired(!$parameter->isOptional());
+                $route->addArgument($parameter->getName(), $instance);
+                continue;
+            }
+            $query = $parameter->getAttributes(Attribute\Query::class)[0] ?? null;
+            if ($query) {
+                /** @var Attribute\Query $instance */
+                $instance = $query->newInstance();
+                $instance->setRequired(!$parameter->isOptional());
+                if (DTO\Mapper::isParameterDTO($parameter)) {
+                    /**
+                     * @var ReflectionNamedType $type
+                     */
+                    $type = $parameter->getType();
+                    $instance->setDTO(DTO\Mapper::fromReflection($type));
+                }
+                $route->addArgument($parameter->getName(), $instance);
+                continue;
+            }
+            throw new \Exception('Invalid parameter type');
+        }
     }
 }

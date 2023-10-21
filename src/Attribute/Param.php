@@ -8,15 +8,14 @@ use Attribute;
 class Param
 {
     protected ?string $parameter;
-    protected ?bool $required;
 
-    public function __construct(protected string $name)
+    public function __construct(protected ?string $name = null)
     {
     }
 
     public function getName(): string
     {
-        return $this->name;
+        return $this->name ?? throw new \Exception('Param name is not set.');
     }
 
     public function getParameter(): string
@@ -27,24 +26,14 @@ class Param
         return $this->parameter;
     }
 
-    public function getRequired(): bool
+    public function hasName(): bool
     {
-        if ($this->required === null) {
-            throw new \Exception("Parameter {$this->name} has not been initialized");
-        }
-        return $this->required;
+        return $this->name !== null;
     }
 
     public function setParameter(string $parameter): self
     {
         $this->parameter = $parameter;
-
-        return $this;
-    }
-
-    public function setRequired(bool $required): self
-    {
-        $this->required = $required;
 
         return $this;
     }

@@ -26,7 +26,7 @@ class CatsService extends Service\Base
         return null;
     }
 
-    public function create(string $name): array
+    public function create(string $name): Cat
     {
         $cat = [
             'id' => (string) count($this->dataService->cats) + 1,
@@ -35,6 +35,6 @@ class CatsService extends Service\Base
 
         $this->dataService->cats[] = $cat;
 
-        return $cat;
+        return new Cat($cat['id'], $cat['name']);
     }
 }

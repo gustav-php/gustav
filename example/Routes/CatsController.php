@@ -9,7 +9,8 @@ use GustavPHP\Example\Services\CatsService;
 use GustavPHP\Gustav\Attribute\{
     Middleware,
     Route,
-    Param
+    Param,
+    Query
 };
 use GustavPHP\Gustav\Controller;
 use GustavPHP\Gustav\Router\Method;
@@ -29,7 +30,7 @@ class CatsController extends Controller\Base
     #[Route('/cats', Method::POST)]
     public function create(#[Param('name')] string $name)
     {
-        return $this->json($this->catsService->create($name));
+        return $this->serialize($this->catsService->create($name));
     }
 
     #[Route('/cats/:id')]

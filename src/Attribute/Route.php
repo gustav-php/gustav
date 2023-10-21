@@ -9,24 +9,35 @@ use Psr\Http\Message\ServerRequestInterface;
 #[Attribute(Attribute::TARGET_METHOD)]
 class Route
 {
-    protected ?string $class;
-    protected ?string $function;
     /**
-     * @var array<string,Param>
+     * @var array<string,Query|Body|Param>
      */
-    protected array $params = [];
+    protected array $arguments = [];
+    /**
+     * @var null|int
+     */
+    protected ?int $body = null;
+    /**
+     * @var null|string
+     */
+    protected ?string $class;
+    /**
+     * @var null|string
+     */
+    protected ?string $function;
     /**
      * @var array<string,int>
      */
     protected array $placeholders = [];
+    protected ?int $query = null;
 
     public function __construct(protected string $path, protected Method $method = Method::GET)
     {
     }
 
-    public function addParam(string $name, Param $param): self
+    public function addArgument(string $name, Query|Body|Param $type): self
     {
-        $this->params[$name] = $param;
+        $this->arguments[$name] = $type;
 
         return $this;
     }
@@ -37,34 +48,66 @@ class Route
     }
 
     /**
-     * Generate the parameters for the Route.
+     * Generate the arguments for the Route.
      *
      * @param ServerRequestInterface $request
      * @return array<string,mixed>
      */
-    public function generateParams(ServerRequestInterface $request): array
+    public function generateArguments(ServerRequestInterface $request): array
     {
-        $pathParams = [];
+        $params = [];
         $path = trim($request->getUri()->getPath(), "/");
         $parts = explode('/', $path);
         foreach ($this->placeholders as $key => $index) {
-            $pathParams[$key] = $parts[$index];
+            $params[$key] = $parts[$index];
         }
 
-        /**
-         * Merge Path and Query Parameters with Post Data (Path > Query > Post).
-         */
-        $params = \array_merge($pathParams, $request->getQueryParams(), (array) ($request->getParsedBody() ?? []));
-
-        return \array_reduce($this->params, function (array $carry, Param $param) use ($params) {
-            if (\array_key_exists($param->getName(), $params)) {
-                $carry[$param->getParameter()] = $params[$param->getName()];
-            } elseif ($param->getRequired()) {
-                throw new \Exception("Parameter '{$param->getName()}' is required.", 400);
+        $arguments = [];
+        foreach ($this->arguments as $argument => $attribute) {
+            switch (get_class($attribute)) {
+                case Body::class: {
+                    $body = (array) ($request->getParsedBody() ?? []);
+                    if ($attribute->hasKey()) {
+                        if (!\array_key_exists($attribute->getKey(), $body)) {
+                            throw new \Exception("Body parameter '{$attribute->getKey()}' is required.", 400);
+                        }
+                        $arguments[$argument] = $body[$attribute->getKey()];
+                    } else {
+                        $arguments[$argument] = $body;
+                    }
+                    break;
+                }
+                case Query::class: {
+                    $query = $request->getQueryParams();
+                    if ($attribute->hasKey()) {
+                        if (!\array_key_exists($attribute->getKey(), $query)) {
+                            throw new \Exception("Query parameter '{$attribute->getKey()}' is required.", 400);
+                        }
+                        $arguments[$argument] = $attribute->hasDto()
+                            ? $attribute->getDto()->build($request->getQueryParams()[$attribute->getKey()])
+                            : $request->getQueryParams()[$attribute->getKey()];
+                    } else {
+                        $arguments[$argument] = $attribute->hasDto()
+                            ? $attribute->getDto()->build($request->getQueryParams())
+                            : $request->getQueryParams();
+                    }
+                    break;
+                }
+                case Param::class: {
+                    if ($attribute->hasName()) {
+                        if (\array_key_exists($argument, $params)) {
+                            $arguments[$argument] = $params[$attribute->getName()];
+                        } else {
+                            throw new \Exception("Parameter '{$argument}' is required.", 400);
+                        }
+                    } else {
+                        $arguments[$argument] = $params;
+                    }
+                    break;
+                }
             }
-
-            return $carry;
-        }, []);
+        }
+        return $arguments;
     }
 
     public function getClass(): string
@@ -86,11 +129,6 @@ class Route
     public function getMethod(): Method
     {
         return $this->method;
-    }
-
-    public function getParam(string $name): ?Param
-    {
-        return $this->params[$name] ?? null;
     }
 
     public function getPath(): string

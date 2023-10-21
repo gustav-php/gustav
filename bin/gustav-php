@@ -2,7 +2,7 @@
 
 <?php
 
-use GustavPHP\Gustav\Internal\Dev\{
+use GustavPHP\Gustav\CLI\{
     ServeCommand,
     InstalledCommand
 };
