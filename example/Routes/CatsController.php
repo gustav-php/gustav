@@ -9,8 +9,7 @@ use GustavPHP\Example\Services\CatsService;
 use GustavPHP\Gustav\Attribute\{
     Middleware,
     Route,
-    Param,
-    Query
+    Param
 };
 use GustavPHP\Gustav\Controller;
 use GustavPHP\Gustav\Router\Method;
