@@ -3,9 +3,8 @@
 namespace GustavPHP\Gustav\Controller;
 
 use Fig\Http\Message\StatusCodeInterface;
-use Psr\Http\Message\StreamInterface;
+use GustavPHP\Gustav\Serializer;
 use React\Http\Message\Response as InternalResponse;
-use React\Stream\ReadableStreamInterface;
 
 class Response implements StatusCodeInterface
 {
@@ -67,9 +66,9 @@ class Response implements StatusCodeInterface
     /**
      * Get body
      *
-     * @return string|ReadableStreamInterface|StreamInterface
+     * @return mixed
      */
-    public function getBody(): string|ReadableStreamInterface|StreamInterface
+    public function getBody(): mixed
     {
         return $this->body;
     }
@@ -81,6 +80,17 @@ class Response implements StatusCodeInterface
     public function getHeaders(): array
     {
         return $this->headers;
+    }
+
+    public function getSerializer(): Serializer\Base|false
+    {
+        if (is_subclass_of($this->body, Serializer\Base::class)) {
+            /**
+             * @var Serializer\Base
+             */
+            return $this->body;
+        }
+        return false;
     }
     /**
      * Get status

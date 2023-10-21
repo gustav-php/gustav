@@ -23,7 +23,7 @@ class CatsController extends Controller\Base
     #[Route('/cats')]
     public function list()
     {
-        return $this->json($this->catsService->list());
+        return $this->serialize($this->catsService->list());
     }
 
     #[Route('/cats', Method::POST)]
@@ -36,6 +36,10 @@ class CatsController extends Controller\Base
     public function get(
         #[Param('id')] string $id
     ) {
-        return $this->json($this->catsService->get($id) ?? throw new Exception('Cat not found.', 404));
+        $cat = $this->catsService->get($id);
+        if (!$cat) {
+            throw new Exception('Cat not found.', 404);
+        }
+        return $this->serialize($cat);
     }
 }

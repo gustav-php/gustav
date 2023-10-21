@@ -3,6 +3,8 @@
 namespace GustavPHP\Example\Services;
 
 use DI\Attribute\Inject;
+use GustavPHP\Example\Serializers\Cat;
+use GustavPHP\Example\Serializers\CatList;
 use GustavPHP\Gustav\Service;
 
 class CatsService extends Service\Base
@@ -10,15 +12,15 @@ class CatsService extends Service\Base
     #[Inject]
     protected DataService $dataService;
 
-    public function list(): array
+    public function list(): CatList
     {
-        return $this->dataService->cats;
+        return new CatList(array_map(fn ($cat) => new Cat($cat['id'], $cat['name']), $this->dataService->cats));
     }
 
-    public function get(string $id): array|null
+    public function get(string $id): Cat|null
     {
         foreach ($this->dataService->cats as $cat) {
-            if ($cat['id'] === $id) return $cat;
+            if ($cat['id'] === $id) return new Cat($cat['id'], $cat['name']);
         }
 
         return null;
