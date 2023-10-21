@@ -68,6 +68,16 @@ class Application
                 }
             }
         }
+        if ($configuration->serializerNamespaces) {
+            foreach ($configuration->serializerNamespaces as $serializer) {
+                $classes = ClassFinder::getClassesInNamespace($serializer, ClassFinder::STANDARD_MODE);
+                foreach ($classes as $class) {
+                    if (is_subclass_of($class, Serializer\Base::class)) {
+                        Serializer\Manager::addEntity($class);
+                    }
+                }
+            }
+        }
         if ($configuration->eventNamespaces) {
             foreach ($configuration->eventNamespaces as $namespace) {
                 $classes = ClassFinder::getClassesInNamespace($namespace, ClassFinder::STANDARD_MODE);
@@ -283,6 +293,11 @@ class Application
             $payload = $instance->{$context->route->getFunction()}(...$params);
             if (!$payload instanceof Controller\Response) {
                 throw new \Exception('Controller needs to return a Response object');
+            }
+            $serializer = $payload->getSerializer();
+            if ($serializer) {
+                $payload->setBody(Serializer\Manager::getEntity($serializer::class)->serialize($serializer));
+                $payload->setBody(\json_encode($payload->getBody()));
             }
             return $response->merge($payload)->build();
         } catch (\Throwable $th) {

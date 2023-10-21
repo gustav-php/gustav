@@ -48,6 +48,12 @@ class Configuration
          */
         public readonly array $serviceNamespaces = [],
         /**
+         * Namespace containing the serializers.
+         *
+         * @var array<string>
+         */
+        public readonly array $serializerNamespaces = [],
+        /**
          * Path to the directory containing static files to serve.
          *
          * @var null|string

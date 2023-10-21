@@ -21,6 +21,9 @@ $configuration = new Configuration(
     routeNamespaces: [
         'GustavPHP\Example\Routes'
     ],
+    serializerNamespaces: [
+        'GustavPHP\Example\Serializers'
+    ],
 );
 
 $app = new Application(configuration: $configuration);

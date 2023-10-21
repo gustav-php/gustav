@@ -2,6 +2,7 @@
 
 namespace GustavPHP\Gustav\Controller;
 
+use GustavPHP\Gustav\Serializer;
 use GustavPHP\Gustav\Traits\Logger;
 use GustavPHP\Gustav\Traits\Request;
 use GustavPHP\Gustav\View;
@@ -55,6 +56,21 @@ class Base
         return new Response(
             status: $status,
             headers: ['Location' => $url]
+        );
+    }
+    /**
+     * Returns a Serializer Response.
+     *
+     * @param Serializer\Base $object
+     * @param int $status
+     * @return Response
+     */
+    protected function serialize(Serializer\Base $object, int $status = Response::STATUS_OK): Response
+    {
+        return new Response(
+            status: $status,
+            body: $object,
+            headers: ['Content-Type' => 'application/json']
         );
     }
 
