@@ -2,8 +2,7 @@
 
 namespace GustavPHP\Gustav;
 
-use Latte\Engine;
-use Latte\RuntimeException;
+use Latte\{Engine, RuntimeException};
 
 class View
 {

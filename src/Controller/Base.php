@@ -2,10 +2,8 @@
 
 namespace GustavPHP\Gustav\Controller;
 
-use GustavPHP\Gustav\Serializer;
-use GustavPHP\Gustav\Traits\Logger;
-use GustavPHP\Gustav\Traits\Request;
-use GustavPHP\Gustav\View;
+use GustavPHP\Gustav\Traits\{Logger, Request};
+use GustavPHP\Gustav\{Serializer, View};
 
 class Base
 {

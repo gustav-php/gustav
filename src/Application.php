@@ -3,13 +3,10 @@
 namespace GustavPHP\Gustav;
 
 use Exception;
-use GustavPHP\Gustav\Attribute\Param;
-use GustavPHP\Gustav\Attribute\Route;
-use GustavPHP\Gustav\Controller\ControllerFactory;
-use GustavPHP\Gustav\Controller\Response;
+use GustavPHP\Gustav\Attribute\{Param, Route};
+use GustavPHP\Gustav\Controller\{ControllerFactory, Response};
 use GustavPHP\Gustav\Logger\Logger;
-use GustavPHP\Gustav\Router\Method;
-use GustavPHP\Gustav\Router\Router;
+use GustavPHP\Gustav\Router\{Method, Router};
 use GustavPHP\Gustav\Service\Container;
 use HaydenPierce\ClassFinder\ClassFinder;
 use InvalidArgumentException;
@@ -153,15 +150,9 @@ class Application
     public function start(): void
     {
         $this->server = new HttpServer(
-            function (ServerRequestInterface $request, callable $next) {
-                return $this->initMiddelware($request, $next);
-            },
-            function (ServerRequestInterface $request, callable $next) {
-                return $this->customMiddleware($request, $next);
-            },
-            function ($request) {
-                return $this->handleRequest($request);
-            }
+            fn (ServerRequestInterface $request, callable $next) => $this->initMiddelware($request, $next),
+            fn (ServerRequestInterface $request, callable $next) => $this->customMiddleware($request, $next),
+            fn ($request) => $this->handleRequest($request)
         );
         $this->server->on('error', function (\Throwable $th) {
             $error = \json_encode([

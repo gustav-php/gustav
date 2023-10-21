@@ -2,6 +2,10 @@
     "preset": "psr12",
     "rules": {
         "array_indentation": true,
+        "single_import_per_statement": false,
+        "group_import": true,
+        "use_arrow_functions": true,
+        "simplified_null_return": true,
         "ordered_class_elements": {
             "sort_algorithm": "alpha"
         },

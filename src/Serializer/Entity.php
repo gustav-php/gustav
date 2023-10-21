@@ -2,8 +2,7 @@
 
 namespace GustavPHP\Gustav\Serializer;
 
-use GustavPHP\Gustav\Attribute\Serializer\AdditionalProperties;
-use GustavPHP\Gustav\Attribute\Serializer\Exclude;
+use GustavPHP\Gustav\Attribute\Serializer\{AdditionalProperties, Exclude};
 use ReflectionClass;
 
 class Entity
