@@ -31,7 +31,11 @@
   ],
   "autoload": {
     "psr-4": {
-      "GustavPHP\\Gustav\\": "src/",
+      "GustavPHP\\Gustav\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
       "GustavPHP\\Demo\\": "demo/"
     }
   },
@@ -43,6 +47,9 @@
   ],
   "minimum-stability": "stable",
   "config": {
+    "preferred-install": "dist",
+    "sort-packages": true,
+    "optimize-autoloader": true,
     "allow-plugins": {
       "pestphp/pest-plugin": true
     },
