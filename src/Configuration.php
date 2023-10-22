@@ -6,6 +6,10 @@ class Configuration
 {
     public function __construct(
         /**
+         * Namespace containing application classes.
+         */
+        public readonly string $namespace,
+        /**
          * Path to cache directory.
          *
          * @var string
@@ -30,25 +34,25 @@ class Configuration
          */
         public readonly int $port = 4201,
         /**
-         * Namespace containing the routes.
+         * Namespace containing additional routes.
          *
          * @var array<string>
          */
         public readonly array $routeNamespaces = [],
         /**
-         * Namespace containing the event listeners.
+         * Namespace containing additional event listeners.
          *
          * @var array<string>
          */
         public readonly array $eventNamespaces = [],
         /**
-         * Namespace containing the services.
+         * Namespace containing additional services.
          *
          * @var array<string>
          */
         public readonly array $serviceNamespaces = [],
         /**
-         * Namespace containing the serializers.
+         * Namespace containing additional serializers.
          *
          * @var array<string>
          */

@@ -2,13 +2,12 @@
 
 namespace GustavPHP\Gustav\Controller;
 
-use GustavPHP\Gustav\Traits\{Logger, Request};
+use GustavPHP\Gustav\Traits\Logger;
 use GustavPHP\Gustav\{Serializer, View};
 
 class Base
 {
     use Logger;
-    use Request;
 
     /**
      * Returns a HTML Response.

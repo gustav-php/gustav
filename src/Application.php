@@ -7,7 +7,6 @@ use GustavPHP\Gustav\Controller\{ControllerFactory, Response};
 use GustavPHP\Gustav\Logger\Logger;
 use GustavPHP\Gustav\Router\{Method, Router};
 use GustavPHP\Gustav\Service\Container;
-use HaydenPierce\ClassFinder\ClassFinder;
 use InvalidArgumentException;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\HttpServer;
@@ -55,35 +54,14 @@ class Application
         Configuration $configuration
     ) {
         self::$configuration = $configuration;
-        if ($configuration->routeNamespaces) {
-            foreach ($configuration->routeNamespaces as $namespace) {
-                $classes = ClassFinder::getClassesInNamespace($namespace, ClassFinder::STANDARD_MODE);
-                foreach ($classes as $class) {
-                    if (is_subclass_of($class, Controller\Base::class)) {
-                        $this->addRoutes([$class]);
-                    }
-                }
-            }
+        foreach (Discovery::discoverController() as $class) {
+            $this->addRoutes([$class]);
         }
-        if ($configuration->serializerNamespaces) {
-            foreach ($configuration->serializerNamespaces as $serializer) {
-                $classes = ClassFinder::getClassesInNamespace($serializer, ClassFinder::STANDARD_MODE);
-                foreach ($classes as $class) {
-                    if (is_subclass_of($class, Serializer\Base::class)) {
-                        Serializer\Manager::addEntity($class);
-                    }
-                }
-            }
+        foreach (Discovery::discoverSerializers() as $class) {
+            Serializer\Manager::addEntity($class);
         }
-        if ($configuration->eventNamespaces) {
-            foreach ($configuration->eventNamespaces as $namespace) {
-                $classes = ClassFinder::getClassesInNamespace($namespace, ClassFinder::STANDARD_MODE);
-                foreach ($classes as $class) {
-                    if (is_subclass_of($class, Event\Base::class)) {
-                        Event\Manager::addListener($class);
-                    }
-                }
-            }
+        foreach (Discovery::discoverEvents() as $class) {
+            Event\Manager::addListener($class);
         }
         if ($configuration->files) {
             if (\is_dir($configuration->files)) {
@@ -230,7 +208,6 @@ class Application
     {
         $response = new Response();
         $context = new Context(
-            container: new Container(self::$configuration->serviceNamespaces),
             path: $request->getAttribute('Gustav-Path'),
             route: $request->getAttribute('Gustav-Route'),
             controllerFactory: $request->getAttribute('Gustav-Controller')
@@ -254,11 +231,10 @@ class Application
                     throw new \Exception(code: Response::STATUS_INTERNAL_SERVER_ERROR);
                 }
             }
-            $dependencies = new Container(self::$configuration->serviceNamespaces);
+            $dependencies = new Container();
             $dependencies->addDependency([ServerRequestInterface::class => fn () => $request]);
             $dependencies->build();
             $instance = $dependencies->make($context->controllerFactory->getClass());
-            $instance->request = $request;
             $payload = $instance->{$context->route->getFunction()}(...$context->route->generateArguments($request));
             if (!$payload instanceof Controller\Response) {
                 throw new \Exception('Controller needs to return a Response object');

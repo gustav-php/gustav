@@ -7,8 +7,8 @@ use DI\Definition\Exception\InvalidDefinition;
 use DI\Definition\Source\DefinitionSource;
 use DI\DependencyException;
 use Exception;
-use GustavPHP\Gustav\Application;
 use GustavPHP\Gustav\Controller\Base;
+use GustavPHP\Gustav\{Application, Discovery};
 use HaydenPierce\ClassFinder\ClassFinder;
 use InvalidArgumentException;
 use LogicException;
@@ -16,12 +16,11 @@ use LogicException;
 class Container
 {
     protected DI\ContainerBuilder $builder;
-    protected ?DI\Container $container;
+    protected ?DI\Container $container = null;
 
     /**
      * Container constructor.
      *
-     * @param array<string> $namespaces
      * @return void
      * @throws LogicException
      * @throws InvalidArgumentException
@@ -29,7 +28,7 @@ class Container
      * @throws InvalidDefinition
      * @throws DependencyException
      */
-    public function __construct(array $namespaces)
+    public function __construct()
     {
         $this->builder = new DI\ContainerBuilder();
         $this->builder
@@ -40,15 +39,6 @@ class Container
             $this->builder
                 ->writeProxiesToFile(true, Application::$configuration->cache)
                 ->enableCompilation(Application::$configuration->cache);
-        }
-
-        foreach ($namespaces as $namespace) {
-            $classes = ClassFinder::getClassesInNamespace($namespace, ClassFinder::STANDARD_MODE);
-            foreach ($classes as $class) {
-                if (is_subclass_of($class, Base::class)) {
-                    $this->builder->addDefinitions([$class => DI\create($class)]);
-                }
-            }
         }
     }
 

@@ -105,6 +105,24 @@ class Route
                     }
                     break;
                 }
+                case Header::class: {
+                    if ($attribute->hasName()) {
+                        if ($request->hasHeader($attribute->getName())) {
+                            $arguments[$argument] = $request->getHeader($attribute->getName());
+                        } else {
+                            if ($attribute->isRequired()) {
+                                throw new \Exception("Header '{$attribute->getName()}' is required.", 400);
+                            }
+                        }
+                    } else {
+                        $arguments[$argument] = $request->getHeaders();
+                    }
+                    break;
+                }
+                case Request::class: {
+                    $arguments[$argument] = $request;
+                    break;
+                }
             }
         }
         return $arguments;

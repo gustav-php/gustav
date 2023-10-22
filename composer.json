@@ -13,9 +13,9 @@
   },
   "scripts": {
     "test": "./vendor/bin/pest",
-    "example": [
+    "demo": [
       "Composer\\Config::disableProcessTimeout",
-      "./bin/gustav-php serve ./example/index.php"
+      "./bin/gustav-php serve ./demo/index.php"
     ],
     "check": "./vendor/bin/phpstan analyze",
     "lint": "./vendor/bin/pint --test src tests",
@@ -32,7 +32,7 @@
   "autoload": {
     "psr-4": {
       "GustavPHP\\Gustav\\": "src/",
-      "GustavPHP\\Example\\": "example/"
+      "GustavPHP\\Demo\\": "demo/"
     }
   },
   "authors": [
