@@ -9,7 +9,6 @@ use DI\DependencyException;
 use Exception;
 use GustavPHP\Gustav\Controller\Base;
 use GustavPHP\Gustav\{Application, Discovery};
-use HaydenPierce\ClassFinder\ClassFinder;
 use InvalidArgumentException;
 use LogicException;
 
