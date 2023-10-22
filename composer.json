@@ -1,7 +1,7 @@
 {
   "name": "gustav-php/gustav",
   "description": "A modern HTTP Framework for PHP.",
-  "website": "https://gustav-php.github.io",
+  "homepage": "https://gustav-php.github.io",
   "keywords": [
     "framework",
     "gustav"
