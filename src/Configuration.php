@@ -46,12 +46,6 @@ class Configuration
          */
         public readonly array $eventNamespaces = [],
         /**
-         * Namespace containing additional services.
-         *
-         * @var array<string>
-         */
-        public readonly array $serviceNamespaces = [],
-        /**
          * Namespace containing additional serializers.
          *
          * @var array<string>
