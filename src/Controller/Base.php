@@ -26,6 +26,22 @@ class Base
     }
 
     /**
+     * Returns a Plaintext Response.
+     * 
+     * @param string $body 
+     * @param int $status 
+     * @return Response 
+     */
+    protected function plaintext(string $body, int $status = Response::STATUS_OK): Response
+    {
+        return new Response(
+            status: $status,
+            body: $body,
+            headers: ['Content-Type' => 'text/plain']
+        );
+    }
+
+    /**
      * Returns a JSON Response.
      *
      * @param array<mixed>|object $data
