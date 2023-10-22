@@ -1,10 +1,19 @@
 {
   "name": "gustav-php/gustav",
   "description": "A modern HTTP Framework for PHP.",
+  "website": "https://gustav-php.github.io",
+  "keywords": [
+    "framework",
+    "gustav"
+  ],
   "type": "library",
   "license": "MIT",
+  "support": {
+    "issues": "https://github.com/gustav-php/gustav/issues",
+    "source": "https://github.com/gustav-php/gustav"
+  },
   "require": {
-    "php": "^8.1",
+    "php": ">=8.1",
     "haydenpierce/class-finder": "^0.5.1",
     "symfony/console": "^6.2",
     "latte/latte": "^3.0",
@@ -12,14 +21,14 @@
     "php-di/php-di": "^7.0"
   },
   "scripts": {
-    "test": "./vendor/bin/pest",
+    "test": "@php ./vendor/bin/pest",
     "demo": [
       "Composer\\Config::disableProcessTimeout",
-      "./bin/gustav-php serve ./demo/index.php"
+      "@php ./bin/gustav-php serve ./demo/index.php"
     ],
-    "check": "./vendor/bin/phpstan analyze",
-    "lint": "./vendor/bin/pint --test src tests demo",
-    "format": "./vendor/bin/pint src tests demo"
+    "check": "@php ./vendor/bin/phpstan analyze",
+    "lint": "@php ./vendor/bin/pint --test src tests demo",
+    "format": "@php ./vendor/bin/pint src tests demo"
   },
   "require-dev": {
     "laravel/pint": "^1.1",
@@ -46,6 +55,7 @@
     }
   ],
   "minimum-stability": "stable",
+  "prefer-stable": true,
   "config": {
     "preferred-install": "dist",
     "sort-packages": true,
