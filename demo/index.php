@@ -1,13 +1,10 @@
 <?php
 
-
 namespace GustavPHP\Demo;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use GustavPHP\Gustav\Application;
-use GustavPHP\Gustav\Configuration;
-use GustavPHP\Gustav\Mode;
+use GustavPHP\Gustav\{Application, Configuration, Mode};
 
 $configuration = new Configuration(
     mode: Mode::Development,

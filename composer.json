@@ -18,8 +18,8 @@
       "./bin/gustav-php serve ./demo/index.php"
     ],
     "check": "./vendor/bin/phpstan analyze",
-    "lint": "./vendor/bin/pint --test src tests",
-    "format": "./vendor/bin/pint src tests"
+    "lint": "./vendor/bin/pint --test src tests demo",
+    "format": "./vendor/bin/pint src tests demo"
   },
   "require-dev": {
     "laravel/pint": "^1.1",

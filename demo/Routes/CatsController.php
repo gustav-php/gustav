@@ -8,8 +8,8 @@ use GustavPHP\Demo\Middlewares\Logs;
 use GustavPHP\Demo\Services\CatsService;
 use GustavPHP\Gustav\Attribute\{
     Middleware,
-    Route,
-    Param
+    Param,
+    Route
 };
 use GustavPHP\Gustav\Controller;
 use GustavPHP\Gustav\Router\Method;
@@ -19,12 +19,6 @@ class CatsController extends Controller\Base
 {
     #[Inject]
     protected CatsService $catsService;
-
-    #[Route('/cats')]
-    public function list()
-    {
-        return $this->serialize($this->catsService->list());
-    }
 
     #[Route('/cats', Method::POST)]
     public function create(#[Param('name')] string $name)
@@ -41,5 +35,11 @@ class CatsController extends Controller\Base
             throw new Exception('Cat not found.', 404);
         }
         return $this->serialize($cat);
+    }
+
+    #[Route('/cats')]
+    public function list()
+    {
+        return $this->serialize($this->catsService->list());
     }
 }
