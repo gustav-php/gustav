@@ -1,16 +1,16 @@
 <?php
 
-namespace GustavPHP\Example\Services;
+namespace GustavPHP\Demo\Services;
 
 use DI\Attribute\Inject;
-use GustavPHP\Example\Serializers\Cat;
-use GustavPHP\Example\Serializers\CatList;
+use GustavPHP\Demo\Serializers\Cat;
+use GustavPHP\Demo\Serializers\CatList;
 use GustavPHP\Gustav\Service;
 
 class CatsService extends Service\Base
 {
     #[Inject]
-    protected DataService $dataService;
+    public DataService $dataService;
 
     public function list(): CatList
     {

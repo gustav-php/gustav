@@ -1,6 +1,6 @@
 <?php
 
-namespace GustavPHP\Example\Middlewares;
+namespace GustavPHP\Demo\Middlewares;
 
 use GustavPHP\Gustav\Logger\Logger;
 use GustavPHP\Gustav\Middleware;

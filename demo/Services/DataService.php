@@ -1,6 +1,6 @@
 <?php
 
-namespace GustavPHP\Example\Services;
+namespace GustavPHP\Demo\Services;
 
 use GustavPHP\Gustav\Service;
 

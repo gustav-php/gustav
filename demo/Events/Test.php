@@ -1,6 +1,6 @@
 <?php
 
-namespace GustavPHP\Example\Events;
+namespace GustavPHP\Demo\Events;
 
 use GustavPHP\Gustav\Attribute\Event;
 use GustavPHP\Gustav\Event\Base;

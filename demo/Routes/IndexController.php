@@ -1,10 +1,10 @@
 <?php
 
-namespace GustavPHP\Example\Routes;
+namespace GustavPHP\Demo\Routes;
 
 use DI\Attribute\Inject;
-use GustavPHP\Example\Middlewares\Logs;
-use GustavPHP\Example\Services\DataService;
+use GustavPHP\Demo\Middlewares\Logs;
+use GustavPHP\Demo\Services\DataService;
 use GustavPHP\Gustav\Attribute\{
     Middleware,
     Route

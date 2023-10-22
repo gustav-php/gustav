@@ -1,11 +1,11 @@
 <?php
 
-namespace GustavPHP\Example\Routes;
+namespace GustavPHP\Demo\Routes;
 
 use DI\Attribute\Inject;
 use Exception;
-use GustavPHP\Example\Middlewares\Logs;
-use GustavPHP\Example\Services\CatsService;
+use GustavPHP\Demo\Middlewares\Logs;
+use GustavPHP\Demo\Services\CatsService;
 use GustavPHP\Gustav\Attribute\{
     Middleware,
     Route,

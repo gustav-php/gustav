@@ -1,6 +1,6 @@
 <?php
 
-namespace GustavPHP\Example\Serializers;
+namespace GustavPHP\Demo\Serializers;
 
 use GustavPHP\Gustav\Attribute\Serializer\Exclude;
 use GustavPHP\Gustav\Serializer;

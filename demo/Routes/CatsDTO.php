@@ -1,6 +1,6 @@
 <?php
 
-namespace GustavPHP\Example\Routes;
+namespace GustavPHP\Demo\Routes;
 
 class CatsDTO
 {
