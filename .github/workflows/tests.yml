@@ -1,42 +1,52 @@
 name: Tests
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    push:
+        branches: ["main"]
+    pull_request:
+        branches: ["main"]
 
 permissions:
-  contents: read
+    contents: read
 
 jobs:
-  build:
+    build:
+        strategy:
+            matrix:
+                php:
+                    - "8.1"
+                    - "8.2"
+                    - "8.3"
+        runs-on: ubuntu-latest
 
-    runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v3
 
-    steps:
-    - uses: actions/checkout@v3
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php }}
 
-    - name: Validate composer.json and composer.lock
-      run: composer validate --strict
+            - name: Validate composer.json and composer.lock
+              run: composer validate --strict
 
-    - name: Cache Composer packages
-      id: composer-cache
-      uses: actions/cache@v3
-      with:
-        path: vendor
-        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-php-
+            - name: Cache Composer packages
+              id: composer-cache
+              uses: actions/cache@v3
+              with:
+                  path: vendor
+                  key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-php-
 
-    - name: Install dependencies
-      run: composer install --prefer-dist --no-progress
+            - name: Install dependencies
+              run: composer install --prefer-dist --no-progress
 
-    - name: Run static code check
-      run: composer run check
+            - name: Run static code check
+              run: composer run check
 
-    - name: Run linter
-      run: composer run lint
+            - name: Run linter
+              run: composer run lint
 
-    - name: Run test suite
-      run: composer run test
+            - name: Run test suite
+              run: composer run test
