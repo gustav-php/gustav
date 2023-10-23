@@ -251,12 +251,20 @@ class Application
             } else {
                 $response->setStatus($th->getCode());
             }
-            $response->setBody([
-                'error' => $th->getMessage(),
-                'file' => $th->getFile(),
-                'line' => $th->getLine(),
-                'code' => $th->getCode()
-            ]);
+            if (self::isProduction()) {
+                $response->setBody(
+                    $th->getCode() >= 500
+                        ? 'Server Error'
+                        : $th->getMessage()
+                );
+            } else {
+                $response->setBody([
+                    'error' => $th->getMessage(),
+                    'file' => $th->getFile(),
+                    'line' => $th->getLine(),
+                    'code' => $th->getCode()
+                ]);
+            }
             return $response->buildJson();
         }
     }
