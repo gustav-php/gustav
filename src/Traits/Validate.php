@@ -7,12 +7,12 @@ use GustavPHP\Gustav\Validation\Validation;
 trait Validate
 {
     /**
-     * @param array<mixed,Validation> $values
+     * @param array<array{mixed,Validation}> $entries
      * @return void
      */
-    public function validate(array $values): void
+    public function validate(array $entries): void
     {
-        foreach ($values as $value => $validation) {
+        foreach ($entries as [$value, $validation]) {
             $validation->validate($value);
         }
     }
