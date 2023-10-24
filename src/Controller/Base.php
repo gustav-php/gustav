@@ -5,6 +5,12 @@ namespace GustavPHP\Gustav\Controller;
 use GustavPHP\Gustav\Traits\{Logger, Validate};
 use GustavPHP\Gustav\{Serializer, View};
 
+use function json_encode;
+
+use Latte\RuntimeException;
+use LogicException;
+use Throwable;
+
 class Base
 {
     use Logger;
@@ -37,7 +43,7 @@ class Base
     {
         return new Response(
             status: $status,
-            body: \json_encode($data),
+            body: json_encode($data),
             headers: ['Content-Type' => 'application/json']
         );
     }
@@ -94,9 +100,9 @@ class Base
      * @param string $template
      * @param array<mixed> $params
      * @return Response
-     * @throws \LogicException
-     * @throws \Latte\RuntimeException
-     * @throws \Throwable
+     * @throws LogicException
+     * @throws RuntimeException
+     * @throws Throwable
      */
     protected function view(string $template, array $params = []): Response
     {

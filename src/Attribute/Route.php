@@ -2,7 +2,10 @@
 
 namespace GustavPHP\Gustav\Attribute;
 
+use function array_key_exists;
+
 use Attribute;
+use Exception;
 use GustavPHP\Gustav\Router\Method;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -52,6 +55,8 @@ class Route
      *
      * @param ServerRequestInterface $request
      * @return array<string,mixed>
+     * @throws Exception
+     * @throws Exception
      */
     public function generateArguments(ServerRequestInterface $request): array
     {
@@ -68,8 +73,8 @@ class Route
                 case Body::class: {
                     $body = (array) ($request->getParsedBody() ?? []);
                     if ($attribute->hasKey()) {
-                        if (!\array_key_exists($attribute->getKey(), $body)) {
-                            throw new \Exception("Body parameter '{$attribute->getKey()}' is required.", 400);
+                        if (!array_key_exists($attribute->getKey(), $body)) {
+                            throw new Exception("Body parameter '{$attribute->getKey()}' is required.", 400);
                         }
                         $arguments[$argument] = $body[$attribute->getKey()];
                     } else {
@@ -80,8 +85,8 @@ class Route
                 case Query::class: {
                     $query = $request->getQueryParams();
                     if ($attribute->hasKey()) {
-                        if (!\array_key_exists($attribute->getKey(), $query)) {
-                            throw new \Exception("Query parameter '{$attribute->getKey()}' is required.", 400);
+                        if (!array_key_exists($attribute->getKey(), $query)) {
+                            throw new Exception("Query parameter '{$attribute->getKey()}' is required.", 400);
                         }
                         $arguments[$argument] = $attribute->hasDto()
                             ? $attribute->getDto()->build($request->getQueryParams()[$attribute->getKey()])
@@ -95,10 +100,10 @@ class Route
                 }
                 case Param::class: {
                     if ($attribute->hasName()) {
-                        if (\array_key_exists($argument, $params)) {
+                        if (array_key_exists($argument, $params)) {
                             $arguments[$argument] = $params[$attribute->getName()];
                         } else {
-                            throw new \Exception("Parameter '{$argument}' is required.", 400);
+                            throw new Exception("Parameter '{$argument}' is required.", 400);
                         }
                     } else {
                         $arguments[$argument] = $params;
@@ -111,7 +116,7 @@ class Route
                             $arguments[$argument] = $request->getHeader($attribute->getName());
                         } else {
                             if ($attribute->isRequired()) {
-                                throw new \Exception("Header '{$attribute->getName()}' is required.", 400);
+                                throw new Exception("Header '{$attribute->getName()}' is required.", 400);
                             }
                         }
                     } else {
@@ -131,7 +136,7 @@ class Route
     public function getClass(): string
     {
         if ($this->class === null) {
-            throw new \Exception('Class not set');
+            throw new Exception('Class not set');
         }
         return $this->class;
     }
@@ -139,7 +144,7 @@ class Route
     public function getFunction(): string
     {
         if ($this->function === null) {
-            throw new \Exception('Function not set');
+            throw new Exception('Function not set');
         }
         return $this->function;
     }

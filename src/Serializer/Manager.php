@@ -2,6 +2,8 @@
 
 namespace GustavPHP\Gustav\Serializer;
 
+use ReflectionException;
+
 class Manager
 {
     /**
@@ -12,6 +14,7 @@ class Manager
      *
      * @param class-string<Base> $className
      * @return void
+     * @throws ReflectionException
      */
     public static function addEntity(string $className): void
     {

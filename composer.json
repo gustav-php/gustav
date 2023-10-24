@@ -14,6 +14,7 @@
   },
   "require": {
     "php": ">=8.2",
+    "ext-fileinfo": "*",
     "haydenpierce/class-finder": "^0.5.1",
     "latte/latte": "^3.0",
     "php-di/php-di": "^7.0",

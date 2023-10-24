@@ -3,6 +3,7 @@
 namespace GustavPHP\Gustav\Attribute;
 
 use Attribute;
+use Exception;
 
 #[Attribute(Attribute::TARGET_PARAMETER)]
 class Header
@@ -14,7 +15,7 @@ class Header
 
     public function getName(): string
     {
-        return $this->name ?? throw new \Exception('Query key is not set.');
+        return $this->name ?? throw new Exception('Query key is not set.');
     }
 
     public function hasName(): bool

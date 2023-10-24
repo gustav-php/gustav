@@ -3,6 +3,7 @@
 namespace GustavPHP\Gustav\Attribute;
 
 use Attribute;
+use Exception;
 use GustavPHP\Gustav\DTO\Mapper;
 
 #[Attribute(Attribute::TARGET_PARAMETER)]
@@ -16,12 +17,12 @@ class Query
 
     public function getDto(): Mapper
     {
-        return $this->dto ?? throw new \Exception('DTO is not set.');
+        return $this->dto ?? throw new Exception('DTO is not set.');
     }
 
     public function getKey(): string
     {
-        return $this->key ?? throw new \Exception('Query key is not set.');
+        return $this->key ?? throw new Exception('Query key is not set.');
     }
 
     public function hasDto(): bool
