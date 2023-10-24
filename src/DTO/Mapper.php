@@ -4,6 +4,7 @@ namespace GustavPHP\Gustav\DTO;
 
 use Exception;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionNamedType;
 use ReflectionParameter;
 use ReflectionProperty;
@@ -11,31 +12,31 @@ use ReflectionProperty;
 class Mapper
 {
     /**
-     * @var array<string> $properties
-     */
-    private array $properties = [];
-    /**
      * @var array<string> $required
      */
     private array $required = [];
     /**
      * @param class-string $className
      * @return void
-     */
-    public function __construct(private string $className)
+     * @throws ReflectionException
+* @throws ReflectionException
+*/
+    public function __construct(private readonly string $className)
     {
         $reflection = new ReflectionClass($className);
         $properties = $reflection->getProperties(ReflectionProperty::IS_PUBLIC);
         foreach ($properties as $property) {
-            $this->properties[] = $property->getName();
             if (!$property->hasDefaultValue()) {
                 $this->required[] = $property->getName();
             }
         }
     }
+
     /**
      * @param array<string,mixed> $data
+     * @param bool $validate
      * @return object
+     * @throws Exception
      */
     public function build(array $data, bool $validate = true): object
     {

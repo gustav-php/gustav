@@ -4,6 +4,7 @@ namespace GustavPHP\Gustav\Event;
 
 use GustavPHP\Gustav\Attribute\Event;
 use ReflectionClass;
+use ReflectionException;
 
 class Manager
 {
@@ -17,6 +18,8 @@ class Manager
      *
      * @param class-string<Base> $class
      * @return void
+     * @throws ReflectionException
+     * @throws ReflectionException
      */
     public static function addListener(string $class): void
     {

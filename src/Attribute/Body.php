@@ -3,6 +3,7 @@
 namespace GustavPHP\Gustav\Attribute;
 
 use Attribute;
+use Exception;
 
 #[Attribute(Attribute::TARGET_PARAMETER)]
 class Body
@@ -12,9 +13,9 @@ class Body
     {
     }
 
-    public function getKey(): mixed
+    public function getKey(): string
     {
-        return $this->key ?? throw new \Exception('Body key is not set.');
+        return $this->key ?? throw new Exception('Body key is not set.');
     }
 
     public function hasKey(): bool

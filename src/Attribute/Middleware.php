@@ -12,19 +12,19 @@ class Middleware
     /**
      * Middleware Attribute.
      *
-     * @param class-string<Base> $class
+     * @param Base $instance
      * @return void
      * @throws Exception
      */
-    public function __construct(protected string $class)
+    public function __construct(protected Base $instance)
     {
-        if (!is_subclass_of($class, Base::class)) {
-            throw new \Exception("Class {$class} must extend " . Base::class);
-        }
     }
 
-    public function initialize(): Base
+    /**
+     * @return Base
+     */
+    public function getInstance(): Base
     {
-        return new $this->class();
+        return $this->instance;
     }
 }

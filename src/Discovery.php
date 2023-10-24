@@ -60,7 +60,7 @@ class Discovery
             $default,
             ...Application::$configuration->{$configurationKey}
         ] as $namespace) {
-            $classes = ClassFinder::getClassesInNamespace($namespace, ClassFinder::STANDARD_MODE);
+            $classes = ClassFinder::getClassesInNamespace($namespace);
             foreach ($classes as $class) {
                 if (is_subclass_of($class, $base)) {
                     yield $class;

@@ -1,12 +1,12 @@
 <?php
 
-namespace GustavPHP\Gustav\Validation\General;
+namespace GustavPHP\Gustav\Validation\Common;
 
 use GustavPHP\Gustav\Validation\Validation;
 
 class Nullable extends Validation
 {
-    public function __construct(private Validation $validator)
+    public function __construct(private readonly Validation $validator)
     {
     }
 

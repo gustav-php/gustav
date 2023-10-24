@@ -3,6 +3,7 @@
 namespace GustavPHP\Gustav\Attribute;
 
 use Attribute;
+use Exception;
 
 #[Attribute(Attribute::TARGET_PARAMETER)]
 class Param
@@ -15,13 +16,13 @@ class Param
 
     public function getName(): string
     {
-        return $this->name ?? throw new \Exception('Param name is not set.');
+        return $this->name ?? throw new Exception('Param name is not set.');
     }
 
     public function getParameter(): string
     {
         if ($this->parameter === null) {
-            throw new \Exception("Parameter {$this->name} has not been initialized");
+            throw new Exception("Parameter {$this->name} has not been initialized");
         }
         return $this->parameter;
     }

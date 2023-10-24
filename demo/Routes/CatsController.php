@@ -14,14 +14,14 @@ use GustavPHP\Gustav\Attribute\{
 use GustavPHP\Gustav\Controller;
 use GustavPHP\Gustav\Router\Method;
 
-#[Middleware(Logs::class)]
+#[Middleware(new Logs())]
 class CatsController extends Controller\Base
 {
     #[Inject]
     protected CatsService $catsService;
 
     #[Route('/cats', Method::POST)]
-    public function create(#[Param('name')] string $name)
+    public function create(#[Param('name')] string $name): Controller\Response
     {
         return $this->serialize($this->catsService->create($name));
     }
@@ -29,7 +29,7 @@ class CatsController extends Controller\Base
     #[Route('/cats/:id')]
     public function get(
         #[Param('id')] string $id
-    ) {
+    ): Controller\Response {
         $cat = $this->catsService->get($id);
         if (!$cat) {
             throw new Exception('Cat not found.', 404);
@@ -38,7 +38,7 @@ class CatsController extends Controller\Base
     }
 
     #[Route('/cats')]
-    public function list()
+    public function list(): Controller\Response
     {
         return $this->serialize($this->catsService->list());
     }

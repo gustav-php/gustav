@@ -1,7 +1,8 @@
 <?php
 
-namespace GustavPHP\Gustav\Validation\General;
+namespace GustavPHP\Gustav\Validation\Common;
 
+use Exception;
 use GustavPHP\Gustav\Validation\Validation;
 
 class Boolean extends Validation
@@ -12,6 +13,6 @@ class Boolean extends Validation
             return true;
         }
 
-        throw new \Exception("value must be boolean");
+        throw new Exception("value must be boolean");
     }
 }

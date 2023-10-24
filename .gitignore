@@ -3,4 +3,5 @@
 /demo/cache
 .env
 .envrc
+.idea
 .vscode/

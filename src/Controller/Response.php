@@ -4,6 +4,7 @@ namespace GustavPHP\Gustav\Controller;
 
 use Fig\Http\Message\StatusCodeInterface;
 use GustavPHP\Gustav\Serializer;
+use InvalidArgumentException;
 use React\Http\Message\Response as InternalResponse;
 
 class Response implements StatusCodeInterface
@@ -48,7 +49,7 @@ class Response implements StatusCodeInterface
      * Build a Response with a JSON body.
      *
      * @return InternalResponse
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     public function buildJson(): InternalResponse
     {

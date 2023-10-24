@@ -14,7 +14,7 @@ class CatsService extends Service\Base
     public function create(string $name): Cat
     {
         $cat = [
-            'id' => (string) count($this->dataService->cats) + 1,
+            'id' => (string) (count($this->dataService->cats) + 1),
             'name' => $name
         ];
 

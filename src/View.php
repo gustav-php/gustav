@@ -3,6 +3,8 @@
 namespace GustavPHP\Gustav;
 
 use Latte\{Engine, RuntimeException};
+use LogicException;
+use Throwable;
 
 class View
 {
@@ -18,9 +20,9 @@ class View
      * @param string $template
      * @param array<mixed> $params
      * @return string
-     * @throws \LogicException
+     * @throws LogicException
      * @throws RuntimeException
-     * @throws \Throwable
+     * @throws Throwable
      */
     public static function render(string $template, array $params = []): string
     {

@@ -3,12 +3,9 @@
 namespace GustavPHP\Gustav\Service;
 
 use DI;
-use DI\Definition\Exception\InvalidDefinition;
-use DI\Definition\Source\DefinitionSource;
-use DI\DependencyException;
 use Exception;
+use GustavPHP\Gustav\Application;
 use GustavPHP\Gustav\Controller\Base;
-use GustavPHP\Gustav\{Application, Discovery};
 use InvalidArgumentException;
 use LogicException;
 
@@ -24,8 +21,6 @@ class Container
      * @throws LogicException
      * @throws InvalidArgumentException
      * @throws Exception
-     * @throws InvalidDefinition
-     * @throws DependencyException
      */
     public function __construct()
     {
@@ -44,13 +39,12 @@ class Container
     /**
      * Add a dependency to the container.
      *
-     * @param (string|callable|DefinitionSource)[] $definitions
+     * @param array<callable> $definitions
      * @return void
-     * @throws LogicException
      */
-    public function addDependency(string|array|DefinitionSource ...$definitions): void
+    public function addDependency(array $definitions): void
     {
-        $this->builder->addDefinitions(...$definitions);
+        $this->builder->addDefinitions($definitions);
     }
 
     public function build(): void

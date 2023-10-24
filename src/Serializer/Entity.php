@@ -3,7 +3,12 @@
 namespace GustavPHP\Gustav\Serializer;
 
 use GustavPHP\Gustav\Attribute\Serializer\{AdditionalProperties, Exclude};
+use InvalidArgumentException;
+
+use function is_subclass_of;
+
 use ReflectionClass;
+use ReflectionException;
 
 class Entity
 {
@@ -31,12 +36,14 @@ class Entity
     /**
      * @param class-string<Base> $className
      * @return void
-     */
+     * @throws ReflectionException
+* @throws ReflectionException
+*/
     public function __construct(
         string $className
     ) {
-        if (!\is_subclass_of($className, Base::class)) {
-            throw new \InvalidArgumentException("Class {$className} is not a subclass of " . Base::class);
+        if (!is_subclass_of($className, Base::class)) {
+            throw new InvalidArgumentException("Class {$className} is not a subclass of " . Base::class);
         }
         $this->reflection = new ReflectionClass($className);
         $this->hasAdditionalProperties = !!$this->reflection->getAttributes(AdditionalProperties::class);

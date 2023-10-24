@@ -12,14 +12,14 @@ use GustavPHP\Gustav\Attribute\{
 use GustavPHP\Gustav\Controller;
 use GustavPHP\Gustav\Event\Manager;
 
-#[Middleware(Logs::class)]
+#[Middleware(new Logs())]
 class IndexController extends Controller\Base
 {
     #[Inject]
     protected DataService $dataService;
 
     #[Route('/')]
-    public function index()
+    public function index(): Controller\Response
     {
         Manager::dispatch('test', [
             'test' => 'test'

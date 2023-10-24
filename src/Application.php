@@ -2,19 +2,24 @@
 
 namespace GustavPHP\Gustav;
 
+use Composer\InstalledVersions;
 use Exception;
 use GustavPHP\Gustav\Controller\{ControllerFactory, Response};
 use GustavPHP\Gustav\Logger\Logger;
 use GustavPHP\Gustav\Router\{Method, Router};
 use GustavPHP\Gustav\Service\Container;
-use InvalidArgumentException;
 use Psr\Http\Message\ServerRequestInterface;
 use React\Http\HttpServer;
 use React\Http\Message\Response as MessageResponse;
 use React\Socket\SocketServer;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionMethod;
 use ReflectionNamedType;
+use SplFileInfo;
+use Throwable;
 
 class Application
 {
@@ -31,17 +36,9 @@ class Application
      */
     protected array $files = [];
     /**
-     * @var Middleware\Base[]
-     */
-    protected array $middlewares = [];
-    /**
      * @var null|HttpServer
      */
     protected ?HttpServer $server;
-    /**
-     * @var null|SocketServer
-     */
-    protected ?SocketServer $socket;
 
     /**
      * Creates a new application instance.
@@ -64,11 +61,11 @@ class Application
             Event\Manager::addListener($class);
         }
         if ($configuration->files) {
-            if (\is_dir($configuration->files)) {
-                $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($configuration->files));
+            if (is_dir($configuration->files)) {
+                $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($configuration->files));
                 foreach ($iterator as $file) {
                     /**
-                     * @var \SplFileInfo $file
+                     * @var SplFileInfo $file
                      */
                     if ($file->isDir()) {
                         continue;
@@ -81,25 +78,11 @@ class Application
     }
 
     /**
-     * Adds middleware classes to the application.
-     *
-     * @param array<class-string<Middleware\Base>> $classes The classes to add as middleware.
-     * @return self Returns the application instance.
-     */
-    public function addMiddlewares(array $classes): self
-    {
-        foreach ($classes as $class) {
-            $this->middlewares[] = new $class();
-        }
-
-        return $this;
-    }
-
-    /**
      * Adds route classes to the application.
      *
      * @param array<class-string<Controller\Base>> $classes The classes to add as routes.
      * @return self Returns the application instance.
+     * @throws ReflectionException
      */
     public function addRoutes(array $classes): self
     {
@@ -128,12 +111,12 @@ class Application
     public function start(): void
     {
         $this->server = new HttpServer(
-            fn (ServerRequestInterface $request, callable $next) => $this->initMiddelware($request, $next),
+            fn (ServerRequestInterface $request, callable $next) => $this->initMiddleware($request, $next),
             fn (ServerRequestInterface $request, callable $next) => $this->customMiddleware($request, $next),
             fn ($request) => $this->handleRequest($request)
         );
-        $this->server->on('error', function (\Throwable $th) {
-            $error = \json_encode([
+        $this->server->on('error', function (Throwable $th) {
+            $error = json_encode([
                 'error' => $th->getMessage(),
                 'file' => $th->getFile(),
                 'line' => $th->getLine(),
@@ -157,6 +140,7 @@ class Application
      *
      * @param ReflectionClass $reflector The reflection class to add methods from.
      * @return void
+     * @throws Exception
      */
     protected function addMethods(ReflectionClass $reflector): void
     {
@@ -193,6 +177,9 @@ class Application
         $middlewares = $request->getAttribute('Gustav-Middlewares', []);
         foreach ($middlewares as $middleware) {
             $request = $middleware->handle($request);
+            if ($request instanceof Response) {
+                return $request->build();
+            }
         }
         return $next($request);
     }
@@ -201,10 +188,10 @@ class Application
      * Handles a given request.
      *
      * @param ServerRequestInterface $request
-     * @return Response|MessageResponse|void
-     * @throws InvalidArgumentException
+     * @return Response|MessageResponse
+     * @throws Throwable
      */
-    protected function handleRequest(ServerRequestInterface $request)
+    protected function handleRequest(ServerRequestInterface $request): Response|MessageResponse
     {
         $response = new Response();
         $context = new Context(
@@ -228,7 +215,7 @@ class Application
                 if ($request->getAttribute('Gustav-Exception') !== null) {
                     throw $request->getAttribute('Gustav-Exception');
                 } else {
-                    throw new \Exception(code: Response::STATUS_INTERNAL_SERVER_ERROR);
+                    throw new Exception(code: Response::STATUS_INTERNAL_SERVER_ERROR);
                 }
             }
             $dependencies = new Container();
@@ -237,15 +224,15 @@ class Application
             $instance = $dependencies->make($context->controllerFactory->getClass());
             $payload = $instance->{$context->route->getFunction()}(...$context->route->generateArguments($request));
             if (!$payload instanceof Controller\Response) {
-                throw new \Exception('Controller needs to return a Response object');
+                throw new Exception('Controller needs to return a Response object');
             }
             $serializer = $payload->getSerializer();
             if ($serializer) {
                 $payload->setBody(Serializer\Manager::getEntity($serializer::class)->serialize($serializer));
-                $payload->setBody(\json_encode($payload->getBody()));
+                $payload->setBody(json_encode($payload->getBody()));
             }
             return $response->merge($payload)->build();
-        } catch (\Throwable $th) {
+        } catch (Throwable $th) {
             if ($th->getCode() === 0) {
                 $response->setStatus(Response::STATUS_INTERNAL_SERVER_ERROR);
             } else {
@@ -265,7 +252,7 @@ class Application
                         'file' => $th->getFile(),
                         'line' => $th->getLine(),
                         'code' => $th->getCode(),
-                        'version' => \Composer\InstalledVersions::getPrettyVersion('gustav-php/gustav')
+                        'version' => InstalledVersions::getPrettyVersion('gustav-php/gustav')
                     ])
                 ))->buildHtml();
             }
@@ -280,7 +267,7 @@ class Application
      * @param callable $next
      * @return mixed
      */
-    protected function initMiddelware(ServerRequestInterface $request, callable $next): mixed
+    protected function initMiddleware(ServerRequestInterface $request, callable $next): mixed
     {
         try {
             $path = ltrim($request->getUri()->getPath(), '/');
@@ -291,7 +278,7 @@ class Application
                 ->withAttribute('Gustav-Route', $route)
                 ->withAttribute('Gustav-Controller', $controller)
                 ->withAttribute('Gustav-Middlewares', $controller->getMiddlewares());
-        } catch (\Throwable $th) {
+        } catch (Throwable $th) {
             $request = $request
                 ->withAttribute('Gustav-Route', null)
                 ->withAttribute('Gustav-Exception', $th);
@@ -305,6 +292,7 @@ class Application
      *
      * @param class-string<Controller\Base> $class The class to register as a route.
      * @return void
+     * @throws ReflectionException
      */
     protected function registerRoute(string $class): void
     {
@@ -320,6 +308,7 @@ class Application
      * @param ReflectionMethod $method The reflection method to add parameters from.
      * @param Attribute\Route $route The route to add parameters to.
      * @return void
+     * @throws Exception
      */
     private function prepareRoute(ReflectionMethod $method, Attribute\Route $route): void
     {
@@ -355,7 +344,7 @@ class Application
                 $route->addArgument($parameter->getName(), $instance);
                 continue;
             }
-            throw new \Exception('Invalid parameter type');
+            throw new Exception('Invalid parameter type');
         }
     }
 }
