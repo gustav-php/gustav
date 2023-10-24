@@ -10,12 +10,12 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'serve')]
 class ServeCommand extends Command
 {
-    protected static $defaultDescription = 'Starts development server.';
+    protected static $defaultDescription = 'Starts production server.';
 
     protected function configure(): void
     {
         $this
-            ->setHelp('This command starts the development server.')
+            ->setHelp('This command starts the production server.')
             ->addArgument('entrypoint', InputArgument::OPTIONAL, 'Entrypoint file', './app/index.php');
     }
 

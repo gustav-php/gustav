@@ -3,16 +3,20 @@
 <?php
 
 use GustavPHP\Gustav\CLI\{
-    ServeCommand,
-    InstalledCommand
+    DevCommand,
+    InstalledCommand,
+    ServeCommand
 };
 use Symfony\Component\Console\Application;
 
 include $_composer_autoload_path ?? __DIR__ . '/../vendor/autoload.php';
 
-$serve = new ServeCommand();
 $installed = new InstalledCommand();
+$serve = new ServeCommand();
+$dev = new DevCommand();
+
 $application = new Application();
-$application->add($serve);
+$application->add($dev);
 $application->add($installed);
+$application->add($serve);
 $application->run();
