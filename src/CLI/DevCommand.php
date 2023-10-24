@@ -61,7 +61,7 @@ class DevCommand extends Command
     {
         $root = getcwd() . DIRECTORY_SEPARATOR;
         $latest = 0;
-        foreach (['src', 'app'] as $directory) {
+        foreach (['src', 'app', 'views'] as $directory) {
             $path = \realpath($root . DIRECTORY_SEPARATOR . $directory);
             if (!$path) {
                 continue;
