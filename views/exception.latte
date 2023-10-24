@@ -1,0 +1,16 @@
+{layout 'layout.latte'}
+{block title}{$title}{/block}
+
+{block content}
+<article>
+    <hgroup>
+        <h1>{$message}</h1>
+        <p>
+            <strong>Exception:</strong> {$exception}<br />
+            <strong>Code:</strong> {$code}<br />
+            <strong>File:</strong> {$file}<br />
+            <strong>Line:</strong> {$line}
+        </p>
+    </hgroup>
+</article>
+{/block}

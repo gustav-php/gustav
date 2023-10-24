@@ -1,0 +1,30 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{block title}{/block}</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1/css/pico.min.css">
+    <script src="https://unpkg.com/htmx.org@1"></script>
+</head>
+
+<body>
+<div>
+    <main class="container">
+    <nav>
+        <ul>
+            <li><strong>GustavPHP</strong></li>
+        </ul>
+        <ul>
+            <li>{$version}</li>
+        </ul>
+    </nav>
+    {block content}{/block}
+    </main>
+</div>
+</body>
+
+</html>

@@ -258,12 +258,16 @@ class Application
                         : $th->getMessage()
                 );
             } else {
-                $response->setBody([
-                    'error' => $th->getMessage(),
-                    'file' => $th->getFile(),
-                    'line' => $th->getLine(),
-                    'code' => $th->getCode()
-                ]);
+                return (new Response(
+                    body: View::render(__DIR__ . '/../views/exception.latte', [
+                        'exception' => get_class($th),
+                        'message' => $th->getMessage(),
+                        'file' => $th->getFile(),
+                        'line' => $th->getLine(),
+                        'code' => $th->getCode(),
+                        'version' => \Composer\InstalledVersions::getPrettyVersion('gustav-php/gustav')
+                    ])
+                ))->buildHtml();
             }
             return $response->buildJson();
         }
