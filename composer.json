@@ -25,7 +25,7 @@
     "test": "@php ./vendor/bin/pest",
     "demo": [
       "Composer\\Config::disableProcessTimeout",
-      "@php ./bin/gustav-php serve ./demo/index.php"
+      "@php ./bin/gustav-php dev ./demo/index.php"
     ],
     "check": "@php ./vendor/bin/phpstan analyze",
     "lint": "@php ./vendor/bin/pint --test src tests demo",

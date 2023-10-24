@@ -23,7 +23,7 @@ class InstalledCommand extends Command
         $output->writeln('');
         $output->writeln('To start the development server, run:');
         $output->writeln('');
-        $output->writeln('<info>    php gustav serve</info>');
+        $output->writeln('<info>    php gustav dev</info>');
         $output->writeln('');
         $output->writeln('You can now visit the development server at <href=http://localhost:4201>http://localhost:4201</>');
         $output->writeln('');

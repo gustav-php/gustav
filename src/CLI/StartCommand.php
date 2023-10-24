@@ -7,8 +7,8 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\{InputArgument, InputInterface};
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(name: 'serve')]
-class ServeCommand extends Command
+#[AsCommand(name: 'start')]
+class StartCommand extends Command
 {
     protected static $defaultDescription = 'Starts production server.';
 
