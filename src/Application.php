@@ -19,6 +19,7 @@ use ReflectionException;
 use ReflectionMethod;
 use ReflectionNamedType;
 use SplFileInfo;
+use stdClass;
 use Throwable;
 
 class Application
@@ -252,6 +253,7 @@ class Application
                         'file' => $th->getFile(),
                         'line' => $th->getLine(),
                         'code' => $th->getCode(),
+                        'trace' => $this->prepareTrace($th),
                         'version' => InstalledVersions::getPrettyVersion('gustav-php/gustav')
                     ])
                 ))->buildHtml();
@@ -285,6 +287,23 @@ class Application
         }
 
         return $next($request);
+    }
+
+    /**
+     * @param Throwable $th
+     * @return array<stdClass>
+     */
+    protected function prepareTrace(Throwable $th): array
+    {
+        return array_map(function ($trace) {
+            $object = new stdClass();
+            $object->file = $trace['file'] ?? null;
+            $object->line = $trace['line'] ?? null;
+            $object->class = $trace['class'] ?? null;
+            $object->function = $trace['function'];
+
+            return $object;
+        }, $th->getTrace());
     }
 
     /**

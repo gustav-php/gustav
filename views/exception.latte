@@ -13,4 +13,24 @@
         </p>
     </hgroup>
 </article>
+<article>
+    {foreach $trace as $entry}
+        <details>
+            <summary>
+                {if $entry?->file}
+                    <small><code>{$entry->file}:{$entry->line}</code></small>
+                {else}
+                    <small><code>PHP internal call</code></small>
+                {/if}
+            </summary>
+            <p>
+                {if $entry?->class}
+                    <strong>{$entry->class}{$entry->type}{$entry?->function}()</strong>
+                {else}
+                    <strong>{$entry?->function}()</strong>
+                {/if}
+            </p>
+        </details>
+    {/foreach}
+</article>
 {/block}
