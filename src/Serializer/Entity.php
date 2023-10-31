@@ -37,8 +37,7 @@ class Entity
      * @param class-string<Base> $className
      * @return void
      * @throws ReflectionException
-* @throws ReflectionException
-*/
+     */
     public function __construct(
         string $className
     ) {
