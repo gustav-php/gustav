@@ -23,7 +23,7 @@ class Base
      * @param int $status
      * @return Response
      */
-    protected function html(string $body, int $status = Response::STATUS_OK): Response
+    protected function html(string $body, int $status = 200): Response
     {
         return new Response(
             status: $status,
@@ -39,7 +39,7 @@ class Base
      * @param int $status
      * @return Response
      */
-    protected function json(array|object $data, int $status = Response::STATUS_OK): Response
+    protected function json(array|object $data, int $status = 200): Response
     {
         return new Response(
             status: $status,
@@ -55,7 +55,7 @@ class Base
      * @param int $status
      * @return Response
      */
-    protected function plaintext(string $body, int $status = Response::STATUS_OK): Response
+    protected function plaintext(string $body, int $status = 200): Response
     {
         return new Response(
             status: $status,
@@ -71,7 +71,7 @@ class Base
      * @param int $status
      * @return Response
      */
-    protected function redirect(string $url, int $status = Response::STATUS_FOUND): Response
+    protected function redirect(string $url, int $status = 200): Response
     {
         return new Response(
             status: $status,
@@ -85,7 +85,7 @@ class Base
      * @param int $status
      * @return Response
      */
-    protected function serialize(Serializer\Base $object, int $status = Response::STATUS_OK): Response
+    protected function serialize(Serializer\Base $object, int $status = 200): Response
     {
         return new Response(
             status: $status,
@@ -109,7 +109,7 @@ class Base
         $view = View::render($template, $params);
 
         return new Response(
-            status: Response::STATUS_OK,
+            status: 200,
             body: $view,
             headers: ['Content-Type' => 'text/html']
         );
@@ -122,7 +122,7 @@ class Base
      * @param int $status
      * @return Response
      */
-    protected function xml(string $body, int $status = Response::STATUS_OK): Response
+    protected function xml(string $body, int $status = 200): Response
     {
         return new Response(
             status: $status,

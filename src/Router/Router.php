@@ -4,7 +4,6 @@ namespace GustavPHP\Gustav\Router;
 
 use Exception;
 use GustavPHP\Gustav\Attribute\Route;
-use GustavPHP\Gustav\Controller\Response;
 
 class Router
 {
@@ -64,7 +63,7 @@ class Router
     public static function match(Method $method, string $path): Route
     {
         if (!array_key_exists($method->value, self::$routes)) {
-            throw new Exception('Not found', Response::STATUS_NOT_FOUND);
+            throw new Exception('Not found', 404);
         }
 
         $parts = array_values(array_filter(explode('/', $path)));
@@ -86,7 +85,7 @@ class Router
             }
         }
 
-        throw new Exception('Not found', Response::STATUS_NOT_FOUND);
+        throw new Exception('Not found', 404);
     }
 
     /**
