@@ -22,20 +22,13 @@ class DevCommand extends Command
 
     protected function configure(): void
     {
-        $this
-            ->setHelp('This command starts the development server.')
-            ->addArgument('entrypoint', InputArgument::OPTIONAL, 'Entrypoint file', './app/index.php');
+        $this->setHelp('This command starts the development server.');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $entrypoint = realpath(getcwd() . DIRECTORY_SEPARATOR . $input->getArgument('entrypoint'));
-        if (!$entrypoint) {
-            $output->writeln('<error>Entrypoint file not found.</error>');
-            return Command::FAILURE;
-        }
-        $entrypoint = escapeshellarg($entrypoint);
-        $command = escapeshellarg(PHP_BINARY) . " {$entrypoint}";
+        $roadrunner = realpath(getcwd() . DIRECTORY_SEPARATOR . 'rr');
+        $command = escapeshellcmd("{$roadrunner} serve");
         $latest = $this->getLatestModificationTimestamp();
         $process = Process::fromShellCommandline($command);
         $process->setTimeout(null);
@@ -48,8 +41,7 @@ class DevCommand extends Command
             if (++$counter >= 100 && $this->getLatestModificationTimestamp() > $latest) {
                 $latest = $this->getLatestModificationTimestamp();
                 $output->writeln('<info>Changes detected, restarting server...</info>');
-                $process->stop();
-                $process->start();
+                Process::fromShellCommandline(escapeshellcmd("{$roadrunner} --silent"))->run();
             }
 
             usleep(10000);
