@@ -145,10 +145,9 @@ class Application
                 //
                 // Reply by the 500 Internal Server Error response
                 $psr7->respond(new Psr7Response(500, [], 'Something Went Wrong!'));
-
-                // Additionally, we can inform the RoadRunner that the processing
-                // of the request failed.
                 $psr7->getWorker()->error((string)$e);
+            } finally {
+                gc_collect_cycles();
             }
         }
     }

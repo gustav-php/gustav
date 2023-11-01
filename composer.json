@@ -29,7 +29,8 @@
     ],
     "check": "@php ./vendor/bin/phpstan analyze",
     "lint": "@php ./vendor/bin/pint --test src tests demo",
-    "format": "@php ./vendor/bin/pint src tests demo"
+    "format": "@php ./vendor/bin/pint src tests demo",
+    "post-install-cmd": "@php ./vendor/bin/rr get-binary"
   },
   "require-dev": {
     "laravel/pint": "^1.1",
