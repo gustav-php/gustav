@@ -5,19 +5,19 @@ namespace GustavPHP\Gustav;
 use Composer\InstalledVersions;
 use Exception;
 use GustavPHP\Gustav\Controller\{ControllerFactory, Response};
-use GustavPHP\Gustav\Logger\Logger;
 use GustavPHP\Gustav\Router\{Method, Router};
 use GustavPHP\Gustav\Service\Container;
+use Nyholm\Psr7\Factory\Psr17Factory;
+use Nyholm\Psr7\Response as Psr7Response;
 use Psr\Http\Message\ServerRequestInterface;
-use React\Http\HttpServer;
-use React\Http\Message\Response as MessageResponse;
-use React\Socket\SocketServer;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionMethod;
 use ReflectionNamedType;
+use Spiral\RoadRunner\Http\PSR7Worker;
+use Spiral\RoadRunner\Worker;
 use SplFileInfo;
 use stdClass;
 use Throwable;
@@ -36,10 +36,6 @@ class Application
      * @var array<string,string>
      */
     protected array $files = [];
-    /**
-     * @var null|HttpServer
-     */
-    protected ?HttpServer $server;
 
     /**
      * Creates a new application instance.
@@ -111,29 +107,49 @@ class Application
      */
     public function start(): void
     {
-        $this->server = new HttpServer(
-            fn (ServerRequestInterface $request, callable $next) => $this->initMiddleware($request, $next),
-            fn (ServerRequestInterface $request, callable $next) => $this->customMiddleware($request, $next),
-            fn ($request) => $this->handleRequest($request)
-        );
-        $this->server->on('error', function (Throwable $th) {
-            $error = json_encode([
-                'error' => $th->getMessage(),
-                'file' => $th->getFile(),
-                'line' => $th->getLine(),
-                'code' => $th->getCode()
-            ]);
-            if ($error) {
-                Logger::log($error);
+        $worker = Worker::create();
+        $factory = new Psr17Factory();
+        $psr7 = new PSR7Worker($worker, $factory, $factory, $factory);
+
+        while (true) {
+            try {
+                $request = $psr7->waitRequest();
+                if ($request === null) {
+                    break;
+                }
+            } catch (Throwable $e) {
+                // Although the PSR-17 specification clearly states that there can be
+                // no exceptions when creating a request, however, some implementations
+                // may violate this rule. Therefore, it is recommended to process the
+                // incoming request for errors.
+                //
+                // Send "Bad Request" response.
+                $psr7->respond(new Psr7Response(400));
+                continue;
             }
-        });
-        $host = self::$configuration->host;
-        $port = self::$configuration->port;
-        $socket = new SocketServer("{$host}:{$port}");
-        Logger::log("<comment>Gustav PHP Framework</comment>");
-        Logger::log('');
-        Logger::log("<info>Server running on <href=http://{$host}:{$port}>http://{$host}:{$port}</></info>");
-        $this->server->listen($socket);
+
+            try {
+                $request = $this->initMiddleware($request);
+                $request = $this->customMiddleware($request);
+                if ($request instanceof Psr7Response) {
+                    $psr7->respond($request);
+                    break;
+                }
+
+                $response = $this->handleRequest($request);
+
+                $psr7->respond($response);
+            } catch (\Throwable $e) {
+                // In case of any exceptions in the application code, you should handle
+                // them and inform the client about the presence of a server error.
+                //
+                // Reply by the 500 Internal Server Error response
+                $psr7->respond(new Psr7Response(500, [], 'Something Went Wrong!'));
+                $psr7->getWorker()->error((string)$e);
+            } finally {
+                gc_collect_cycles();
+            }
+        }
     }
 
     /**
@@ -167,10 +183,9 @@ class Application
      * Handles custom middlewares.
      *
      * @param ServerRequestInterface $request
-     * @param callable $next
-     * @return mixed
+     * @return ServerRequestInterface|Psr7Response
      */
-    protected function customMiddleware(ServerRequestInterface $request, callable $next): mixed
+    protected function customMiddleware(ServerRequestInterface $request): ServerRequestInterface|Psr7Response
     {
         /**
          * @var Middleware\Base[] $middlewares
@@ -182,17 +197,17 @@ class Application
                 return $request->build();
             }
         }
-        return $next($request);
+        return $request;
     }
 
     /**
      * Handles a given request.
      *
      * @param ServerRequestInterface $request
-     * @return Response|MessageResponse
+     * @return Psr7Response
      * @throws Throwable
      */
-    protected function handleRequest(ServerRequestInterface $request): Response|MessageResponse
+    protected function handleRequest(ServerRequestInterface $request): Psr7Response
     {
         $response = new Response();
         $context = new Context(
@@ -205,7 +220,7 @@ class Application
                 $path = $this->files[$context->path];
                 $contentType = mime_content_type($path);
                 return (new Response(
-                    status: Response::STATUS_OK,
+                    status: 200,
                     headers: [
                         'Content-Type' => $contentType ?: 'application/octet-stream',
                     ],
@@ -216,7 +231,7 @@ class Application
                 if ($request->getAttribute('Gustav-Exception') !== null) {
                     throw $request->getAttribute('Gustav-Exception');
                 } else {
-                    throw new Exception(code: Response::STATUS_INTERNAL_SERVER_ERROR);
+                    throw new Exception(code: 500);
                 }
             }
             $dependencies = new Container();
@@ -235,7 +250,7 @@ class Application
             return $response->merge($payload)->build();
         } catch (Throwable $th) {
             if ($th->getCode() === 0) {
-                $response->setStatus(Response::STATUS_INTERNAL_SERVER_ERROR);
+                $response->setStatus(500);
             } else {
                 $response->setStatus($th->getCode());
             }
@@ -266,10 +281,9 @@ class Application
      * Initializes the application middleware.
      *
      * @param ServerRequestInterface $request
-     * @param callable $next
-     * @return mixed
+     * @return ServerRequestInterface
      */
-    protected function initMiddleware(ServerRequestInterface $request, callable $next): mixed
+    protected function initMiddleware(ServerRequestInterface $request): ServerRequestInterface
     {
         try {
             $path = ltrim($request->getUri()->getPath(), '/');
@@ -286,7 +300,7 @@ class Application
                 ->withAttribute('Gustav-Exception', $th);
         }
 
-        return $next($request);
+        return $request;
     }
 
     /**

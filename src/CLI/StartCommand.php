@@ -14,21 +14,15 @@ class StartCommand extends Command
 
     protected function configure(): void
     {
-        $this
-            ->setHelp('This command starts the production server.')
-            ->addArgument('entrypoint', InputArgument::OPTIONAL, 'Entrypoint file', './app/index.php');
+        $this->setHelp('This command starts the production server.');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $entrypoint = realpath(getcwd() . DIRECTORY_SEPARATOR . $input->getArgument('entrypoint'));
-        if (!$entrypoint) {
-            $output->writeln('<error>Entrypoint file not found.</error>');
-            return Command::FAILURE;
-        }
-        $entrypoint = escapeshellarg($entrypoint);
+        $roadrunner = realpath(getcwd() . DIRECTORY_SEPARATOR . 'rr');
+        $command = escapeshellcmd("{$roadrunner} serve -c ./.rr.prod.yaml");
 
-        passthru(escapeshellarg(PHP_BINARY) . " {$entrypoint}");
+        passthru($command);
 
         return Command::SUCCESS;
     }

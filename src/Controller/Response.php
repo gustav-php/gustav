@@ -2,12 +2,11 @@
 
 namespace GustavPHP\Gustav\Controller;
 
-use Fig\Http\Message\StatusCodeInterface;
 use GustavPHP\Gustav\Serializer;
 use InvalidArgumentException;
-use React\Http\Message\Response as InternalResponse;
+use Nyholm\Psr7\Response as Psr7Response;
 
-class Response implements StatusCodeInterface
+class Response
 {
     /**
      * Response constructor.
@@ -18,19 +17,19 @@ class Response implements StatusCodeInterface
      * @return void
      */
     public function __construct(
-        protected int $status = InternalResponse::STATUS_OK,
+        protected int $status = 200,
         protected array $headers = [],
         protected mixed $body = '',
     ) {
     }
     /**
-     * Build a InternalResponse from the Response.
+     * Build a Psr7Response from the Response.
      *
-     * @return InternalResponse
+     * @return Psr7Response
      */
-    public function build(): InternalResponse
+    public function build(): Psr7Response
     {
-        return new InternalResponse(
+        return new Psr7Response(
             $this->status,
             $this->headers,
             $this->body
@@ -39,30 +38,42 @@ class Response implements StatusCodeInterface
     /**
      * Build a Response with a JSON body.
      *
-     * @return InternalResponse
+     * @return Psr7Response
      */
-    public function buildHtml(): InternalResponse
+    public function buildHtml(): Psr7Response
     {
-        return InternalResponse::html($this->body);
+        return new Psr7Response(
+            $this->status,
+            array_merge($this->headers, ['Content-Type' => 'text/html']),
+            $this->body
+        );
     }
     /**
      * Build a Response with a JSON body.
      *
-     * @return InternalResponse
+     * @return Psr7Response
      * @throws InvalidArgumentException
      */
-    public function buildJson(): InternalResponse
+    public function buildJson(): Psr7Response
     {
-        return InternalResponse::json($this->body);
+        return new Psr7Response(
+            $this->status,
+            array_merge($this->headers, ['Content-Type' => 'application/json']),
+            (string) json_encode($this->body)
+        );
     }
     /**
      * Build a Response with a plaintext body.
      *
-     * @return InternalResponse
+     * @return Psr7Response
      */
-    public function buildPlaintext(): InternalResponse
+    public function buildPlaintext(): Psr7Response
     {
-        return InternalResponse::plaintext($this->body);
+        return new Psr7Response(
+            $this->status,
+            array_merge($this->headers, ['Content-Type' => 'text/plain']),
+            $this->body
+        );
     }
     /**
      * Get body

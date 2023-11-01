@@ -1,0 +1,26 @@
+version: "3"
+rpc:
+  listen: "tcp://127.0.0.1:6001"
+server:
+  command: "php demo/index.php"
+  relay: pipes
+http:
+  address: "0.0.0.0:5173"
+  middleware:
+    - gzip
+    - static
+  pool:
+    num_workers: 16
+    supervisor:
+      max_worker_memory: 100
+jobs:
+  pool:
+    num_workers: 2
+    max_worker_memory: 100
+kv:
+  local:
+    driver: memory
+    config:
+      interval: 60
+metrics:
+  address: "127.0.0.1:2112"
