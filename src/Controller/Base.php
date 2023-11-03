@@ -71,7 +71,7 @@ class Base
      * @param int $status
      * @return Response
      */
-    protected function redirect(string $url, int $status = 200): Response
+    protected function redirect(string $url, int $status = 301): Response
     {
         return new Response(
             status: $status,

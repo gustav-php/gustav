@@ -32,9 +32,11 @@
     "format": "@php ./vendor/bin/pint src tests demo"
   },
   "require-dev": {
+    "guzzlehttp/guzzle": "^7.8",
     "laravel/pint": "^1.1",
-    "phpstan/phpstan": "^1.8",
-    "pestphp/pest": "^2.4"
+    "leafs/fetch": "^0.1.0",
+    "pestphp/pest": "^2.4",
+    "phpstan/phpstan": "^1.8"
   },
   "bin": ["./bin/gustav-php"],
   "autoload": {
@@ -44,7 +46,8 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "GustavPHP\\Demo\\": "demo/"
+      "GustavPHP\\Demo\\": "demo/",
+      "GustavPHP\\Tests\\": "tests/"
     }
   },
   "authors": [

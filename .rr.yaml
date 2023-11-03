@@ -8,7 +8,6 @@ http:
   address: "0.0.0.0:5173"
   middleware:
     - gzip
-    - static
   pool:
     num_workers: 16
     supervisor:

@@ -4,5 +4,6 @@
 .env
 .envrc
 .idea
+.pid
 .vscode/
 rr
