@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e5c47c4fbb22a03873278ac0765eb515",
+    "content-hash": "15522f83bab7e723b913ee14b503d807",
     "packages": [
         {
             "name": "composer/semver",
@@ -3096,64 +3096,6 @@
                 "source": "https://github.com/laravel/pint"
             },
             "time": "2023-10-26T09:26:10+00:00"
-        },
-        {
-            "name": "leafs/fetch",
-            "version": "v0.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/leafsphp/fetch.git",
-                "reference": "f214dda6131c830ed19310dfdfd57a244f5bbd08"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/leafsphp/fetch/zipball/f214dda6131c830ed19310dfdfd57a244f5bbd08",
-                "reference": "f214dda6131c830ed19310dfdfd57a244f5bbd08",
-                "shasum": ""
-            },
-            "require": {
-                "ext-curl": "*"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Leaf\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Michael Darko",
-                    "email": "mickdd22@gmail.com",
-                    "homepage": "https://mychi.netlify.app",
-                    "role": "Developer"
-                }
-            ],
-            "description": "Plain simple PHP http client",
-            "homepage": "https://github.com/leafsphp/redis",
-            "keywords": [
-                "client",
-                "fetch",
-                "http",
-                "leaf",
-                "network",
-                "php",
-                "xhr"
-            ],
-            "support": {
-                "issues": "https://github.com/leafsphp/fetch/issues",
-                "source": "https://github.com/leafsphp/fetch/tree/v0.1"
-            },
-            "funding": [
-                {
-                    "url": "https://opencollective.com/leaf",
-                    "type": "open_collective"
-                }
-            ],
-            "time": "2021-06-04T17:47:10+00:00"
         },
         {
             "name": "myclabs/deep-copy",
