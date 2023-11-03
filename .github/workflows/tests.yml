@@ -47,5 +47,8 @@ jobs:
             - name: Run linter
               run: composer run lint
 
+            - name: Setup RoadRunner
+              run: ./vendor/bin/rr get-binary --no-config
+
             - name: Run test suite
               run: composer run test
