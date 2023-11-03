@@ -3,7 +3,6 @@
 
 function startServer(): void
 {
-    stopServer();
     $command = 'nohup ' . getcwd() . DIRECTORY_SEPARATOR . 'rr serve -p -c .rr.tests.yaml 1> test.log &';
     exec($command);
     sleep(5);
