@@ -4,14 +4,14 @@
 function startServer(): void
 {
     stopServer();
-    $command = getcwd() . DIRECTORY_SEPARATOR . 'rr serve -p -c .rr.tests.yaml &>/dev/null &';
+    $command = 'nohup ' . getcwd() . DIRECTORY_SEPARATOR . 'rr serve -p -c .rr.tests.yaml > /dev/null &';
     exec($command);
     sleep(1);
 }
 
 function stopServer(): void
 {
-    $command = getcwd() . DIRECTORY_SEPARATOR . 'rr stop &>/dev/null &';
+    $command = 'nohup ' . getcwd() . DIRECTORY_SEPARATOR . 'rr stop > /dev/null &';
     exec($command);
 }
 
