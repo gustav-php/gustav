@@ -13,7 +13,7 @@ use Psr\Http\Message\ServerRequestInterface;
 class Route
 {
     /**
-     * @var array<string,Query|Body|Param>
+     * @var array<string,Query|Body|Param|Request>
      */
     protected array $arguments = [];
     /**
