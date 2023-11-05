@@ -38,7 +38,7 @@ class Route
     {
     }
 
-    public function addArgument(string $name, Query|Body|Param $type): self
+    public function addArgument(string $name, Query|Body|Param|Request $type): self
     {
         $this->arguments[$name] = $type;
 

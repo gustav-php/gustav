@@ -35,6 +35,7 @@ class Responses extends Controller\Base
             ]
         ]);
     }
+
     #[Route('/responses/plaintext')]
     public function returnPlaintext(): Controller\Response
     {

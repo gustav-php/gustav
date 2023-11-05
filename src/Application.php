@@ -360,6 +360,13 @@ class Application
                 $route->addArgument($parameter->getName(), $instance);
                 continue;
             }
+            $request = $parameter->getAttributes(Attribute\Request::class)[0] ?? null;
+            if ($request) {
+                /** @var Attribute\Request $instance */
+                $instance = $request->newInstance();
+                $route->addArgument($parameter->getName(), $instance);
+                continue;
+            }
             $query = $parameter->getAttributes(Attribute\Query::class)[0] ?? null;
             if ($query) {
                 /** @var Attribute\Query $instance */
