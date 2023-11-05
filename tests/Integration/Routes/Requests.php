@@ -2,8 +2,7 @@
 
 namespace GustavPHP\Tests\Integration\Routes;
 
-use GustavPHP\Gustav\Attribute\Request;
-use GustavPHP\Gustav\Attribute\Route;
+use GustavPHP\Gustav\Attribute\{Request, Route};
 use GustavPHP\Gustav\Controller;
 use Psr\Http\Message\ServerRequestInterface;
 

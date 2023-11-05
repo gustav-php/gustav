@@ -28,8 +28,8 @@
       "@php ./bin/gustav-php dev"
     ],
     "check": "@php ./vendor/bin/phpstan analyze",
-    "lint": "@php ./vendor/bin/pint --test src tests demo",
-    "format": "@php ./vendor/bin/pint src tests demo"
+    "lint": "@php ./vendor/bin/pint --test src tests",
+    "format": "@php ./vendor/bin/pint src tests"
   },
   "require-dev": {
     "guzzlehttp/guzzle": "^7.8",
