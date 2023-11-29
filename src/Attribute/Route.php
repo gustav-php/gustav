@@ -9,7 +9,7 @@ use Exception;
 use GustavPHP\Gustav\Router\Method;
 use Psr\Http\Message\ServerRequestInterface;
 
-#[Attribute(Attribute::TARGET_METHOD)]
+#[Attribute(Attribute::TARGET_METHOD | Attribute::IS_REPEATABLE)]
 class Route
 {
     /**
