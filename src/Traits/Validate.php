@@ -10,7 +10,7 @@ trait Validate
      * @param array<array{mixed,Validation}> $entries
      * @return void
      */
-    public function validate(array $entries): void
+    protected function validate(array $entries): void
     {
         foreach ($entries as [$value, $validation]) {
             $validation->validate($value);

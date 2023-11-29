@@ -7,7 +7,7 @@ use Stringable;
 
 trait Logger
 {
-    public function log(string|Stringable $message): void
+    protected function log(string|Stringable $message): void
     {
         InternalLogger::log($message);
     }

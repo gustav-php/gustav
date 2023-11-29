@@ -11,6 +11,6 @@ class Requests extends Controller\Base
     #[Route('/request')]
     public function get(#[Request] ServerRequestInterface $request): Controller\Response
     {
-        return $this->json((array)$request);
+        return $this->json((array) $request);
     }
 }
