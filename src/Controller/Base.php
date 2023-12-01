@@ -3,7 +3,7 @@
 namespace GustavPHP\Gustav\Controller;
 
 use GustavPHP\Gustav\Traits\{Logger, Validate};
-use GustavPHP\Gustav\{Serializer, View};
+use GustavPHP\Gustav\{Application, Serializer, View};
 
 use function json_encode;
 
@@ -106,6 +106,10 @@ class Base
      */
     protected function view(string $template, array $params = []): Response
     {
+        if (Application::$configuration->views) {
+            $template = Application::$configuration->views . DIRECTORY_SEPARATOR . $template;
+        }
+
         $view = View::render($template, $params);
 
         return new Response(
