@@ -261,6 +261,7 @@ class Application
             } else {
                 return (new Response(
                     body: View::render(__DIR__ . '/../views/exception.latte', [
+                        'title' => get_class($th),
                         'exception' => get_class($th),
                         'message' => $th->getMessage(),
                         'file' => $th->getFile(),
@@ -309,10 +310,11 @@ class Application
     {
         return array_map(function ($trace) {
             $object = new stdClass();
+            $object->type = $trace['type'] ?? null;
             $object->file = $trace['file'] ?? null;
             $object->line = $trace['line'] ?? null;
             $object->class = $trace['class'] ?? null;
-            $object->function = $trace['function'];
+            $object->function = $trace['function'] ?? null;
 
             return $object;
         }, $th->getTrace());
