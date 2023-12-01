@@ -26,6 +26,9 @@ class View
      */
     public static function render(string $template, array $params = []): string
     {
+        if (Application::$configuration->views) {
+            $template = Application::$configuration->views . DIRECTORY_SEPARATOR . $template;
+        }
         return self::getEngine()->renderToString($template, $params);
     }
 

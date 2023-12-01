@@ -28,6 +28,12 @@ readonly class Configuration
          */
         public ?string $files = null,
         /**
+         * Path to the directory containing view templates..
+         *
+         * @var null|string
+         */
+        public ?string $views = null,
+        /**
          * Hostname or IP address to listen on.
          *
          * @var string
@@ -39,7 +45,6 @@ readonly class Configuration
          * @var int
          */
         public int $port = 4201,
-
         /**
          * Namespace containing additional routes.
          *
