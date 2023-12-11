@@ -199,6 +199,30 @@ class Application
     }
 
     /**
+     * Fetches the relevant code snippet from the given file and line.
+     *
+     * @param string $file The file to fetch the code snippet from.
+     * @param int $line The line to fetch the code snippet from.
+     * @return string Returns the code snippet.
+     */
+    protected function getCodeBlockFromTrace(string $file, int $line): string
+    {
+        $lines = file($file);
+        $code = '';
+        $code .= $lines[$line - 5] ?? null;
+        $code .= $lines[$line - 4] ?? null;
+        $code .= $lines[$line - 3] ?? null;
+        $code .= $lines[$line - 2] ?? null;
+        $code .= $lines[$line - 1] ?? null; // current line
+        $code .= $lines[$line] ?? null;
+        $code .= $lines[$line + 1] ?? null;
+        $code .= $lines[$line + 2] ?? null;
+        $code .= $lines[$line + 3] ?? null;
+
+        return $code;
+    }
+
+    /**
      * Handles a given request.
      *
      * @param ServerRequestInterface $request
@@ -268,6 +292,7 @@ class Application
                         'line' => $th->getLine(),
                         'code' => $th->getCode(),
                         'trace' => $this->prepareTrace($th),
+                        'snippet' => $this->getCodeBlockFromTrace($th->getFile(), $th->getLine()),
                         'version' => InstalledVersions::getPrettyVersion('gustav-php/gustav')
                     ])
                 ))->buildHtml();
@@ -310,15 +335,19 @@ class Application
     {
         return array_map(function ($trace) {
             $object = new stdClass();
-            $object->type = $trace['type'] ?? null;
             $object->file = $trace['file'] ?? null;
             $object->line = $trace['line'] ?? null;
-            $object->class = $trace['class'] ?? null;
             $object->function = $trace['function'];
+            $object->type = $trace['type'] ?? null;
+            $object->class = $trace['class'] ?? null;
+            if ($object->file !== null && $object->line !== null) {
+                $object->snippet = $this->getCodeBlockFromTrace($object->file, $object->line);
+            }
 
             return $object;
         }, $th->getTrace());
     }
+
 
     /**
      * Registers a route in the application.

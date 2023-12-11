@@ -12,6 +12,7 @@
             <strong>Line:</strong> {$line}
         </p>
     </hgroup>
+    <pre><code class="language-php">{$snippet}</code></pre>
 </article>
 <article>
     {foreach $trace as $entry}
@@ -29,6 +30,7 @@
                 {else}
                     <strong>{$entry?->function}()</strong>
                 {/if}
+                <pre><code class="language-php">{$entry->snippet}</code></pre>
             </p>
         </details>
     {/foreach}
