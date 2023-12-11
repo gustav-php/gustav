@@ -314,7 +314,7 @@ class Application
             $object->file = $trace['file'] ?? null;
             $object->line = $trace['line'] ?? null;
             $object->class = $trace['class'] ?? null;
-            $object->function = $trace['function'] ?? null;
+            $object->function = $trace['function'];
 
             return $object;
         }, $th->getTrace());
