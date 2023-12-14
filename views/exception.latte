@@ -3,36 +3,57 @@
 
 {block content}
 <article>
-    <hgroup>
-        <h1>{$message}</h1>
-        <p>
-            <strong>Exception:</strong> {$exception}<br />
-            <strong>Code:</strong> {$code}<br />
-            <strong>File:</strong> {$file}<br />
-            <strong>Line:</strong> {$line}
-        </p>
-    </hgroup>
+    <h1>{$message}</h1>
+    <table>
+        <tbody>
+            <tr>
+                <th scope="row"><strong>Type</strong></th>
+                <td><code>{$exception}</code></td>
+            </tr>
+            <tr>
+                <th scope="row"><strong>Message</strong></th>
+                <td><code>{$message}</code></td>
+            </tr>
+            <tr>
+                <th scope="row"> <strong>Code</strong></th>
+                <td><code>{$code}</code></td>
+            </tr>
+            <tr>
+                <th scope="row"><strong>File</strong></th>
+                <td><code>{$file}</code></td>
+            </tr>
+            <tr>
+                <th scope="row"><strong>Line</strong></th>
+                <td><code>{$line}</code></td>
+            </tr>
+        </tbody>
+    </table>
     <pre><code class="language-php">{$snippet}</code></pre>
 </article>
 <article>
     {foreach $trace as $entry}
-        <details>
-            <summary>
-                {if $entry?->file}
-                    <small><code>{$entry->file}:{$entry->line}</code></small>
-                {else}
-                    <small><code>PHP internal call</code></small>
-                {/if}
-            </summary>
-            <p>
-                {if $entry?->class}
-                    <strong>{$entry?->class}{$entry?->type}{$entry?->function}()</strong>
-                {else}
-                    <strong>{$entry?->function}()</strong>
-                {/if}
-                <pre><code class="language-php">{$entry->snippet}</code></pre>
-            </p>
-        </details>
+    <details>
+        <summary>
+            <small>{$entry->file}:{$entry->line}</small>
+        </summary>
+        <table>
+            <tbody>
+                <tr>
+                    <th scope="row"><strong>Function</strong></th>
+                    <td><code>{$entry?->class}{$entry?->type}{$entry?->function}</code></td>
+                </tr>
+                <tr>
+                    <th scope="row"><strong>File</strong></th>
+                    <td><code>{$entry->file}</code></td>
+                </tr>
+                <tr>
+                    <th scope="row"><strong>Line</strong></th>
+                    <td><code>{$entry->line}</code></td>
+                </tr>
+            </tbody>
+        </table>
+        <pre><code class="language-php">{$entry->snippet}</code></pre>
+    </details>
     {/foreach}
 </article>
 {/block}
