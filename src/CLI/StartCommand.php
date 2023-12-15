@@ -19,10 +19,15 @@ class StartCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $env = realpath(getcwd() . DIRECTORY_SEPARATOR . '.env');
         $roadrunner = realpath(getcwd() . DIRECTORY_SEPARATOR . 'rr');
-        $command = escapeshellcmd("{$roadrunner} serve -c ./.rr.prod.yaml");
+        $command = "{$roadrunner} serve -c ./.rr.prod.yaml";
 
-        passthru($command);
+        if ($env) {
+            $command .= " --dotenv {$env}";
+        }
+
+        passthru(escapeshellcmd($command));
 
         return Command::SUCCESS;
     }

@@ -30,10 +30,15 @@ class DevCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $env = realpath(getcwd() . DIRECTORY_SEPARATOR . '.env');
         $roadrunner = realpath(getcwd() . DIRECTORY_SEPARATOR . 'rr');
-        $command = escapeshellcmd("{$roadrunner} serve");
+        $command = "{$roadrunner} serve";
+        if ($env) {
+            $command .= " --dotenv {$env}";
+        }
+
         $latest = $this->getLatestModificationTimestamp();
-        $process = Process::fromShellCommandline($command);
+        $process = Process::fromShellCommandline(escapeshellcmd($command));
         $process->setTimeout(null);
         $process->setIdleTimeout(null);
         $process->start();
