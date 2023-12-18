@@ -398,6 +398,22 @@ class Application
                 $route->addArgument($parameter->getName(), $instance);
                 continue;
             }
+            $cookie = $parameter->getAttributes(Attribute\Cookie::class)[0] ?? null;
+            if ($cookie) {
+                /** @var Attribute\Cookie $instance */
+                $instance = $cookie->newInstance();
+                $instance->setRequired(!$parameter->isOptional());
+                $route->addArgument($parameter->getName(), $instance);
+                continue;
+            }
+            $header = $parameter->getAttributes(Attribute\Header::class)[0] ?? null;
+            if ($header) {
+                /** @var Attribute\Header $instance */
+                $instance = $header->newInstance();
+                $instance->setRequired(!$parameter->isOptional());
+                $route->addArgument($parameter->getName(), $instance);
+                continue;
+            }
             $query = $parameter->getAttributes(Attribute\Query::class)[0] ?? null;
             if ($query) {
                 /** @var Attribute\Query $instance */
@@ -413,6 +429,10 @@ class Application
                 $route->addArgument($parameter->getName(), $instance);
                 continue;
             }
+            var_dump('---');
+            var_dump($method, $parameter, $header);
+            var_dump('---');
+
             throw new Exception('Invalid parameter type');
         }
     }

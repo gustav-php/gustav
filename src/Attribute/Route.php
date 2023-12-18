@@ -13,7 +13,7 @@ use Psr\Http\Message\ServerRequestInterface;
 class Route
 {
     /**
-     * @var array<string,Query|Body|Param|Request>
+     * @var array<string,Query|Body|Param|Request|Cookie|Header>
      */
     protected array $arguments = [];
     /**
@@ -38,7 +38,7 @@ class Route
     {
     }
 
-    public function addArgument(string $name, Query|Body|Param|Request $type): self
+    public function addArgument(string $name, Query|Body|Param|Cookie|Request|Header $type): self
     {
         $this->arguments[$name] = $type;
 
@@ -74,7 +74,10 @@ class Route
                     $body = (array) ($request->getParsedBody() ?? []);
                     if ($attribute->hasKey()) {
                         if (!array_key_exists($attribute->getKey(), $body)) {
-                            throw new Exception("Body parameter '{$attribute->getKey()}' is required.", 400);
+                            if ($attribute->isRequired()) {
+                                throw new Exception("Body parameter '{$attribute->getKey()}' is required.", 400);
+                            }
+                            break;
                         }
                         $arguments[$argument] = $body[$attribute->getKey()];
                     } else {
@@ -86,7 +89,10 @@ class Route
                     $query = $request->getQueryParams();
                     if ($attribute->hasKey()) {
                         if (!array_key_exists($attribute->getKey(), $query)) {
-                            throw new Exception("Query parameter '{$attribute->getKey()}' is required.", 400);
+                            if ($attribute->isRequired()) {
+                                throw new Exception("Query parameter '{$attribute->getKey()}' is required.", 400);
+                            }
+                            break;
                         }
                         $arguments[$argument] = $attribute->hasDto()
                             ? $attribute->getDto()->build($request->getQueryParams()[$attribute->getKey()])
@@ -118,9 +124,25 @@ class Route
                             if ($attribute->isRequired()) {
                                 throw new Exception("Header '{$attribute->getName()}' is required.", 400);
                             }
+                            break;
                         }
                     } else {
                         $arguments[$argument] = $request->getHeaders();
+                    }
+                    break;
+                }
+                case Cookie::class: {
+                    if ($attribute->hasKey()) {
+                        $cookies = $request->getCookieParams();
+                        if (array_key_exists($attribute->getKey(), $cookies)) {
+                            $arguments[$argument] = $cookies[$attribute->getKey()];
+                        } else {
+                            if ($attribute->isRequired()) {
+                                throw new Exception("Cookie '{$attribute->getKey()}' is required.", 400);
+                            }
+                        }
+                    } else {
+                        $arguments[$argument] = $request->getCookieParams();
                     }
                     break;
                 }
