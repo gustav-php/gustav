@@ -13,7 +13,7 @@ use Psr\Http\Message\ServerRequestInterface;
 class Route
 {
     /**
-     * @var array<string,Query|Body|Param|Request|Cookie>
+     * @var array<string,Query|Body|Param|Request|Cookie|Header>
      */
     protected array $arguments = [];
     /**
@@ -38,7 +38,7 @@ class Route
     {
     }
 
-    public function addArgument(string $name, Query|Body|Param|Cookie|Request $type): self
+    public function addArgument(string $name, Query|Body|Param|Cookie|Request|Header $type): self
     {
         $this->arguments[$name] = $type;
 

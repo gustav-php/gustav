@@ -2,7 +2,13 @@
 
 namespace GustavPHP\Tests\Integration\Routes;
 
-use GustavPHP\Gustav\Attribute\{Body, Cookie, Header, Query, Route};
+use GustavPHP\Gustav\Attribute\{
+    Body,
+    Cookie,
+    Header,
+    Query,
+    Route
+};
 use GustavPHP\Gustav\Controller;
 
 class Params extends Controller\Base
@@ -41,9 +47,10 @@ class Params extends Controller\Base
         return $this->json([
             'required' => $required,
             'optional' => $optional,
-            'all' => $all
+            'all' => $all ?? ''
         ]);
     }
+
     #[Route('/params/query')]
     public function query(
         #[Query] array $all,
