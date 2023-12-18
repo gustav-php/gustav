@@ -398,6 +398,14 @@ class Application
                 $route->addArgument($parameter->getName(), $instance);
                 continue;
             }
+            $cookie = $parameter->getAttributes(Attribute\Cookie::class)[0] ?? null;
+            if ($cookie) {
+                /** @var Attribute\Cookie $instance */
+                $instance = $cookie->newInstance();
+                $instance->setRequired(!$parameter->isOptional());
+                $route->addArgument($parameter->getName(), $instance);
+                continue;
+            }
             $query = $parameter->getAttributes(Attribute\Query::class)[0] ?? null;
             if ($query) {
                 /** @var Attribute\Query $instance */
