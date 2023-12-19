@@ -119,7 +119,7 @@ class Route
                 case Header::class: {
                     if ($attribute->hasName()) {
                         if ($request->hasHeader($attribute->getName())) {
-                            $arguments[$argument] = $request->getHeader($attribute->getName());
+                            $arguments[$argument] = $request->getHeaderLine($attribute->getName());
                         } else {
                             if ($attribute->isRequired()) {
                                 throw new Exception("Header '{$attribute->getName()}' is required.", 400);

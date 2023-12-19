@@ -6,14 +6,16 @@ use GustavPHP\Gustav\Attribute\{
     Body,
     Cookie,
     Header,
+    Param,
     Query,
     Route
 };
 use GustavPHP\Gustav\Controller;
+use GustavPHP\Gustav\Router\Method;
 
 class Params extends Controller\Base
 {
-    #[Route('/params/body')]
+    #[Route('/params/body', Method::POST)]
     public function body(
         #[Body] array $all,
         #[Body('required')] string $required,
@@ -47,7 +49,16 @@ class Params extends Controller\Base
         return $this->json([
             'required' => $required,
             'optional' => $optional,
-            'all' => $all ?? ''
+            'all' => $all
+        ]);
+    }
+
+    #[Route('/params/path/:required')]
+    public function param(
+        #[Param('required')] string $required,
+    ): Controller\Response {
+        return $this->json([
+            'required' => $required
         ]);
     }
 
