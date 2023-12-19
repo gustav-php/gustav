@@ -2,8 +2,6 @@
 
 namespace GustavPHP\Gustav\Attribute;
 
-use function array_key_exists;
-
 use Attribute;
 use Exception;
 use GustavPHP\Gustav\Router\Method;

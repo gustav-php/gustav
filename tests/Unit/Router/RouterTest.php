@@ -23,9 +23,9 @@ test('can match url with placeholder', function () {
     $routeBlog = new Route('/blog');
     $routeBlogAuthors = new Route('/blog/authors');
     $routeBlogAuthorsComments = new Route('/blog/authors/comments');
-    $routeBlogPost = new Route('/blog/:post');
-    $routeBlogPostComments = new Route('/blog/:post/comments');
-    $routeBlogPostCommentsSingle = new Route('/blog/:post/comments/:comment');
+    $routeBlogPost = new Route('/blog/{post}');
+    $routeBlogPostComments = new Route('/blog/{post}/comments');
+    $routeBlogPostCommentsSingle = new Route('/blog/{post}/comments/{comment}');
 
     Router::addRoute($routeBlog);
     Router::addRoute($routeBlogAuthors);
@@ -37,9 +37,9 @@ test('can match url with placeholder', function () {
     expect($routeBlog)->toBe(Router::match(Method::GET, '/blog'));
     expect($routeBlogAuthors)->toBe(Router::match(Method::GET, '/blog/authors'));
     expect($routeBlogAuthorsComments)->toBe(Router::match(Method::GET, '/blog/authors/comments'));
-    expect($routeBlogPost)->toBe(Router::match(Method::GET, '/blog/:post'));
-    expect($routeBlogPostComments)->toBe(Router::match(Method::GET, '/blog/:post/comments'));
-    expect($routeBlogPostCommentsSingle)->toBe(Router::match(Method::GET, '/blog/:post/comments/:comment'));
+    expect($routeBlogPost)->toBe(Router::match(Method::GET, '/blog/{post}'));
+    expect($routeBlogPostComments)->toBe(Router::match(Method::GET, '/blog/{post}/comments'));
+    expect($routeBlogPostCommentsSingle)->toBe(Router::match(Method::GET, '/blog/{post}/comments/{comment}'));
 });
 
 test('can match http method', function () {

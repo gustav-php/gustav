@@ -138,9 +138,9 @@ class Router
                 $prepare .= '/';
             }
 
-            if (str_starts_with($part, ':')) {
+            if (str_starts_with($part, '{') && str_ends_with($part, '}')) {
                 $prepare .= self::PLACEHOLDER_TOKEN;
-                $params[ltrim($part, ':')] = $key;
+                $params[trim($part, '{}')] = $key;
                 if (!in_array($key, self::$params)) {
                     self::$params[] = $key;
                 }

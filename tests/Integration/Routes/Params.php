@@ -53,7 +53,7 @@ class Params extends Controller\Base
         ]);
     }
 
-    #[Route('/params/path/:required')]
+    #[Route('/params/path/{required}')]
     public function param(
         #[Param('required')] string $required,
     ): Controller\Response {

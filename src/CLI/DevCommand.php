@@ -2,8 +2,6 @@
 
 namespace GustavPHP\Gustav\CLI;
 
-use function realpath;
-
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -12,8 +10,6 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\{InputArgument, InputInterface};
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\Process;
-
-use function usleep;
 
 #[AsCommand(name: 'dev')]
 class DevCommand extends Command

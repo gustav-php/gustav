@@ -4,9 +4,6 @@ namespace GustavPHP\Gustav\Controller;
 
 use GustavPHP\Gustav\Traits\{Logger, Validate};
 use GustavPHP\Gustav\{Application, Serializer, View};
-
-use function json_encode;
-
 use Latte\RuntimeException;
 use LogicException;
 use Throwable;

@@ -4,9 +4,6 @@ namespace GustavPHP\Gustav\Serializer;
 
 use GustavPHP\Gustav\Attribute\Serializer\{AdditionalProperties, Exclude};
 use InvalidArgumentException;
-
-use function is_subclass_of;
-
 use ReflectionClass;
 use ReflectionException;
 

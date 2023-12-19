@@ -295,7 +295,7 @@ class Application
                         'snippet' => $this->getCodeBlockFromTrace($th->getFile(), $th->getLine()),
                         'version' => InstalledVersions::getPrettyVersion('gustav-php/gustav')
                     ]),
-                    status: $th->getCode() >= 500 ? 500 : $th->getCode()
+                    status: $th->getCode() >= 500 ? 500 : (int) $th->getCode()
                 ))->buildHtml();
             }
             return $response->buildJson();
@@ -312,20 +312,18 @@ class Application
     {
         try {
             $path = ltrim($request->getUri()->getPath(), '/');
-            $request = $request->withAttribute('Gustav-Path', $path);
             $route = Router::match(Method::fromRequest($request), $path);
             $controller = $this->controllers[$route->getClass()];
-            $request = $request
+            return $request
+                ->withAttribute('Gustav-Path', $path)
                 ->withAttribute('Gustav-Route', $route)
                 ->withAttribute('Gustav-Controller', $controller)
                 ->withAttribute('Gustav-Middlewares', $controller->getMiddlewares());
         } catch (Throwable $th) {
-            $request = $request
+            return $request
                 ->withAttribute('Gustav-Route', null)
                 ->withAttribute('Gustav-Exception', $th);
         }
-
-        return $request;
     }
 
     /**
