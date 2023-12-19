@@ -294,7 +294,8 @@ class Application
                         'trace' => $this->prepareTrace($th),
                         'snippet' => $this->getCodeBlockFromTrace($th->getFile(), $th->getLine()),
                         'version' => InstalledVersions::getPrettyVersion('gustav-php/gustav')
-                    ])
+                    ]),
+                    status: $th->getCode() >= 500 ? 500 : $th->getCode()
                 ))->buildHtml();
             }
             return $response->buildJson();
