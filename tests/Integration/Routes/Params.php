@@ -30,7 +30,7 @@ class Params extends Controller\Base
     #[Route('/params/cookie')]
     public function cookie(
         #[Cookie] array $all,
-        #[Cookie('a-session-console')] string $required,
+        #[Cookie('required')] string $required,
         #[Cookie('optional')] string $optional = 'default',
     ): Controller\Response {
         return $this->json([

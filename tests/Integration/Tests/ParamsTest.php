@@ -1,5 +1,7 @@
 <?php
 
+use GuzzleHttp\Cookie\CookieJar;
+
 $client = new GuzzleHttp\Client(['base_uri' => 'http://127.0.0.1:5173']);
 
 describe('params', function () use ($client) {
@@ -37,6 +39,23 @@ describe('params', function () use ($client) {
                 'required' => 'lorem',
                 'optional' => 'ipsum'
             ]
+        ]);
+        $body = json_decode($response->getBody()->getContents(), true);
+
+        expect($response->getStatusCode())->toBe(200);
+        expect($body['required'])->toBe('lorem');
+        expect($body['optional'])->toBe('ipsum');
+    });
+
+    it('can be in cookie', function () use ($client) {
+        $response = $client->request('GET', '/params/cookie', [
+            'cookies' => CookieJar::fromArray(
+                [
+                    'required' => 'lorem',
+                    'optional' => 'ipsum'
+                ],
+                '127.0.0.1'
+            )
         ]);
         $body = json_decode($response->getBody()->getContents(), true);
 
