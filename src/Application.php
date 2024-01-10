@@ -140,6 +140,7 @@ class Application
 
                 $psr7->respond($response);
             } catch (\Throwable $e) {
+                var_dump($e);
                 // In case of any exceptions in the application code, you should handle
                 // them and inform the client about the presence of a server error.
                 //
@@ -231,13 +232,13 @@ class Application
      */
     protected function handleRequest(ServerRequestInterface $request): Psr7Response
     {
-        $response = new Response();
-        $context = new Context(
-            path: $request->getAttribute('Gustav-Path'),
-            route: $request->getAttribute('Gustav-Route'),
-            controllerFactory: $request->getAttribute('Gustav-Controller')
-        );
         try {
+            $response = new Response();
+            $context = new Context(
+                path: $request->getAttribute('Gustav-Path'),
+                route: $request->getAttribute('Gustav-Route'),
+                controllerFactory: $request->getAttribute('Gustav-Controller')
+            );
             if ($request->getMethod() === 'GET' && array_key_exists($context->path, $this->files)) {
                 $path = $this->files[$context->path];
                 $contentType = mime_content_type($path);
@@ -314,6 +315,7 @@ class Application
             $path = ltrim($request->getUri()->getPath(), '/');
             $route = Router::match(Method::fromRequest($request), $path);
             $controller = $this->controllers[$route->getClass()];
+
             return $request
                 ->withAttribute('Gustav-Path', $path)
                 ->withAttribute('Gustav-Route', $route)
@@ -321,6 +323,7 @@ class Application
                 ->withAttribute('Gustav-Middlewares', $controller->getMiddlewares());
         } catch (Throwable $th) {
             return $request
+                ->withAttribute('Gustav-Path', $path)
                 ->withAttribute('Gustav-Route', null)
                 ->withAttribute('Gustav-Exception', $th);
         }
