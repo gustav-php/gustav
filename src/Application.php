@@ -232,8 +232,9 @@ class Application
      */
     protected function handleRequest(ServerRequestInterface $request): Psr7Response
     {
+        $response = new Response();
+
         try {
-            $response = new Response();
             $context = new Context(
                 path: $request->getAttribute('Gustav-Path'),
                 route: $request->getAttribute('Gustav-Route'),
@@ -313,17 +314,16 @@ class Application
     {
         try {
             $path = ltrim($request->getUri()->getPath(), '/');
+            $request = $request->withAttribute('Gustav-Path', $path);
             $route = Router::match(Method::fromRequest($request), $path);
             $controller = $this->controllers[$route->getClass()];
 
             return $request
-                ->withAttribute('Gustav-Path', $path)
                 ->withAttribute('Gustav-Route', $route)
                 ->withAttribute('Gustav-Controller', $controller)
                 ->withAttribute('Gustav-Middlewares', $controller->getMiddlewares());
         } catch (Throwable $th) {
             return $request
-                ->withAttribute('Gustav-Path', $path)
                 ->withAttribute('Gustav-Route', null)
                 ->withAttribute('Gustav-Exception', $th);
         }
