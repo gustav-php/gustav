@@ -18,14 +18,18 @@ class Base
      *
      * @param string $body
      * @param int $status
+     * @param array<string,string|array<string>> $headers
      * @return Response
      */
-    protected function html(string $body, int $status = 200): Response
-    {
+    protected function html(
+        string $body,
+        int $status = 200,
+        array $headers = []
+    ): Response {
         return new Response(
             status: $status,
             body: $body,
-            headers: ['Content-Type' => 'text/html']
+            headers: array_merge($headers, ["Content-Type" => "text/html"])
         );
     }
 
@@ -34,14 +38,20 @@ class Base
      *
      * @param array<mixed>|object $data
      * @param int $status
+     * @param array<string,string|array<string>> $headers
      * @return Response
      */
-    protected function json(array|object $data, int $status = 200): Response
-    {
+    protected function json(
+        array|object $data,
+        int $status = 200,
+        array $headers = []
+    ): Response {
         return new Response(
             status: $status,
             body: json_encode($data),
-            headers: ['Content-Type' => 'application/json']
+            headers: array_merge($headers, [
+                "Content-Type" => "application/json",
+            ])
         );
     }
 
@@ -50,14 +60,18 @@ class Base
      *
      * @param string $body
      * @param int $status
+     * @param array<string,string|array<string>> $headers
      * @return Response
      */
-    protected function plaintext(string $body, int $status = 200): Response
-    {
+    protected function plaintext(
+        string $body,
+        int $status = 200,
+        array $headers = []
+    ): Response {
         return new Response(
             status: $status,
             body: $body,
-            headers: ['Content-Type' => 'text/plain']
+            headers: array_merge($headers, ["Content-Type" => "text/plain"])
         );
     }
 
@@ -66,13 +80,17 @@ class Base
      *
      * @param string $url
      * @param int $status
+     * @param array<string,string|array<string>> $headers
      * @return Response
      */
-    protected function redirect(string $url, int $status = 301): Response
-    {
+    protected function redirect(
+        string $url,
+        int $status = 301,
+        array $headers = []
+    ): Response {
         return new Response(
             status: $status,
-            headers: ['Location' => $url]
+            headers: array_merge($headers, ["Location" => $url])
         );
     }
     /**
@@ -80,14 +98,20 @@ class Base
      *
      * @param Serializer\Base $object
      * @param int $status
+     * @param array<string,string|array<string>> $headers
      * @return Response
      */
-    protected function serialize(Serializer\Base $object, int $status = 200): Response
-    {
+    protected function serialize(
+        Serializer\Base $object,
+        int $status = 200,
+        array $headers = []
+    ): Response {
         return new Response(
             status: $status,
             body: $object,
-            headers: ['Content-Type' => 'application/json']
+            headers: array_merge($headers, [
+                "Content-Type" => "application/json",
+            ])
         );
     }
 
@@ -96,23 +120,32 @@ class Base
      *
      * @param string $template
      * @param array<mixed> $params
+     * @param int $status
+     * @param array<string,string|array<string>> $headers
      * @return Response
      * @throws LogicException
      * @throws RuntimeException
      * @throws Throwable
      */
-    protected function view(string $template, array $params = []): Response
-    {
+    protected function view(
+        string $template,
+        array $params = [],
+        int $status = 200,
+        array $headers = []
+    ): Response {
         if (Application::$configuration->views) {
-            $template = Application::$configuration->views . DIRECTORY_SEPARATOR . $template;
+            $template =
+                Application::$configuration->views .
+                DIRECTORY_SEPARATOR .
+                $template;
         }
 
         $view = View::render($template, $params);
 
         return new Response(
-            status: 200,
+            status: $status,
             body: $view,
-            headers: ['Content-Type' => 'text/html']
+            headers: array_merge($headers, ["Content-Type" => "text/html"])
         );
     }
 
@@ -128,7 +161,7 @@ class Base
         return new Response(
             status: $status,
             body: $body,
-            headers: ['Content-Type' => 'text/xml']
+            headers: ["Content-Type" => "text/xml"]
         );
     }
 }
