@@ -14,7 +14,7 @@ use Symfony\Component\Process\Process;
 #[AsCommand(name: 'dev')]
 class DevCommand extends Command
 {
-    protected static $defaultDescription = 'Starts development server.';
+    protected static string $defaultDescription = 'Starts development server.';
 
     protected function configure(): void
     {
