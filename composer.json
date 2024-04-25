@@ -12,14 +12,14 @@
   "require": {
     "php": ">=8.2",
     "ext-fileinfo": "*",
-    "haydenpierce/class-finder": "^0.5.1",
+    "haydenpierce/class-finder": "^0.5.3",
     "latte/latte": "^3.0",
     "nyholm/psr7": "^1.8",
     "php-di/php-di": "^7.0",
-    "spiral/roadrunner-cli": "^2.5",
-    "spiral/roadrunner-http": "^3.2",
-    "symfony/console": "^6.2",
-    "symfony/process": "^6.3"
+    "spiral/roadrunner-cli": "^2.6",
+    "spiral/roadrunner-http": "^3.5",
+    "symfony/console": "^7.0",
+    "symfony/process": "^7.0"
   },
   "scripts": {
     "test": "@php ./vendor/bin/pest",
@@ -33,9 +33,9 @@
   },
   "require-dev": {
     "guzzlehttp/guzzle": "^7.8",
-    "laravel/pint": "^1.1",
-    "pestphp/pest": "^2.4",
-    "phpstan/phpstan": "^1.8"
+    "laravel/pint": "^1.15",
+    "pestphp/pest": "^2.34",
+    "phpstan/phpstan": "^1.10"
   },
   "bin": ["./bin/gustav-php"],
   "autoload": {
