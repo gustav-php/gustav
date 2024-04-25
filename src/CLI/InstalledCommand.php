@@ -10,7 +10,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'installed', hidden: true)]
 class InstalledCommand extends Command
 {
-    protected static $defaultDescription = 'Show post install instructions.';
+    protected static string $defaultDescription = 'Show post install instructions.';
 
     protected function configure(): void
     {

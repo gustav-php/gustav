@@ -10,7 +10,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'start')]
 class StartCommand extends Command
 {
-    protected static $defaultDescription = 'Starts production server.';
+    protected static string $defaultDescription = 'Starts production server.';
 
     protected function configure(): void
     {
