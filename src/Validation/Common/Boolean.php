@@ -9,10 +9,10 @@ class Boolean extends Validation
 {
     public function validate(mixed $value): true
     {
-        if ($value === true || $value === false || $value === "true" || $value === "false") {
+        if ($value === true || $value === false || $value === 'true' || $value === 'false') {
             return true;
         }
 
-        throw new Exception("value must be boolean");
+        throw new Exception('value must be boolean');
     }
 }

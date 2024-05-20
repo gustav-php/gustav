@@ -10,7 +10,7 @@ class URL extends Validation
     public function validate(mixed $value): true
     {
         if (!filter_var($value, FILTER_VALIDATE_URL)) {
-            throw new Exception("Invalid URL");
+            throw new Exception('Invalid URL');
         }
         return true;
     }

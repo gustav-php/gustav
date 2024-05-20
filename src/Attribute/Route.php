@@ -59,7 +59,7 @@ class Route
     public function generateArguments(ServerRequestInterface $request): array
     {
         $params = [];
-        $path = trim($request->getUri()->getPath(), "/");
+        $path = trim($request->getUri()->getPath(), '/');
         $parts = explode('/', $path);
         foreach ($this->placeholders as $key => $index) {
             $params[$key] = $parts[$index];

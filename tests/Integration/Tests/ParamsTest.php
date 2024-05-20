@@ -1,16 +1,18 @@
 <?php
 
+use function GustavPHP\Tests\Integration\createClient;
+
 use GuzzleHttp\Cookie\CookieJar;
 
-$client = new GuzzleHttp\Client(['base_uri' => 'http://127.0.0.1:5173']);
+$client = createClient();
 
 describe('params', function () use ($client) {
     it('can be in query', function () use ($client) {
         $response = $client->request('GET', '/params/query', [
             'query' => [
                 'required' => 'lorem',
-                'optional' => 'ipsum'
-            ]
+                'optional' => 'ipsum',
+            ],
         ]);
         $body = json_decode($response->getBody()->getContents(), true);
 
@@ -23,8 +25,8 @@ describe('params', function () use ($client) {
         $response = $client->request('GET', '/params/header', [
             'headers' => [
                 'required' => 'lorem',
-                'optional' => 'ipsum'
-            ]
+                'optional' => 'ipsum',
+            ],
         ]);
         $body = json_decode($response->getBody()->getContents(), true);
 
@@ -37,8 +39,8 @@ describe('params', function () use ($client) {
         $response = $client->request('POST', '/params/body', [
             'form_params' => [
                 'required' => 'lorem',
-                'optional' => 'ipsum'
-            ]
+                'optional' => 'ipsum',
+            ],
         ]);
         $body = json_decode($response->getBody()->getContents(), true);
 
@@ -52,10 +54,10 @@ describe('params', function () use ($client) {
             'cookies' => CookieJar::fromArray(
                 [
                     'required' => 'lorem',
-                    'optional' => 'ipsum'
+                    'optional' => 'ipsum',
                 ],
                 '127.0.0.1'
-            )
+            ),
         ]);
         $body = json_decode($response->getBody()->getContents(), true);
 

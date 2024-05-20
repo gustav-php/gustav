@@ -2,7 +2,9 @@
 
 use GustavPHP\Gustav\Router\Method;
 
-$client = new GuzzleHttp\Client(['base_uri' => 'http://127.0.0.1:5173']);
+use function GustavPHP\Tests\Integration\createClient;
+
+$client = createClient();
 
 describe('methods', function () use ($client) {
     it('can return', function (Method $method) use ($client) {
@@ -15,6 +17,6 @@ describe('methods', function () use ($client) {
         Method::PUT,
         Method::PATCH,
         Method::DELETE,
-        Method::OPTIONS
+        Method::OPTIONS,
     ]);
 });

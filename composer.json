@@ -1,71 +1,74 @@
 {
-  "name": "gustav-php/gustav",
-  "description": "A modern HTTP Framework for PHP.",
-  "homepage": "https://gustav-php.github.io",
-  "keywords": ["framework", "gustav"],
-  "type": "library",
-  "license": "MIT",
-  "support": {
-    "issues": "https://github.com/gustav-php/gustav/issues",
-    "source": "https://github.com/gustav-php/gustav"
-  },
-  "require": {
-    "php": ">=8.2",
-    "ext-fileinfo": "*",
-    "haydenpierce/class-finder": "^0.5.3",
-    "latte/latte": "^3.0",
-    "nyholm/psr7": "^1.8",
-    "php-di/php-di": "^7.0",
-    "spiral/roadrunner-cli": "^2.6",
-    "spiral/roadrunner-http": "^3.5",
-    "symfony/console": "^7.0",
-    "symfony/process": "^7.0"
-  },
-  "scripts": {
-    "test": "@php ./vendor/bin/pest",
-    "demo": [
-      "Composer\\Config::disableProcessTimeout",
-      "@php ./bin/gustav-php dev"
-    ],
-    "check": "@php ./vendor/bin/phpstan analyze",
-    "lint": "@php ./vendor/bin/pint --test src tests",
-    "format": "@php ./vendor/bin/pint src tests"
-  },
-  "require-dev": {
-    "guzzlehttp/guzzle": "^7.8",
-    "laravel/pint": "^1.15",
-    "pestphp/pest": "^2.34",
-    "phpstan/phpstan": "^1.10"
-  },
-  "bin": ["./bin/gustav-php"],
-  "autoload": {
-    "psr-4": {
-      "GustavPHP\\Gustav\\": "src/"
-    }
-  },
-  "autoload-dev": {
-    "psr-4": {
-      "GustavPHP\\Demo\\": "demo/",
-      "GustavPHP\\Tests\\": "tests/"
-    }
-  },
-  "authors": [
-    {
-      "name": "Torsten Dittmann",
-      "email": "torsten.dittmann@googlemail.com"
-    }
-  ],
-  "minimum-stability": "stable",
-  "prefer-stable": true,
-  "config": {
-    "preferred-install": "dist",
-    "sort-packages": true,
-    "optimize-autoloader": true,
-    "allow-plugins": {
-      "pestphp/pest-plugin": true
+    "name": "gustav-php/gustav",
+    "description": "A modern HTTP Framework for PHP.",
+    "homepage": "https://gustav-php.github.io",
+    "keywords": ["framework", "gustav"],
+    "type": "library",
+    "license": "MIT",
+    "support": {
+        "issues": "https://github.com/gustav-php/gustav/issues",
+        "source": "https://github.com/gustav-php/gustav"
     },
-    "platform": {
-      "php": "8.2.0"
+    "require": {
+        "php": ">=8.2",
+        "ext-fileinfo": "*",
+        "haydenpierce/class-finder": "^0.5.3",
+        "latte/latte": "^3.0",
+        "nyholm/psr7": "^1.8",
+        "php-di/php-di": "^7.0",
+        "spiral/roadrunner-cli": "^2.6",
+        "spiral/roadrunner-http": "^3.5",
+        "symfony/console": "^7.0",
+        "symfony/process": "^7.0"
+    },
+    "scripts": {
+        "test": "@php ./vendor/bin/pest",
+        "demo": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php ./bin/gustav-php dev"
+        ],
+        "check": "@php ./vendor/bin/phpstan analyze",
+        "lint": "@php ./vendor/bin/pint --test src tests",
+        "format": "@php ./vendor/bin/pint src tests"
+    },
+    "require-dev": {
+        "guzzlehttp/guzzle": "^7.8",
+        "laravel/pint": "^1.15",
+        "pestphp/pest": "^2.34",
+        "phpstan/phpstan": "^1.10"
+    },
+    "bin": ["./bin/gustav-php"],
+    "autoload": {
+        "psr-4": {
+            "GustavPHP\\Gustav\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "GustavPHP\\Demo\\": "demo/",
+            "GustavPHP\\Tests\\": "tests/"
+        },
+        "files": [
+            "tests/Integration/helpers.php"
+        ]
+    },
+    "authors": [
+        {
+            "name": "Torsten Dittmann",
+            "email": "torsten.dittmann@googlemail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "config": {
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "optimize-autoloader": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        },
+        "platform": {
+            "php": "8.2.0"
+        }
     }
-  }
 }

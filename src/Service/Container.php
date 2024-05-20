@@ -25,9 +25,6 @@ class Container
     public function __construct()
     {
         $this->builder = new DI\ContainerBuilder();
-        $this->builder
-            ->useAttributes(true)
-            ->useAutowiring(false);
 
         if (Application::isProduction()) {
             $this->builder

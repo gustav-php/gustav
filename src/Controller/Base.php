@@ -29,7 +29,7 @@ class Base
         return new Response(
             status: $status,
             body: $body,
-            headers: array_merge($headers, ["Content-Type" => "text/html"])
+            headers: array_merge($headers, ['Content-Type' => 'text/html'])
         );
     }
 
@@ -50,7 +50,7 @@ class Base
             status: $status,
             body: json_encode($data),
             headers: array_merge($headers, [
-                "Content-Type" => "application/json",
+                'Content-Type' => 'application/json',
             ])
         );
     }
@@ -71,7 +71,7 @@ class Base
         return new Response(
             status: $status,
             body: $body,
-            headers: array_merge($headers, ["Content-Type" => "text/plain"])
+            headers: array_merge($headers, ['Content-Type' => 'text/plain'])
         );
     }
 
@@ -90,7 +90,7 @@ class Base
     ): Response {
         return new Response(
             status: $status,
-            headers: array_merge($headers, ["Location" => $url])
+            headers: array_merge($headers, ['Location' => $url])
         );
     }
     /**
@@ -110,7 +110,7 @@ class Base
             status: $status,
             body: $object,
             headers: array_merge($headers, [
-                "Content-Type" => "application/json",
+                'Content-Type' => 'application/json',
             ])
         );
     }
@@ -145,7 +145,7 @@ class Base
         return new Response(
             status: $status,
             body: $view,
-            headers: array_merge($headers, ["Content-Type" => "text/html"])
+            headers: array_merge($headers, ['Content-Type' => 'text/html'])
         );
     }
 
@@ -161,7 +161,7 @@ class Base
         return new Response(
             status: $status,
             body: $body,
-            headers: ["Content-Type" => "text/xml"]
+            headers: ['Content-Type' => 'text/xml']
         );
     }
 }

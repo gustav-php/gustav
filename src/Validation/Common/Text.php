@@ -13,21 +13,21 @@ class Text extends Validation
         protected ?int $maxLength = null
     ) {
         if ($this->minLength !== null && $this->minLength < 0) {
-            throw new InvalidArgumentException("minLength must be greater than 0");
+            throw new InvalidArgumentException('minLength must be greater than 0');
         }
         if ($this->maxLength !== null) {
             if ($this->maxLength < 0) {
-                throw new InvalidArgumentException("maxLength must be greater than 0");
+                throw new InvalidArgumentException('maxLength must be greater than 0');
             }
             if ($this->minLength !== null && $this->minLength > $this->maxLength) {
-                throw new InvalidArgumentException("minLength must be less than maxLength");
+                throw new InvalidArgumentException('minLength must be less than maxLength');
             }
         }
     }
     public function validate(mixed $value): true
     {
         if (!is_string($value)) {
-            throw new Exception("value must be string");
+            throw new Exception('value must be string');
         }
 
         $length = mb_strlen($value);
