@@ -140,7 +140,6 @@ class Application
 
                 $psr7->respond($response);
             } catch (\Throwable $e) {
-                var_dump($e);
                 // In case of any exceptions in the application code, you should handle
                 // them and inform the client about the presence of a server error.
                 //
@@ -273,7 +272,7 @@ class Application
             }
             return $response->merge($payload)->build();
         } catch (Throwable $th) {
-            if ($th->getCode() === 0) {
+            if ($th->getCode() < 400 || $th->getCode() >= 600) {
                 $response->setStatus(500);
             } else {
                 $response->setStatus($th->getCode());
@@ -297,9 +296,10 @@ class Application
                         'snippet' => $this->getCodeBlockFromTrace($th->getFile(), $th->getLine()),
                         'version' => InstalledVersions::getPrettyVersion('gustav-php/gustav')
                     ]),
-                    status: $th->getCode() >= 500 ? 500 : (int) $th->getCode()
+                    status: $th->getCode() < 400 || $th->getCode() >= 600 ? 500 : (int) $th->getCode()
                 ))->buildHtml();
             }
+            var_dump(5);
             return $response->buildJson();
         }
     }
@@ -431,9 +431,6 @@ class Application
                 $route->addArgument($parameter->getName(), $instance);
                 continue;
             }
-            var_dump('---');
-            var_dump($method, $parameter, $header);
-            var_dump('---');
 
             throw new Exception('Invalid parameter type');
         }

@@ -1,7 +1,4 @@
-{layout 'layout.latte'}
-{block title}{$title}{/block}
-
-{block content}
+{layout 'layout.latte'} {block title}{$title}{/block} {block content}
 <article>
     <h1>{$message}</h1>
     <table>
@@ -15,7 +12,7 @@
                 <td><code>{$message}</code></td>
             </tr>
             <tr>
-                <th scope="row"> <strong>Code</strong></th>
+                <th scope="row"><strong>Code</strong></th>
                 <td><code>{$code}</code></td>
             </tr>
             <tr>
@@ -28,7 +25,7 @@
             </tr>
         </tbody>
     </table>
-    <pre><code class="language-php">{$snippet}</code></pre>
+    <pre class="snippet"><code>{$snippet}</code></pre>
 </article>
 <article>
     {foreach $trace as $entry}
@@ -40,7 +37,11 @@
             <tbody>
                 <tr>
                     <th scope="row"><strong>Function</strong></th>
-                    <td><code>{$entry?->class}{$entry?->type}{$entry?->function}</code></td>
+                    <td>
+                        <code
+                            >{$entry?->class}{$entry?->type}{$entry?->function}</code
+                        >
+                    </td>
                 </tr>
                 <tr>
                     <th scope="row"><strong>File</strong></th>
@@ -52,8 +53,29 @@
                 </tr>
             </tbody>
         </table>
-        <pre><code class="language-php">{$entry->snippet}</code></pre>
+        <pre class="snippet"><code>{$entry->snippet}</code></pre>
     </details>
     {/foreach}
 </article>
+<script type="module">
+    import { codeToHtml } from "https://esm.sh/shiki@1.6.0";
+
+    document.querySelectorAll(".snippet").forEach(async (block) => {
+        console.log(block.querySelector("code").innerText);
+        block.outerHTML = await codeToHtml(
+            block.querySelector("code").textContent,
+            {
+                lang: "php",
+                theme: "dracula",
+                decorations: [
+                    {
+                        start: { line: 0, character: 0 },
+                        end: { line: 4, character: 0 },
+                        properties: { class: "highlighted-word" },
+                    },
+                ],
+            },
+        );
+    });
+</script>
 {/block}

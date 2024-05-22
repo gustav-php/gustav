@@ -2,6 +2,7 @@
 
 namespace GustavPHP\Gustav\Event;
 
+use Exception;
 use GustavPHP\Gustav\Attribute\Event;
 use ReflectionClass;
 use ReflectionException;
@@ -41,8 +42,8 @@ class Manager
     public static function dispatch(string $event, array $payload): void
     {
         $payload = new Payload($event, $payload);
-        if (!isset(self::$listeners[$event])) {
-            return;
+        if (!array_key_exists($event, self::$listeners)) {
+            throw new Exception("No listeners for event: $event");
         }
         foreach (self::$listeners[$event] as $listener) {
             $listener->handle($payload);
