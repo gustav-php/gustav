@@ -2,8 +2,8 @@
 
 namespace GustavPHP\Gustav\Controller;
 
-use GustavPHP\Gustav\Traits\{Logger, Validate};
 use GustavPHP\Gustav\{Application, Serializer, View};
+use GustavPHP\Gustav\Traits\{Logger, Validate};
 use Latte\RuntimeException;
 use LogicException;
 use Throwable;
