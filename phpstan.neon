@@ -1,6 +1,7 @@
 parameters:
-	level: 8
-	paths:
-		- src
-	ignoreErrors:
-	    - identifier: missingType.generics
+    level: 8
+    paths:
+        - src
+    treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+        - identifier: missingType.generics
