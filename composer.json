@@ -34,7 +34,7 @@
     "require-dev": {
         "guzzlehttp/guzzle": "^7.8",
         "laravel/pint": "^1.15",
-        "pestphp/pest": "^3.8",
+        "pestphp/pest": "3.0.3",
         "phpstan/phpstan": "^2.1"
     },
     "bin": ["./bin/gustav-php"],
