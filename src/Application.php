@@ -426,7 +426,7 @@ class Application
                      * @var ReflectionNamedType $type
                      */
                     $type = $parameter->getType();
-                    $instance->setDTO(DTO\Mapper::fromReflection($type));
+                    $instance->setDto(DTO\Mapper::fromReflection($type));
                 }
                 $route->addArgument($parameter->getName(), $instance);
                 continue;
