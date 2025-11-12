@@ -127,7 +127,7 @@ class Response
         if ($response->body) {
             $this->body = $response->body;
         }
-        $this->headers = array_merge($this->headers ?? [], $response->headers ?? []);
+        $this->headers = array_merge($this->headers, $response->headers);
 
         return $this;
     }
