@@ -9,3 +9,4 @@
 .vscode/
 rr
 test.log
+.DS_Store
