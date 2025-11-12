@@ -15,7 +15,9 @@ class ControllerFactory
      * @param class-string<Base> $class
      * @return void
      */
-    public function __construct(protected string $class) {}
+    public function __construct(protected string $class)
+    {
+    }
 
     /**
      * Get the controller class.
@@ -40,7 +42,7 @@ class ControllerFactory
         $attributes = $reflection->getAttributes(Middleware::class);
 
         return array_map(
-            fn($attribute) => $attribute->newInstance()->getInstance(),
+            fn ($attribute) => $attribute->newInstance()->getInstance(),
             $attributes,
         );
     }
