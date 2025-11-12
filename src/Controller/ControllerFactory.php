@@ -15,14 +15,12 @@ class ControllerFactory
      * @param class-string<Base> $class
      * @return void
      */
-    public function __construct(protected string $class)
-    {
-    }
+    public function __construct(protected string $class) {}
 
     /**
      * Get the controller class.
      *
-     * @return string
+     * @return class-string<Base>
      */
     public function getClass(): string
     {
@@ -41,6 +39,9 @@ class ControllerFactory
         $reflection = new ReflectionClass($this->class);
         $attributes = $reflection->getAttributes(Middleware::class);
 
-        return array_map(fn ($attribute) => $attribute->newInstance()->getInstance(), $attributes);
+        return array_map(
+            fn($attribute) => $attribute->newInstance()->getInstance(),
+            $attributes,
+        );
     }
 }
