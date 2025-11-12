@@ -40,11 +40,13 @@ class Container
     {
         foreach ($definitions as $id => $factory) {
             if (!is_string($id) || $id === '') {
-                throw new InvalidArgumentException('Dependency id must be a non-empty string');
+                throw new InvalidArgumentException(
+                    'Dependency id must be a non-empty string',
+                );
             }
             if (!is_callable($factory) && !is_object($factory)) {
                 throw new InvalidArgumentException(
-                    sprintf('Definition for "%s" must be an object or callable', $id)
+                    "Definition for '{$id}' must be an object or callable",
                 );
             }
 
@@ -75,7 +77,7 @@ class Container
 
         $instance = $this->autowire($class);
         if (!$instance instanceof Base) {
-            throw new LogicException(sprintf('%s must extend %s', $class, Base::class));
+            throw new LogicException("{$class} must extend " . Base::class);
         }
 
         return $instance;
@@ -90,22 +92,28 @@ class Container
     protected function autowire(string $class): object
     {
         if (!class_exists($class)) {
-            throw new InvalidArgumentException(sprintf('Unable to resolve "%s"', $class));
+            throw new InvalidArgumentException("Unable to resolve '{$class}'");
         }
 
         $reflector = new ReflectionClass($class);
         if (!$reflector->isInstantiable()) {
-            throw new InvalidArgumentException(sprintf('%s is not instantiable', $class));
+            throw new InvalidArgumentException("{$class} is not instantiable");
         }
 
         $constructor = $reflector->getConstructor();
-        if ($constructor === null || $constructor->getNumberOfParameters() === 0) {
+        if (
+            $constructor === null ||
+            $constructor->getNumberOfParameters() === 0
+        ) {
             return new $class();
         }
 
         $dependencies = array_map(
-            fn (ReflectionParameter $parameter) => $this->resolveParameter($class, $parameter),
-            $constructor->getParameters()
+            fn (ReflectionParameter $parameter) => $this->resolveParameter(
+                $class,
+                $parameter,
+            ),
+            $constructor->getParameters(),
         );
 
         return $reflector->newInstanceArgs($dependencies);
@@ -118,23 +126,21 @@ class Container
      * @param callable $definition
      * @return mixed
      */
-    protected function executeDefinition(string $id, callable $definition): mixed
-    {
+    protected function executeDefinition(
+        string $id,
+        callable $definition,
+    ): mixed {
         $callable = Closure::fromCallable($definition);
         $reflection = new ReflectionFunction($callable);
         $parameterCount = $reflection->getNumberOfParameters();
 
         if ($parameterCount > 1) {
-            throw new InvalidArgumentException(sprintf(
-                'Definition for "%s" must accept 0 or 1 parameter, %d given',
-                $id,
-                $parameterCount
-            ));
+            throw new InvalidArgumentException(
+                "Definition for '{$id}' must accept 0 or 1 parameter, {$parameterCount} given",
+            );
         }
 
-        return $parameterCount === 0
-            ? $callable()
-            : $callable($this);
+        return $parameterCount === 0 ? $callable() : $callable($this);
     }
 
     /**
@@ -150,7 +156,7 @@ class Container
         }
 
         if (isset($this->resolving[$id])) {
-            throw new LogicException(sprintf('Circular dependency detected for "%s"', $id));
+            throw new LogicException("Unable to resolve '{$id}'");
         }
         $this->resolving[$id] = true;
 
@@ -160,6 +166,9 @@ class Container
                 ? $this->executeDefinition($id, $definition)
                 : $definition;
         } else {
+            if (!class_exists($id)) {
+                throw new InvalidArgumentException("Unable to resolve '{$id}'");
+            }
             $value = $this->autowire($id);
         }
 
@@ -177,8 +186,10 @@ class Container
      * @param ReflectionParameter $parameter
      * @return mixed
      */
-    protected function resolveParameter(string $context, ReflectionParameter $parameter): mixed
-    {
+    protected function resolveParameter(
+        string $context,
+        ReflectionParameter $parameter,
+    ): mixed {
         $type = $parameter->getType();
 
         if ($type instanceof ReflectionNamedType && !$type->isBuiltin()) {
@@ -193,10 +204,8 @@ class Container
             return null;
         }
 
-        throw new InvalidArgumentException(sprintf(
-            'Unable to resolve parameter $%s for %s::__construct()',
-            $parameter->getName(),
-            $context
-        ));
+        throw new InvalidArgumentException(
+            "Unable to resolve parameter \${$parameter->getName()} for {$context}::__construct()",
+        );
     }
 }
