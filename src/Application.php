@@ -77,6 +77,24 @@ class Application implements RequestHandlerInterface
         Event\Manager::reset();
         View::reset();
 
+        foreach (Discovery::discoverServices() as $service) {
+            $this->services->bind(
+                $service->service,
+                $service->implementation,
+                $service->lifetime,
+            );
+        }
+        foreach (Discovery::discoverServiceProviders() as $provider) {
+            (new $provider())->register($this->services);
+        }
+        foreach (Discovery::discoverMiddlewares() as $middleware) {
+            $this->services->bind(
+                $middleware['class'],
+                $middleware['class'],
+                $middleware['lifetime'],
+            );
+            $this->addMiddleware($middleware['class']);
+        }
         foreach (Discovery::discoverController() as $class) {
             $this->addRoutes([$class]);
         }

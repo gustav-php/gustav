@@ -1,11 +1,14 @@
 <?php
 
-namespace GustavPHP\Tests\Integration\Auth;
+namespace GustavPHP\Tests\Integration\Services;
 
+use GustavPHP\Gustav\Attribute\Service;
 use GustavPHP\Gustav\Auth\{Authenticator, BearerAuth, Identity};
 use GustavPHP\Gustav\Auth\Exception\UnauthorizedException;
+use GustavPHP\Tests\Integration\Auth\TestIdentity;
 use Psr\Http\Message\ServerRequestInterface;
 
+#[Service(as: Authenticator::class)]
 class HeaderAuthenticator implements Authenticator
 {
     public function authenticate(ServerRequestInterface $request): Identity
