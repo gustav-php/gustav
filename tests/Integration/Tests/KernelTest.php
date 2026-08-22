@@ -4,7 +4,7 @@ use GustavPHP\Gustav\Http\Exception\HttpException;
 
 use function GustavPHP\Tests\Integration\{createApplication, createClient};
 
-use GustavPHP\Tests\Integration\Middleware\Trace;
+use GustavPHP\Tests\Integration\Middleware\GlobalTrace;
 use Nyholm\Psr7\ServerRequest;
 
 $client = createClient();
@@ -18,7 +18,7 @@ describe('http kernel', function () use ($client) {
     });
 
     it('runs global, controller, and route middleware in order and unwinds the response', function () {
-        $app = createApplication()->addMiddleware(new Trace('global'));
+        $app = createApplication()->addMiddleware(GlobalTrace::class);
         $response = $app->handle(new ServerRequest('GET', '/kernel/middleware'));
 
         expect((string) $response->getBody())->toBe('global,controller,route')
@@ -62,7 +62,7 @@ describe('http kernel', function () use ($client) {
     });
 
     it('lets application middleware inspect mapped error responses', function () {
-        $app = createApplication()->addMiddleware(new Trace('global'));
+        $app = createApplication()->addMiddleware(GlobalTrace::class);
         $response = $app->handle(new ServerRequest('GET', '/missing'));
 
         expect($response->getStatusCode())->toBe(404)

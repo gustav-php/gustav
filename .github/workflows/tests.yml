@@ -76,6 +76,14 @@ jobs:
                   auth_status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:5173/kernel/auth)
                   test "$auth_status" = "401"
 
+                  service_json=$(curl --fail --silent http://127.0.0.1:5173/services/lifecycle)
+                  php -r '$body = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR); exit($body["greeting"] === "configured" && $body["request"] === $body["middleware"] && $body["transientsDiffer"] === true ? 0 : 1);' <<< "$service_json"
+
+                  service_error_status=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+                      http://127.0.0.1:5173/services/lifecycle/error)
+                  test "$service_error_status" = "418"
+                  curl --fail --silent --output /dev/null http://127.0.0.1:5173/services/lifecycle
+
                   valid_json=$(curl --fail --silent \
                       --header 'Content-Type: application/json' \
                       --data '{"email":"ada@example.com","age":"0","active":"false","status":"published","nickname":null}' \

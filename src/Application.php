@@ -11,6 +11,7 @@ use GustavPHP\Gustav\Http\Exception\{HttpException, RequestInputException, Valid
 use GustavPHP\Gustav\Middleware\Pipeline;
 use GustavPHP\Gustav\Router\{Method, Router};
 use GustavPHP\Gustav\Service\Container;
+use InvalidArgumentException;
 use LogicException;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response as Psr7Response;
@@ -42,7 +43,7 @@ class Application implements RequestHandlerInterface
      */
     protected array $files = [];
     /**
-     * @var array<MiddlewareInterface>
+     * @var array<class-string<MiddlewareInterface>>
      */
     protected array $middlewares = [];
     /**
@@ -53,6 +54,8 @@ class Application implements RequestHandlerInterface
      * @var array<int,ResponseHandler>
      */
     protected array $responseHandlers = [];
+
+    protected Container $services;
 
     /**
      * Creates a new application instance.
@@ -65,6 +68,10 @@ class Application implements RequestHandlerInterface
         Configuration $configuration
     ) {
         self::$configuration = $configuration;
+        $this->services = new Container();
+        $this->services
+            ->singleton(Configuration::class, $configuration)
+            ->singleton(self::class, $this);
         Router::reset();
         Serializer\Manager::reset();
         Event\Manager::reset();
@@ -98,9 +105,18 @@ class Application implements RequestHandlerInterface
 
     /**
      * Add application-wide middleware.
+     *
+     * @param class-string<MiddlewareInterface> ...$middlewares
      */
-    public function addMiddleware(MiddlewareInterface ...$middlewares): self
+    public function addMiddleware(string ...$middlewares): self
     {
+        foreach ($middlewares as $middleware) {
+            if (!is_a($middleware, MiddlewareInterface::class, true)) {
+                throw new InvalidArgumentException(
+                    "Middleware '{$middleware}' must implement " . MiddlewareInterface::class,
+                );
+            }
+        }
         array_push($this->middlewares, ...$middlewares);
 
         return $this;
@@ -127,16 +143,28 @@ class Application implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
+        $scope = null;
+
         try {
+            $this->services->build();
+            $scope = $this->services->createRequestScope($request);
             $path = ltrim($request->getUri()->getPath(), '/');
             $request = $request->withAttribute('Gustav-Path', $path);
+            $scope->setRequest($request);
 
             return (new Pipeline(
-                $this->middlewares,
-                new CallableRequestHandler($this->handleRoutedRequestSafely(...)),
+                $this->resolveMiddlewares($this->middlewares, $scope),
+                new CallableRequestHandler(
+                    fn (ServerRequestInterface $nextRequest): ResponseInterface => $this->handleRoutedRequestSafely(
+                        $nextRequest,
+                        $scope,
+                    ),
+                ),
             ))->handle($request);
         } catch (Throwable $th) {
             return $this->renderException($th);
+        } finally {
+            $scope?->release();
         }
     }
 
@@ -151,12 +179,21 @@ class Application implements RequestHandlerInterface
     }
 
     /**
+     * Access application service registration before request handling begins.
+     */
+    public function services(): Container
+    {
+        return $this->services;
+    }
+
+    /**
      * Starts the application.
      *
      * @return void
      */
     public function start(): void
     {
+        $this->services->build();
         $worker = Worker::create();
         $factory = new Psr17Factory();
         $psr7 = new PSR7Worker($worker, $factory, $factory, $factory);
@@ -216,18 +253,23 @@ class Application implements RequestHandlerInterface
     /**
      * Invoke the matched controller.
      */
-    protected function dispatchRequest(ServerRequestInterface $request): ResponseInterface
-    {
+    protected function dispatchRequest(
+        ServerRequestInterface $request,
+        Container $scope,
+    ): ResponseInterface {
         $route = $request->getAttribute('Gustav-Route');
         $controller = $request->getAttribute('Gustav-Controller');
         if (!$route instanceof Attribute\Route || !$controller instanceof ControllerFactory) {
             throw new LogicException('Request route has not been initialized');
         }
 
-        $dependencies = new Container();
-        $dependencies->addDependency([ServerRequestInterface::class => fn () => $request]);
-        $dependencies->build();
-        $instance = $dependencies->make($controller->getClass());
+        $scope->setRequest($request);
+        $instance = $scope->make($controller->getClass());
+        if (!$instance instanceof Controller\Base) {
+            throw new LogicException(
+                "Controller '{$controller->getClass()}' must extend " . Controller\Base::class,
+            );
+        }
         $requestBinder = $this->requestBinders[spl_object_id($route)] ?? null;
         if ($requestBinder === null) {
             throw new LogicException('Request binder has not been initialized');
@@ -265,8 +307,11 @@ class Application implements RequestHandlerInterface
     /**
      * Resolve a route and run its controller and method middleware.
      */
-    protected function handleRoutedRequest(ServerRequestInterface $request): ResponseInterface
-    {
+    protected function handleRoutedRequest(
+        ServerRequestInterface $request,
+        Container $scope,
+    ): ResponseInterface {
+        $scope->setRequest($request);
         $path = $request->getAttribute('Gustav-Path');
         if (!is_string($path)) {
             throw new LogicException('Request path has not been initialized');
@@ -282,15 +327,22 @@ class Application implements RequestHandlerInterface
             throw new LogicException("Controller '{$route->getClass()}' has not been registered");
         }
 
-        $middlewares = $controller->getMiddlewares($route->getFunction());
+        $middlewares = $this->resolveMiddlewares(
+            $controller->getMiddlewareClasses($route->getFunction()),
+            $scope,
+        );
         $request = $request
             ->withAttribute('Gustav-Route', $route)
-            ->withAttribute('Gustav-Controller', $controller)
-            ->withAttribute('Gustav-Middlewares', $middlewares);
+            ->withAttribute('Gustav-Controller', $controller);
 
         return (new Pipeline(
             $middlewares,
-            new CallableRequestHandler($this->dispatchRequest(...)),
+            new CallableRequestHandler(
+                fn (ServerRequestInterface $nextRequest): ResponseInterface => $this->dispatchRequest(
+                    $nextRequest,
+                    $scope,
+                ),
+            ),
         ))->handle($request);
     }
 
@@ -298,10 +350,12 @@ class Application implements RequestHandlerInterface
      * Convert route and controller exceptions inside the application middleware
      * pipeline so outer middleware can inspect the resulting error response.
      */
-    protected function handleRoutedRequestSafely(ServerRequestInterface $request): ResponseInterface
-    {
+    protected function handleRoutedRequestSafely(
+        ServerRequestInterface $request,
+        Container $scope,
+    ): ResponseInterface {
         try {
-            return $this->handleRoutedRequest($request);
+            return $this->handleRoutedRequest($request, $scope);
         } catch (Throwable $throwable) {
             return $this->renderException($throwable);
         }
@@ -339,8 +393,13 @@ class Application implements RequestHandlerInterface
      */
     protected function registerRoute(string $class): void
     {
-        $controller = new ControllerFactory($class);
         $reflector = new ReflectionClass($class);
+        if (!$reflector->isSubclassOf(Controller\Base::class)) {
+            throw new InvalidArgumentException(
+                "Controller '{$class}' must extend " . Controller\Base::class,
+            );
+        }
+        $controller = new ControllerFactory($class, $reflector);
         $this->addMethods($reflector);
         $this->controllers[$class] = $controller;
     }
@@ -448,5 +507,23 @@ class Application implements RequestHandlerInterface
         $routeId = spl_object_id($route);
         $this->requestBinders[$routeId] = $requestBinder;
         $this->responseHandlers[$routeId] = $responseHandler;
+    }
+
+    /**
+     * @param array<class-string<MiddlewareInterface>> $classes
+     * @return array<MiddlewareInterface>
+     */
+    private function resolveMiddlewares(array $classes, Container $scope): array
+    {
+        return array_map(function (string $class) use ($scope): MiddlewareInterface {
+            $middleware = $scope->get($class);
+            if (!$middleware instanceof MiddlewareInterface) {
+                throw new LogicException(
+                    "Service '{$class}' must resolve to " . MiddlewareInterface::class,
+                );
+            }
+
+            return $middleware;
+        }, $classes);
     }
 }

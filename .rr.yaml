@@ -8,4 +8,4 @@ http:
   address: "0.0.0.0:5173"
   pool:
     debug: false
-    num_workers: 2
+    num_workers: 1

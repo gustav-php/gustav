@@ -5,18 +5,32 @@ namespace GustavPHP\Gustav\Controller;
 use GustavPHP\Gustav\Attribute\Middleware;
 use Psr\Http\Server\MiddlewareInterface;
 use ReflectionClass;
-use ReflectionException;
 
 class ControllerFactory
 {
+    /** @var array<string, array<class-string<MiddlewareInterface>>> */
+    private array $methodMiddlewares = [];
+    /** @var array<class-string<MiddlewareInterface>> */
+    private array $middlewares;
+
     /**
      * ControllerFactory constructor.
      *
      * @param class-string<Base> $class
      * @return void
      */
-    public function __construct(protected string $class)
-    {
+    public function __construct(
+        protected string $class,
+        ?ReflectionClass $reflection = null,
+    ) {
+        $reflection ??= new ReflectionClass($class);
+        $this->middlewares = $this->compileMiddlewares($reflection->getAttributes(Middleware::class));
+
+        foreach ($reflection->getMethods() as $method) {
+            $this->methodMiddlewares[$method->getName()] = $this->compileMiddlewares(
+                $method->getAttributes(Middleware::class),
+            );
+        }
     }
 
     /**
@@ -30,25 +44,26 @@ class ControllerFactory
     }
 
     /**
-     * Get the middlewares for the controller.
+     * Get the compiled middleware classes for the controller and method.
      *
-     * @return array<MiddlewareInterface>
-     * @throws ReflectionException
+     * @return array<class-string<MiddlewareInterface>>
      */
-    public function getMiddlewares(?string $method = null): array
+    public function getMiddlewareClasses(?string $method = null): array
     {
-        $reflection = new ReflectionClass($this->class);
-        $attributes = $reflection->getAttributes(Middleware::class);
+        return [
+            ...$this->middlewares,
+            ...($method === null ? [] : ($this->methodMiddlewares[$method] ?? [])),
+        ];
+    }
 
-        if ($method !== null) {
-            $attributes = [
-                ...$attributes,
-                ...$reflection->getMethod($method)->getAttributes(Middleware::class),
-            ];
-        }
-
+    /**
+     * @param array<\ReflectionAttribute<Middleware>> $attributes
+     * @return array<class-string<MiddlewareInterface>>
+     */
+    private function compileMiddlewares(array $attributes): array
+    {
         return array_map(
-            fn ($attribute) => $attribute->newInstance()->getInstance(),
+            fn ($attribute): string => $attribute->newInstance()->getClass(),
             $attributes,
         );
     }
