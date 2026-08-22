@@ -2,7 +2,7 @@
 
 namespace GustavPHP\Tests\Integration\Routes;
 
-use GustavPHP\Gustav\Attribute\{JsonResponse, Route};
+use GustavPHP\Gustav\Attribute\Route;
 use GustavPHP\Gustav\Controller;
 use GustavPHP\Tests\Integration\DTO\{CircularOutput, DogOutput, OwnerOutput, ResponseState, UninitializedOutput, UnsupportedOutput};
 use GustavPHP\Tests\Integration\Serializers\LegacyOutput;
@@ -19,7 +19,6 @@ class Responses extends Controller\Base
     }
 
     #[Route('/responses/direct-collection')]
-    #[JsonResponse(status: 201, headers: ['X-Response-Mode' => 'compiled'])]
     public function directCollection(): array
     {
         return [
@@ -30,28 +29,24 @@ class Responses extends Controller\Base
     }
 
     #[Route('/responses/direct-dto')]
-    #[JsonResponse]
     public function directDto(): DogOutput
     {
         return $this->dog(1);
     }
 
     #[Route('/responses/direct-enum')]
-    #[JsonResponse]
     public function directEnum(): ResponseState
     {
         return ResponseState::Active;
     }
 
     #[Route('/responses/direct-false')]
-    #[JsonResponse]
     public function directFalse(): bool
     {
         return false;
     }
 
     #[Route('/responses/direct-null')]
-    #[JsonResponse]
     public function directNull(): ?DogOutput
     {
         return null;
@@ -61,6 +56,16 @@ class Responses extends Controller\Base
     public function dtoHelper(): Controller\Response
     {
         return $this->json($this->dog(1));
+    }
+
+    #[Route('/responses/dto-helper-created')]
+    public function dtoHelperCreated(): Controller\Response
+    {
+        return $this->json(
+            $this->dog(1),
+            status: 201,
+            headers: ['X-Response-Mode' => 'explicit'],
+        );
     }
 
     #[Route('/responses/legacy-serializer')]
@@ -120,7 +125,6 @@ class Responses extends Controller\Base
     }
 
     #[Route('/responses/uninitialized')]
-    #[JsonResponse]
     public function uninitialized(): UninitializedOutput
     {
         return new UninitializedOutput();

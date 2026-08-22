@@ -47,7 +47,7 @@ describe('response', function () use ($client) {
         expect($response->getStatusCode())->toBe(301);
     });
 
-    it('serializes a directly returned readonly DTO recursively', function () use ($client) {
+    it('infers JSON for a directly returned readonly DTO without a marker attribute', function () use ($client) {
         $response = $client->request('GET', '/responses/direct-dto');
         $body = json_decode((string) $response->getBody(), true);
 
@@ -71,12 +71,12 @@ describe('response', function () use ($client) {
             ->not->toContain('internalNote');
     });
 
-    it('applies direct JSON status and headers to recursive collections', function () use ($client) {
+    it('infers JSON for directly returned recursive collections', function () use ($client) {
         $response = $client->request('GET', '/responses/direct-collection');
         $body = json_decode((string) $response->getBody(), true);
 
-        expect($response->getStatusCode())->toBe(201)
-            ->and($response->getHeaderLine('X-Response-Mode'))->toBe('compiled')
+        expect($response->getStatusCode())->toBe(200)
+            ->and($response->getHeaderLine('Content-Type'))->toBe('application/json')
             ->and($body['state'])->toBe('active')
             ->and($body['dogs'])->toHaveCount(2)
             ->and($body['dogs'][1]['name'])->toBe('Dog 2');
@@ -107,6 +107,16 @@ describe('response', function () use ($client) {
             ->and($body['owner'])->toBe(['name' => 'Ada'])
             ->and($body['watchers'])->toHaveCount(2)
             ->and((string) $response->getBody())->not->toContain('secret');
+    });
+
+    it('uses the JSON helper for non-default status and headers', function () use ($client) {
+        $response = $client->request('GET', '/responses/dto-helper-created');
+        $body = json_decode((string) $response->getBody(), true);
+
+        expect($response->getStatusCode())->toBe(201)
+            ->and($response->getHeaderLine('X-Response-Mode'))->toBe('explicit')
+            ->and($body['state'])->toBe('active')
+            ->and($body['owner'])->toBe(['name' => 'Ada']);
     });
 
     it('preserves legacy serializers, mixed arrays, exclusions, and additional properties', function () use ($client) {
