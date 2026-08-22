@@ -24,4 +24,12 @@ class Manager
     {
         return self::$entities[$className];
     }
+
+    /**
+     * Remove all registered serializer entities.
+     */
+    public static function reset(): void
+    {
+        self::$entities = [];
+    }
 }

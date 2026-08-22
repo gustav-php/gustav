@@ -4,6 +4,8 @@ namespace GustavPHP\Gustav\Attribute;
 
 use Attribute;
 use Exception;
+use GustavPHP\Gustav\Auth\Exception\UnauthorizedException;
+use GustavPHP\Gustav\Auth\Identity;
 use GustavPHP\Gustav\Router\Method;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -11,7 +13,7 @@ use Psr\Http\Message\ServerRequestInterface;
 class Route
 {
     /**
-     * @var array<string,Query|Body|Param|Request|Cookie|Header>
+     * @var array<string,Query|Body|Param|Request|Cookie|Header|AuthUser>
      */
     protected array $arguments = [];
     /**
@@ -36,7 +38,7 @@ class Route
     {
     }
 
-    public function addArgument(string $name, Query|Body|Param|Cookie|Request|Header $type): self
+    public function addArgument(string $name, Query|Body|Param|Cookie|Request|Header|AuthUser $type): self
     {
         $this->arguments[$name] = $type;
 
@@ -146,6 +148,15 @@ class Route
                 }
                 case Request::class: {
                     $arguments[$argument] = $request;
+                    break;
+                }
+                case AuthUser::class: {
+                    $identity = $request->getAttribute(Identity::class)
+                        ?? $request->getAttribute('identity');
+                    if (!$identity instanceof Identity) {
+                        throw new UnauthorizedException('Authentication is required');
+                    }
+                    $arguments[$argument] = $identity;
                     break;
                 }
             }

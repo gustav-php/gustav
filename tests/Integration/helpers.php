@@ -2,9 +2,18 @@
 
 namespace GustavPHP\Tests\Integration;
 
-use GuzzleHttp\Client;
+use GustavPHP\Gustav\{Application, Configuration, Mode};
+
+function createApplication(Mode $mode = Mode::Production): Application
+{
+    return new Application(new Configuration(
+        mode: $mode,
+        namespace: __NAMESPACE__,
+        cache: __DIR__ . '/cache/',
+    ));
+}
 
 function createClient(): Client
 {
-    return new Client(['base_uri' => 'http://127.0.0.1:5173']);
+    return new Client();
 }

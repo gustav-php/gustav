@@ -3,25 +3,25 @@
 namespace GustavPHP\Gustav\Attribute;
 
 use Attribute;
-use GustavPHP\Gustav\Middleware\Base;
+use Psr\Http\Server\MiddlewareInterface;
 
-#[Attribute(Attribute::TARGET_CLASS)]
+#[Attribute(Attribute::TARGET_CLASS | Attribute::TARGET_METHOD | Attribute::IS_REPEATABLE)]
 class Middleware
 {
     /**
      * Middleware Attribute.
      *
-     * @param Base $instance
+     * @param MiddlewareInterface $instance
      * @return void
      */
-    public function __construct(protected Base $instance)
+    public function __construct(protected MiddlewareInterface $instance)
     {
     }
 
     /**
-     * @return Base
+     * @return MiddlewareInterface
      */
-    public function getInstance(): Base
+    public function getInstance(): MiddlewareInterface
     {
         return $this->instance;
     }

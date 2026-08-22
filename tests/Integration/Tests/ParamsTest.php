@@ -2,8 +2,6 @@
 
 use function GustavPHP\Tests\Integration\createClient;
 
-use GuzzleHttp\Cookie\CookieJar;
-
 $client = createClient();
 
 describe('params', function () use ($client) {
@@ -51,13 +49,10 @@ describe('params', function () use ($client) {
 
     it('can be in cookie', function () use ($client) {
         $response = $client->request('GET', '/params/cookie', [
-            'cookies' => CookieJar::fromArray(
-                [
-                    'required' => 'lorem',
-                    'optional' => 'ipsum',
-                ],
-                '127.0.0.1'
-            ),
+            'cookies' => [
+                'required' => 'lorem',
+                'optional' => 'ipsum',
+            ],
         ]);
         $body = json_decode($response->getBody()->getContents(), true);
 

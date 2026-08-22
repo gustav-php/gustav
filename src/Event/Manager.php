@@ -49,4 +49,12 @@ class Manager
             $listener->handle($payload);
         }
     }
+
+    /**
+     * Remove all registered listeners.
+     */
+    public static function reset(): void
+    {
+        self::$listeners = [];
+    }
 }

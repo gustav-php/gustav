@@ -15,8 +15,9 @@
         "haydenpierce/class-finder": "^0.5.3",
         "latte/latte": "^3.0",
         "nyholm/psr7": "^1.8",
+        "psr/http-server-middleware": "^1.0",
         "spiral/roadrunner-cli": "^2.6",
-        "spiral/roadrunner-http": "^3.5",
+        "spiral/roadrunner-http": "^4.1",
         "symfony/console": "^7.0",
         "symfony/process": "^7.0"
     },
@@ -31,9 +32,8 @@
         "format": "@php ./vendor/bin/pint src tests"
     },
     "require-dev": {
-        "guzzlehttp/guzzle": "^7.8",
         "laravel/pint": "^1.15",
-        "pestphp/pest": "3.0.3",
+        "pestphp/pest": "^3.8",
         "phpstan/phpstan": "^2.1"
     },
     "bin": ["./bin/gustav-php"],
@@ -47,6 +47,9 @@
             "GustavPHP\\Demo\\": "demo/",
             "GustavPHP\\Tests\\": "tests/"
         },
+        "exclude-from-classmap": [
+            "tests/Unit/Service/ContainerTest.php"
+        ],
         "files": [
             "tests/Integration/helpers.php"
         ]

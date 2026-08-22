@@ -4,6 +4,7 @@ namespace GustavPHP\Gustav\Router;
 
 use Exception;
 use GustavPHP\Gustav\Attribute\Route;
+use GustavPHP\Gustav\Http\Exception\HttpException;
 
 class Router
 {
@@ -62,30 +63,28 @@ class Router
      */
     public static function match(Method $method, string $path): Route
     {
-        if (!array_key_exists($method->value, self::$routes)) {
-            throw new Exception('Not found', 404);
+        $route = self::matchMethod($method->value, $path);
+        if ($route !== null) {
+            return $route;
         }
 
-        $parts = array_values(array_filter(explode('/', $path)));
-        $length = count($parts) - 1;
-        $filteredParams = array_filter(self::$params, fn ($i) => $i <= $length);
-
-        foreach (self::combinations($filteredParams) as $sample) {
-            $sample = array_filter($sample, fn ($i) => $i <= $length);
-            $match = implode(
-                '/',
-                array_replace(
-                    $parts,
-                    array_fill_keys($sample, self::PLACEHOLDER_TOKEN)
-                )
-            );
-
-            if (array_key_exists($match, self::$routes[$method->value])) {
-                return self::$routes[$method->value][$match];
+        $allowed = [];
+        foreach (array_keys(self::$routes) as $routeMethod) {
+            if ($routeMethod !== $method->value && self::matchMethod($routeMethod, $path) !== null) {
+                $allowed[] = $routeMethod;
             }
         }
+        if ($allowed !== []) {
+            sort($allowed);
 
-        throw new Exception('Not found', 404);
+            throw new HttpException(
+                405,
+                'Method not allowed',
+                ['Allow' => implode(', ', $allowed)],
+            );
+        }
+
+        throw new HttpException(404, 'Not found');
     }
 
     /**
@@ -119,6 +118,34 @@ class Router
                 yield $ret;
             }
         }
+    }
+
+    protected static function matchMethod(string $method, string $path): ?Route
+    {
+        if (!array_key_exists($method, self::$routes)) {
+            return null;
+        }
+
+        $parts = array_values(array_filter(explode('/', $path)));
+        $length = count($parts) - 1;
+        $filteredParams = array_filter(self::$params, fn ($i) => $i <= $length);
+
+        foreach (self::combinations($filteredParams) as $sample) {
+            $sample = array_filter($sample, fn ($i) => $i <= $length);
+            $match = implode(
+                '/',
+                array_replace(
+                    $parts,
+                    array_fill_keys($sample, self::PLACEHOLDER_TOKEN)
+                )
+            );
+
+            if (array_key_exists($match, self::$routes[$method])) {
+                return self::$routes[$method][$match];
+            }
+        }
+
+        return null;
     }
 
     /**
