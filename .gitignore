@@ -8,5 +8,6 @@
 .pid
 .vscode/
 rr
+rr.exe
 test.log
 .DS_Store

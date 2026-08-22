@@ -20,6 +20,24 @@ After the project has been created, start GustavPHP's local development server u
 php gustav dev
 ```
 
+## Development
+
+Run the fast in-process test suite with:
+
+```bash
+composer test
+```
+
+Run the focused RoadRunner boundary contract locally with:
+
+```bash
+composer test:transport
+```
+
+The transport command downloads the ignored local RoadRunner binary when it is
+missing, selects free ports, starts and stops the worker automatically, and
+prints its logs if the contract fails.
+
 ## Documentation
 
 - https://gustav-php.github.io
