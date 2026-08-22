@@ -46,4 +46,104 @@ describe('response', function () use ($client) {
         expect($response->getHeaderLine('Location'))->toBe('/responses/plaintext');
         expect($response->getStatusCode())->toBe(301);
     });
+
+    it('serializes a directly returned readonly DTO recursively', function () use ($client) {
+        $response = $client->request('GET', '/responses/direct-dto');
+        $body = json_decode((string) $response->getBody(), true);
+
+        expect($response->getStatusCode())->toBe(200)
+            ->and($response->getHeaderLine('Content-Type'))->toBe('application/json')
+            ->and($body)->toBe([
+                'id' => 1,
+                'name' => 'Dog 1',
+                'state' => 'active',
+                'nickname' => null,
+                'owner' => ['name' => 'Ada'],
+                'watchers' => [
+                    ['name' => 'Grace'],
+                    ['name' => 'Linus'],
+                ],
+                'labels' => ['friendly', 0, false],
+                'rating' => 1.0,
+            ])
+            ->and((string) $response->getBody())->toContain('"rating":1.0')
+            ->not->toContain('secret')
+            ->not->toContain('internalNote');
+    });
+
+    it('applies direct JSON status and headers to recursive collections', function () use ($client) {
+        $response = $client->request('GET', '/responses/direct-collection');
+        $body = json_decode((string) $response->getBody(), true);
+
+        expect($response->getStatusCode())->toBe(201)
+            ->and($response->getHeaderLine('X-Response-Mode'))->toBe('compiled')
+            ->and($body['state'])->toBe('active')
+            ->and($body['dogs'])->toHaveCount(2)
+            ->and($body['dogs'][1]['name'])->toBe('Dog 2');
+    });
+
+    it('serializes a nullable direct response as JSON null', function () use ($client) {
+        $response = $client->request('GET', '/responses/direct-null');
+
+        expect($response->getStatusCode())->toBe(200)
+            ->and($response->getHeaderLine('Content-Type'))->toBe('application/json')
+            ->and((string) $response->getBody())->toBe('null');
+    });
+
+    it('uses the same normalizer through the JSON helper', function () use ($client) {
+        $response = $client->request('GET', '/responses/dto-helper');
+        $body = json_decode((string) $response->getBody(), true);
+
+        expect($response->getStatusCode())->toBe(200)
+            ->and($body['owner'])->toBe(['name' => 'Ada'])
+            ->and($body['watchers'])->toHaveCount(2)
+            ->and((string) $response->getBody())->not->toContain('secret');
+    });
+
+    it('preserves legacy serializers, mixed arrays, exclusions, and additional properties', function () use ($client) {
+        $response = $client->request('GET', '/responses/legacy-serializer');
+        $body = json_decode((string) $response->getBody(), true);
+
+        expect($response->getStatusCode())->toBe(200)
+            ->and($body)->toBe([
+                'items' => [
+                    ['name' => 'child'],
+                    'kept',
+                    0,
+                ],
+                'name' => 'legacy',
+                'extra' => 'included',
+            ]);
+    });
+
+    it('maps unsupported values, uninitialized fields, and cycles to safe production errors', function (
+        string $uri,
+    ) use ($client) {
+        $response = $client->request('GET', $uri);
+        $body = json_decode((string) $response->getBody(), true);
+
+        expect($response->getStatusCode())->toBe(500)
+            ->and($body)->toBe([
+                'error' => [
+                    'status' => 500,
+                    'message' => 'Server Error',
+                ],
+            ])
+            ->and((string) $response->getBody())->not->toContain('Closure')
+            ->not->toContain('CircularOutput')
+            ->not->toContain('UninitializedOutput');
+    })->with([
+        'unsupported value' => ['/responses/unsupported'],
+        'uninitialized field' => ['/responses/uninitialized'],
+        'circular reference' => ['/responses/circular'],
+    ]);
+
+    it('continues serving after response serialization fails', function () use ($client) {
+        $failed = $client->request('GET', '/responses/circular');
+        $next = $client->request('GET', '/responses/plaintext');
+
+        expect($failed->getStatusCode())->toBe(500)
+            ->and($next->getStatusCode())->toBe(200)
+            ->and((string) $next->getBody())->toBe('lorem ipsum');
+    });
 });
