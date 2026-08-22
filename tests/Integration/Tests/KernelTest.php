@@ -78,6 +78,13 @@ describe('http kernel', function () use ($client) {
             ->and((string) $response->getBody())->not->toContain('internal secret');
     });
 
+    it('does not interpret arbitrary exception codes as HTTP status codes', function () use ($client) {
+        $response = $client->request('GET', '/kernel/coded-server-error');
+
+        expect($response->getStatusCode())->toBe(500)
+            ->and((string) $response->getBody())->not->toContain('coded internal secret');
+    });
+
     it('returns 404 and 405 responses with an Allow header', function () use ($client) {
         $missing = $client->request('GET', '/missing');
         $wrongMethod = $client->request('POST', '/kernel/middleware');

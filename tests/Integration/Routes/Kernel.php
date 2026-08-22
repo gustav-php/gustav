@@ -39,6 +39,12 @@ class Kernel extends Controller\Base
         return $this->plaintext('controller should not run');
     }
 
+    #[Route('/kernel/coded-server-error')]
+    public function codedServerError(): Controller\Response
+    {
+        throw new RuntimeException('coded internal secret', 422);
+    }
+
     #[Route('/kernel/error')]
     public function error(): Controller\Response
     {
