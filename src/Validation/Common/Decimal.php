@@ -2,38 +2,36 @@
 
 namespace GustavPHP\Gustav\Validation\Common;
 
-use Exception;
-use GustavPHP\Gustav\Validation\Validation;
+use GustavPHP\Gustav\Validation\{RuleViolation, Validation};
 use InvalidArgumentException;
 
 class Decimal extends Validation
 {
     public function __construct(
-        protected float $min = PHP_FLOAT_MIN,
+        protected float $min = -PHP_FLOAT_MAX,
         protected float $max = PHP_FLOAT_MAX
     ) {
         if ($this->min > $this->max) {
-            throw new InvalidArgumentException('min must be less than max');
+            throw new InvalidArgumentException('min must be less than or equal to max');
         }
-        if ($this->min < PHP_FLOAT_MIN) {
-            throw new InvalidArgumentException('min must be greater than or equal to PHP_FLOAT_MIN');
-        }
-        if ($this->max > PHP_FLOAT_MAX) {
-            throw new InvalidArgumentException('max must be less than or equal to PHP_FLOAT_MAX');
+        if (!is_finite($this->min) || !is_finite($this->max)) {
+            throw new InvalidArgumentException('min and max must be finite');
         }
     }
-    public function validate(mixed $value): true
+
+    public function getViolation(mixed $value): ?RuleViolation
     {
-        if (!filter_var($value, FILTER_VALIDATE_FLOAT)) {
-            throw new Exception('value must be integer');
+        $decimal = filter_var($value, FILTER_VALIDATE_FLOAT);
+        if ($decimal === false || !is_finite($decimal)) {
+            return new RuleViolation('invalid_decimal', 'Value must be decimal');
         }
-        if ($value < $this->min) {
-            throw new Exception("value must be greater than or equal to {$this->min}");
+        if ($decimal < $this->min) {
+            return new RuleViolation('min_value', "Value must be greater than or equal to {$this->min}");
         }
-        if ($value > $this->max) {
-            throw new Exception("value must be less than or equal to {$this->max}");
+        if ($decimal > $this->max) {
+            return new RuleViolation('max_value', "Value must be less than or equal to {$this->max}");
         }
 
-        return true;
+        return null;
     }
 }

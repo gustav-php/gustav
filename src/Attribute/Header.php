@@ -6,16 +6,15 @@ use Attribute;
 use Exception;
 
 #[Attribute(Attribute::TARGET_PARAMETER)]
-class Header
+final readonly class Header
 {
-    protected bool $required = false;
-    public function __construct(protected ?string $name = null)
+    public function __construct(private ?string $name = null)
     {
     }
 
     public function getName(): string
     {
-        return $this->name ?? throw new Exception('Query key is not set.');
+        return $this->name ?? throw new Exception('Header name is not set.');
     }
 
     public function hasName(): bool
@@ -23,15 +22,4 @@ class Header
         return $this->name !== null;
     }
 
-    public function isRequired(): bool
-    {
-        return $this->required;
-    }
-
-    public function setRequired(bool $required): self
-    {
-        $this->required = $required;
-
-        return $this;
-    }
 }

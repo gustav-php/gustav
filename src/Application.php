@@ -5,8 +5,9 @@ namespace GustavPHP\Gustav;
 use Composer\InstalledVersions;
 use Exception;
 use GustavPHP\Gustav\Controller\{ControllerFactory, Response};
+use GustavPHP\Gustav\Http\Binding\RequestBinder;
 use GustavPHP\Gustav\Http\CallableRequestHandler;
-use GustavPHP\Gustav\Http\Exception\HttpException;
+use GustavPHP\Gustav\Http\Exception\{HttpException, RequestInputException, ValidationException};
 use GustavPHP\Gustav\Middleware\Pipeline;
 use GustavPHP\Gustav\Router\{Method, Router};
 use GustavPHP\Gustav\Service\Container;
@@ -20,7 +21,6 @@ use RecursiveIteratorIterator;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionMethod;
-use ReflectionNamedType;
 use Spiral\RoadRunner\Http\PSR7Worker;
 use Spiral\RoadRunner\Worker;
 use SplFileInfo;
@@ -45,6 +45,10 @@ class Application implements RequestHandlerInterface
      * @var array<MiddlewareInterface>
      */
     protected array $middlewares = [];
+    /**
+     * @var array<int,RequestBinder>
+     */
+    protected array $requestBinders = [];
 
     /**
      * Creates a new application instance.
@@ -220,7 +224,11 @@ class Application implements RequestHandlerInterface
         $dependencies->addDependency([ServerRequestInterface::class => fn () => $request]);
         $dependencies->build();
         $instance = $dependencies->make($controller->getClass());
-        $payload = $instance->{$route->getFunction()}(...$route->generateArguments($request));
+        $requestBinder = $this->requestBinders[spl_object_id($route)] ?? null;
+        if ($requestBinder === null) {
+            throw new LogicException('Request binder has not been initialized');
+        }
+        $payload = $instance->{$route->getFunction()}(...$requestBinder->bind($request, $route->getPlaceholders()));
 
         if ($payload instanceof Controller\Response) {
             $serializer = $payload->getSerializer();
@@ -346,14 +354,30 @@ class Application implements RequestHandlerInterface
     {
         $status = $throwable instanceof HttpException
             ? $throwable->getStatusCode()
-            : (int) $throwable->getCode();
-        if ($status < 400 || $status >= 600) {
-            $status = 500;
-        }
+            : 500;
 
         $headers = $throwable instanceof HttpException
             ? $throwable->getHeaders()
             : [];
+
+        if ($throwable instanceof RequestInputException) {
+            $error = [
+                'status' => $status,
+                'message' => $throwable->getMessage(),
+            ];
+            if ($throwable instanceof ValidationException) {
+                $error['violations'] = array_map(
+                    fn ($violation): array => $violation->toArray(),
+                    $throwable->getViolations(),
+                );
+            }
+
+            return new Psr7Response(
+                $status,
+                array_merge(['Content-Type' => 'application/json'], $headers),
+                (string) json_encode(['error' => $error], JSON_INVALID_UTF8_SUBSTITUTE),
+            );
+        }
 
         if (self::isProduction()) {
             $message = $status >= 500
@@ -424,81 +448,6 @@ class Application implements RequestHandlerInterface
      */
     private function prepareRoute(ReflectionMethod $method, Attribute\Route $route): void
     {
-        foreach ($method->getParameters() as $parameter) {
-            $param = $parameter->getAttributes(Attribute\Param::class)[0] ?? null;
-            if ($param) {
-                /** @var Attribute\Param $instance */
-                $instance = $param->newInstance();
-                $instance->setParameter($parameter->getName());
-                $route->addArgument($parameter->getName(), $instance);
-                continue;
-            }
-            $body = $parameter->getAttributes(Attribute\Body::class)[0] ?? null;
-            if ($body) {
-                /** @var Attribute\Body $instance */
-                $instance = $body->newInstance();
-                $instance->setRequired(!$parameter->isOptional());
-                $route->addArgument($parameter->getName(), $instance);
-                continue;
-            }
-            $request = $parameter->getAttributes(Attribute\Request::class)[0] ?? null;
-            if ($request) {
-                /** @var Attribute\Request $instance */
-                $instance = $request->newInstance();
-                $route->addArgument($parameter->getName(), $instance);
-                continue;
-            }
-            $cookie = $parameter->getAttributes(Attribute\Cookie::class)[0] ?? null;
-            if ($cookie) {
-                /** @var Attribute\Cookie $instance */
-                $instance = $cookie->newInstance();
-                $instance->setRequired(!$parameter->isOptional());
-                $route->addArgument($parameter->getName(), $instance);
-                continue;
-            }
-            $header = $parameter->getAttributes(Attribute\Header::class)[0] ?? null;
-            if ($header) {
-                /** @var Attribute\Header $instance */
-                $instance = $header->newInstance();
-                $instance->setRequired(!$parameter->isOptional());
-                $route->addArgument($parameter->getName(), $instance);
-                continue;
-            }
-            $query = $parameter->getAttributes(Attribute\Query::class)[0] ?? null;
-            if ($query) {
-                /** @var Attribute\Query $instance */
-                $instance = $query->newInstance();
-                $instance->setRequired(!$parameter->isOptional());
-                if (DTO\Mapper::isParameterDTO($parameter)) {
-                    /**
-                     * @var ReflectionNamedType $type
-                     */
-                    $type = $parameter->getType();
-                    $instance->setDto(DTO\Mapper::fromReflection($type));
-                }
-                $route->addArgument($parameter->getName(), $instance);
-                continue;
-            }
-            $authUser = $parameter->getAttributes(Attribute\AuthUser::class)[0] ?? null;
-            if ($authUser) {
-                $type = $parameter->getType();
-                if (
-                    !$type instanceof ReflectionNamedType
-                    || $type->isBuiltin()
-                    || !is_a($type->getName(), Auth\Identity::class, true)
-                ) {
-                    throw new LogicException(
-                        "Auth user parameter \${$parameter->getName()} must implement " . Auth\Identity::class,
-                    );
-                }
-
-                /** @var Attribute\AuthUser $instance */
-                $instance = $authUser->newInstance();
-                $route->addArgument($parameter->getName(), $instance);
-                continue;
-            }
-
-            throw new Exception('Invalid parameter type');
-        }
+        $this->requestBinders[spl_object_id($route)] = RequestBinder::compile($method, $route->getPath());
     }
 }

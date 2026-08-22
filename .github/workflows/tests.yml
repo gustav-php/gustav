@@ -75,4 +75,18 @@ jobs:
                   test "$response" = "lorem ipsum"
                   auth_status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:5173/kernel/auth)
                   test "$auth_status" = "401"
+
+                  valid_json=$(curl --fail --silent \
+                      --header 'Content-Type: application/json' \
+                      --data '{"email":"ada@example.com","age":"0","active":"false","status":"published","nickname":null}' \
+                      http://127.0.0.1:5173/params/body-dto)
+                  php -r '$body = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR); exit($body["age"] === 0 && $body["active"] === false ? 0 : 1);' <<< "$valid_json"
+
+                  invalid_status=$(curl --silent --output /tmp/gustav-invalid.json --write-out '%{http_code}' \
+                      --header 'Content-Type: application/json' \
+                      --data '{"email":' \
+                      http://127.0.0.1:5173/params/body-dto)
+                  test "$invalid_status" = "400"
+                  php -r '$body = json_decode(file_get_contents($argv[1]), true, 512, JSON_THROW_ON_ERROR); exit($body["error"]["status"] === 400 ? 0 : 1);' /tmp/gustav-invalid.json
+
                   test "$(curl --fail --silent http://127.0.0.1:5173/responses/plaintext)" = "lorem ipsum"

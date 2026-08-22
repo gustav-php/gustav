@@ -6,10 +6,9 @@ use Attribute;
 use Exception;
 
 #[Attribute(Attribute::TARGET_PARAMETER)]
-class Body
+final readonly class Body
 {
-    protected bool $required = true;
-    public function __construct(protected ?string $key = null)
+    public function __construct(private ?string $key = null)
     {
     }
 
@@ -23,15 +22,4 @@ class Body
         return $this->key !== null;
     }
 
-    public function isRequired(): bool
-    {
-        return $this->required;
-    }
-
-    public function setRequired(bool $required): self
-    {
-        $this->required = $required;
-
-        return $this;
-    }
 }
