@@ -23,6 +23,10 @@
     },
     "scripts": {
         "test": "@php ./vendor/bin/pest",
+        "test:transport": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php ./tests/Transport/run.php"
+        ],
         "demo": [
             "Composer\\Config::disableProcessTimeout",
             "@php ./bin/gustav-php dev"

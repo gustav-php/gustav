@@ -52,56 +52,24 @@ jobs:
             - name: Run linter
               run: composer run lint
 
-            - name: Setup RoadRunner
-              run: ./vendor/bin/rr get-binary --no-config
-
             - name: Run test suite
               run: composer run test
 
-            - name: Run RoadRunner transport smoke test
-              run: |
-                  ./rr serve -c .rr.yaml > /tmp/gustav-roadrunner.log 2>&1 &
-                  server_pid=$!
-                  trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+    transport:
+        name: RoadRunner boundary
+        runs-on: ubuntu-latest
+        timeout-minutes: 5
 
-                  response=""
-                  for attempt in {1..20}; do
-                      if response=$(curl --fail --silent http://127.0.0.1:5173/responses/plaintext); then
-                          break
-                      fi
-                      sleep 0.25
-                  done
+        steps:
+            - uses: actions/checkout@v4
 
-                  test "$response" = "lorem ipsum"
-                  auth_status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:5173/kernel/auth)
-                  test "$auth_status" = "401"
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: "8.2"
 
-                  service_json=$(curl --fail --silent http://127.0.0.1:5173/services/lifecycle)
-                  php -r '$body = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR); exit($body["greeting"] === "configured" && $body["request"] === $body["middleware"] && $body["transientsDiffer"] === true ? 0 : 1);' <<< "$service_json"
+            - name: Install dependencies
+              run: composer install --prefer-dist --no-progress
 
-                  service_error_status=$(curl --silent --output /dev/null --write-out '%{http_code}' \
-                      http://127.0.0.1:5173/services/lifecycle/error)
-                  test "$service_error_status" = "418"
-                  curl --fail --silent --output /dev/null http://127.0.0.1:5173/services/lifecycle
-
-                  valid_json=$(curl --fail --silent \
-                      --header 'Content-Type: application/json' \
-                      --data '{"email":"ada@example.com","age":"0","active":"false","status":"published","nickname":null}' \
-                      http://127.0.0.1:5173/params/body-dto)
-                  php -r '$body = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR); exit($body["age"] === 0 && $body["active"] === false ? 0 : 1);' <<< "$valid_json"
-
-                  invalid_status=$(curl --silent --output /tmp/gustav-invalid.json --write-out '%{http_code}' \
-                      --header 'Content-Type: application/json' \
-                      --data '{"email":' \
-                      http://127.0.0.1:5173/params/body-dto)
-                  test "$invalid_status" = "400"
-                  php -r '$body = json_decode(file_get_contents($argv[1]), true, 512, JSON_THROW_ON_ERROR); exit($body["error"]["status"] === 400 ? 0 : 1);' /tmp/gustav-invalid.json
-
-                  typed_response=$(curl --fail --silent http://127.0.0.1:5173/responses/direct-dto)
-                  php -r '$body = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR); exit($body["state"] === "active" && $body["owner"] === ["name" => "Ada"] && is_float($body["rating"]) && !array_key_exists("internalNote", $body) ? 0 : 1);' <<< "$typed_response"
-
-                  serialization_status=$(curl --silent --output /tmp/gustav-serialization-error.json --write-out '%{http_code}' \
-                      http://127.0.0.1:5173/responses/circular)
-                  test "$serialization_status" = "500"
-
-                  test "$(curl --fail --silent http://127.0.0.1:5173/responses/plaintext)" = "lorem ipsum"
+            - name: Run transport contract
+              run: composer test:transport
