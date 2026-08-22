@@ -2,16 +2,16 @@
 
 namespace GustavPHP\Gustav\Validation\Common;
 
-use Exception;
-use GustavPHP\Gustav\Validation\Validation;
+use GustavPHP\Gustav\Validation\{RuleViolation, Validation};
 
 class Email extends Validation
 {
-    public function validate(mixed $value): true
+    public function getViolation(mixed $value): ?RuleViolation
     {
-        if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
-            throw new Exception('Invalid email address');
+        if (!is_string($value) || filter_var($value, FILTER_VALIDATE_EMAIL) === false) {
+            return new RuleViolation('invalid_email', 'Email is invalid');
         }
-        return true;
+
+        return null;
     }
 }

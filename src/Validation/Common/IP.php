@@ -2,8 +2,8 @@
 
 namespace GustavPHP\Gustav\Validation\Common;
 
-use Exception;
-use GustavPHP\Gustav\Validation\Validation;
+use GustavPHP\Gustav\Validation\{RuleViolation, Validation};
+use InvalidArgumentException;
 
 class IP extends Validation
 {
@@ -12,19 +12,20 @@ class IP extends Validation
         protected bool $onlyV6 = false
     ) {
         if ($this->onlyV4 && $this->onlyV6) {
-            throw new Exception('Cannot specify both onlyV4 and onlyV6');
+            throw new InvalidArgumentException('Cannot specify both onlyV4 and onlyV6');
         }
     }
-    public function validate(mixed $value): true
-    {
 
-        if (!filter_var($value, FILTER_VALIDATE_IP, match (true) {
+    public function getViolation(mixed $value): ?RuleViolation
+    {
+        if (!is_string($value) || filter_var($value, FILTER_VALIDATE_IP, match (true) {
             $this->onlyV4 => FILTER_FLAG_IPV4,
             $this->onlyV6 => FILTER_FLAG_IPV6,
-            default => FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6
-        })) {
-            throw new Exception('Invalid IP address');
+            default => 0,
+        }) === false) {
+            return new RuleViolation('invalid_ip', 'IP address is invalid');
         }
-        return true;
+
+        return null;
     }
 }

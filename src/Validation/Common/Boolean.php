@@ -2,17 +2,16 @@
 
 namespace GustavPHP\Gustav\Validation\Common;
 
-use Exception;
-use GustavPHP\Gustav\Validation\Validation;
+use GustavPHP\Gustav\Validation\{RuleViolation, Validation};
 
 class Boolean extends Validation
 {
-    public function validate(mixed $value): true
+    public function getViolation(mixed $value): ?RuleViolation
     {
-        if ($value === true || $value === false || $value === 'true' || $value === 'false') {
-            return true;
+        if (in_array($value, [true, false, 1, 0, '1', '0', 'true', 'false'], true)) {
+            return null;
         }
 
-        throw new Exception('value must be boolean');
+        return new RuleViolation('invalid_boolean', 'Value must be boolean');
     }
 }

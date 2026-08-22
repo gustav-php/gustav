@@ -2,8 +2,7 @@
 
 namespace GustavPHP\Gustav\Validation\Common;
 
-use Exception;
-use GustavPHP\Gustav\Validation\Validation;
+use GustavPHP\Gustav\Validation\{RuleViolation, Validation};
 use InvalidArgumentException;
 
 class Integer extends Validation
@@ -13,7 +12,7 @@ class Integer extends Validation
         protected int $max = PHP_INT_MAX
     ) {
         if ($this->min > $this->max) {
-            throw new InvalidArgumentException('min must be less than max');
+            throw new InvalidArgumentException('min must be less than or equal to max');
         }
         if ($this->min < PHP_INT_MIN) {
             throw new InvalidArgumentException('min must be greater than or equal to PHP_INT_MIN');
@@ -22,18 +21,19 @@ class Integer extends Validation
             throw new InvalidArgumentException('max must be less than or equal to PHP_INT_MAX');
         }
     }
-    public function validate(mixed $value): true
+    public function getViolation(mixed $value): ?RuleViolation
     {
-        if (!filter_var($value, FILTER_VALIDATE_INT)) {
-            throw new Exception('value must be integer');
+        $integer = filter_var($value, FILTER_VALIDATE_INT);
+        if ($integer === false) {
+            return new RuleViolation('invalid_integer', 'Value must be integer');
         }
-        if ($value < $this->min) {
-            throw new Exception("value must be greater than or equal to {$this->min}");
+        if ($integer < $this->min) {
+            return new RuleViolation('min_value', "Value must be greater than or equal to {$this->min}");
         }
-        if ($value > $this->max) {
-            throw new Exception("value must be less than or equal to {$this->max}");
+        if ($integer > $this->max) {
+            return new RuleViolation('max_value', "Value must be less than or equal to {$this->max}");
         }
 
-        return true;
+        return null;
     }
 }

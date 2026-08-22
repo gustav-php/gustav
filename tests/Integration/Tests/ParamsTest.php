@@ -59,6 +59,29 @@ describe('request input binding', function () use ($client) {
         }
     });
 
+    it('reports missing required values for keyed body, query, header, and cookie input', function (
+        string $method,
+        string $uri,
+        array $options,
+        string $source,
+    ) use ($client) {
+        $response = $client->request($method, $uri, $options);
+
+        expectValidationError($response, $source, 'required', 'required');
+    })->with([
+        'body' => ['POST', '/params/body', ['form_params' => []], 'body'],
+        'query' => ['GET', '/params/query', [], 'query'],
+        'header' => ['GET', '/params/header', [], 'header'],
+        'cookie' => ['GET', '/params/cookie', [], 'cookie'],
+    ]);
+
+    it('binds a named path placeholder when the PHP argument has a different name', function () use ($client) {
+        $response = $client->request('GET', '/params/path-alias/42');
+
+        expect($response->getStatusCode())->toBe(200)
+            ->and(json_decode((string) $response->getBody(), true))->toBe(['value' => 42]);
+    });
+
     it('hydrates a readonly body DTO and preserves constructor defaults', function () use ($client) {
         $response = $client->request('POST', '/params/body-dto', [
             'json' => [
@@ -100,6 +123,18 @@ describe('request input binding', function () use ($client) {
             ]);
     });
 
+    it('supports zero-argument DTOs with declared public properties', function () use ($client) {
+        $response = $client->request('GET', '/params/legacy-query-dto', [
+            'query' => ['term' => 'framework'],
+        ]);
+
+        expect($response->getStatusCode())->toBe(200)
+            ->and(json_decode((string) $response->getBody(), true))->toBe([
+                'term' => 'framework',
+                'page' => 1,
+            ]);
+    });
+
     it('distinguishes explicit null from an omitted PHP default', function () use ($client) {
         $response = $client->request('POST', '/params/typed/12', [
             'query' => ['zero' => '0', 'enabled' => 'false'],
@@ -132,6 +167,17 @@ describe('request input binding', function () use ($client) {
         ]);
 
         expectValidationError($response, 'body', 'email', 'not_nullable');
+    });
+
+    it('does not treat a nullable type as optional when no PHP default exists', function () use ($client) {
+        $response = $client->request('POST', '/params/typed/12', [
+            'query' => ['zero' => '0', 'enabled' => 'false'],
+            'headers' => ['X-Count' => '4'],
+            'cookies' => ['enabled' => 'false'],
+            'json' => [],
+        ]);
+
+        expectValidationError($response, 'body', 'nullable', 'required');
     });
 
     it('returns a structured error for missing required values', function () use ($client) {
@@ -198,6 +244,18 @@ describe('request input binding', function () use ($client) {
             ]);
     });
 
+    it('accepts converted values at validation boundaries', function () use ($client) {
+        $response = $client->request('GET', '/params/validated', [
+            'query' => ['email' => 'ada@example.com', 'score' => '-2'],
+        ]);
+
+        expect($response->getStatusCode())->toBe(200)
+            ->and(json_decode((string) $response->getBody(), true))->toBe([
+                'email' => 'ada@example.com',
+                'score' => -2,
+            ]);
+    });
+
     it('maps the controller validation helper to the same structured exception', function () use ($client) {
         $response = $client->request('GET', '/params/manual-validation', [
             'query' => ['email' => 'invalid', 'score' => '3'],
@@ -229,6 +287,25 @@ describe('request input binding', function () use ($client) {
 
         expect($response->getStatusCode())->toBe(200)
             ->and($body['stream_position'])->toBe(7);
+    });
+
+    it('prefers an existing PSR-7 parsed body regardless of the raw media type', function () {
+        $request = (new ServerRequest(
+            'POST',
+            '/params/body-dto',
+            ['Content-Type' => 'text/plain'],
+            'raw body is intentionally ignored',
+        ))->withParsedBody([
+            'email' => 'ada@example.com',
+            'age' => 2,
+            'active' => true,
+            'status' => 'draft',
+            'nickname' => null,
+        ]);
+
+        $response = createApplication()->handle($request);
+
+        expect($response->getStatusCode())->toBe(200);
     });
 
     it('returns 400 for malformed JSON', function () use ($client) {

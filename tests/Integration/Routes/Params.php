@@ -15,7 +15,7 @@ use GustavPHP\Gustav\Attribute\{
 use GustavPHP\Gustav\Controller;
 use GustavPHP\Gustav\Router\Method;
 use GustavPHP\Gustav\Validation\Common\{Decimal, Email};
-use GustavPHP\Tests\Integration\DTO\{BodyInput, QueryInput};
+use GustavPHP\Tests\Integration\DTO\{BodyInput, LegacyQueryInput, QueryInput};
 use Psr\Http\Message\ServerRequestInterface;
 
 class Params extends Controller\Base
@@ -74,6 +74,12 @@ class Params extends Controller\Base
         ]);
     }
 
+    #[Route('/params/legacy-query-dto')]
+    public function legacyQueryDto(#[Query] LegacyQueryInput $input): Controller\Response
+    {
+        return $this->json(['term' => $input->term, 'page' => $input->page]);
+    }
+
     #[Route('/params/manual-validation')]
     public function manualValidation(
         #[Query('email')] string $email,
@@ -94,6 +100,12 @@ class Params extends Controller\Base
         return $this->json([
             'required' => $required
         ]);
+    }
+
+    #[Route('/params/path-alias/{id}')]
+    public function paramAlias(#[Param('id')] int $value): Controller\Response
+    {
+        return $this->json(['value' => $value]);
     }
 
     #[Route('/params/query')]

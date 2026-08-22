@@ -2,8 +2,7 @@
 
 namespace GustavPHP\Gustav\Validation\Common;
 
-use Exception;
-use GustavPHP\Gustav\Validation\Validation;
+use GustavPHP\Gustav\Validation\{RuleViolation, Validation};
 use InvalidArgumentException;
 
 class Text extends Validation
@@ -13,31 +12,31 @@ class Text extends Validation
         protected ?int $maxLength = null
     ) {
         if ($this->minLength !== null && $this->minLength < 0) {
-            throw new InvalidArgumentException('minLength must be greater than 0');
+            throw new InvalidArgumentException('minLength must be greater than or equal to 0');
         }
         if ($this->maxLength !== null) {
             if ($this->maxLength < 0) {
-                throw new InvalidArgumentException('maxLength must be greater than 0');
+                throw new InvalidArgumentException('maxLength must be greater than or equal to 0');
             }
             if ($this->minLength !== null && $this->minLength > $this->maxLength) {
-                throw new InvalidArgumentException('minLength must be less than maxLength');
+                throw new InvalidArgumentException('minLength must be less than or equal to maxLength');
             }
         }
     }
-    public function validate(mixed $value): true
+    public function getViolation(mixed $value): ?RuleViolation
     {
         if (!is_string($value)) {
-            throw new Exception('value must be string');
+            return new RuleViolation('invalid_string', 'Value must be string');
         }
 
         $length = mb_strlen($value);
         if ($this->minLength !== null && $length < $this->minLength) {
-            throw new Exception("value must be longer than {$this->minLength}");
+            return new RuleViolation('min_length', "Value must contain at least {$this->minLength} characters");
         }
         if ($this->maxLength !== null && $length > $this->maxLength) {
-            throw new Exception("value must be shorter than {$this->maxLength}");
+            return new RuleViolation('max_length', "Value must contain at most {$this->maxLength} characters");
         }
 
-        return true;
+        return null;
     }
 }

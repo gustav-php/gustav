@@ -2,7 +2,7 @@
 
 namespace GustavPHP\Gustav\Validation\Common;
 
-use GustavPHP\Gustav\Validation\Validation;
+use GustavPHP\Gustav\Validation\{RuleViolation, Validation};
 
 class Nullable extends Validation
 {
@@ -10,12 +10,12 @@ class Nullable extends Validation
     {
     }
 
-    public function validate(mixed $value): true
+    public function getViolation(mixed $value): ?RuleViolation
     {
         if ($value === null) {
-            return true;
+            return null;
         }
 
-        return $this->validator->validate($value);
+        return $this->validator->getViolation($value);
     }
 }

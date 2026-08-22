@@ -2,16 +2,16 @@
 
 namespace GustavPHP\Gustav\Validation\Common;
 
-use Exception;
-use GustavPHP\Gustav\Validation\Validation;
+use GustavPHP\Gustav\Validation\{RuleViolation, Validation};
 
 class URL extends Validation
 {
-    public function validate(mixed $value): true
+    public function getViolation(mixed $value): ?RuleViolation
     {
-        if (!filter_var($value, FILTER_VALIDATE_URL)) {
-            throw new Exception('Invalid URL');
+        if (!is_string($value) || filter_var($value, FILTER_VALIDATE_URL) === false) {
+            return new RuleViolation('invalid_url', 'URL is invalid');
         }
-        return true;
+
+        return null;
     }
 }

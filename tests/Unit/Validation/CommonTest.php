@@ -68,6 +68,8 @@ describe('built-in validation rules', function () {
 
         expect($rule->validate(true))->toBeTrue()
             ->and($rule->validate(false))->toBeTrue()
+            ->and($rule->validate('0'))->toBeTrue()
+            ->and($rule->validate('1'))->toBeTrue()
             ->and($rule->validate('true'))->toBeTrue()
             ->and($rule->validate('false'))->toBeTrue();
 
@@ -83,6 +85,10 @@ describe('built-in validation rules', function () {
         $rule->validate('a');
     })->throws(ValidationException::class);
 
+    it('rejects text above the maximum length', function () {
+        (new Text(maxLength: 2))->validate('abc');
+    })->throws(ValidationException::class);
+
     it('validates email addresses', function () {
         $rule = new Email();
 
@@ -96,6 +102,13 @@ describe('built-in validation rules', function () {
 
         (new IP(onlyV4: true))->validate('2001:db8::1');
     })->throws(ValidationException::class);
+
+    it('accepts either IP version by default', function () {
+        $rule = new IP();
+
+        expect($rule->validate('127.0.0.1'))->toBeTrue()
+            ->and($rule->validate('2001:db8::1'))->toBeTrue();
+    });
 
     it('validates URLs', function () {
         $rule = new URL();
