@@ -21,6 +21,10 @@ class Decimal extends Validation
 
     public function getViolation(mixed $value): ?RuleViolation
     {
+        if (!is_int($value) && !is_float($value) && !is_string($value)) {
+            return new RuleViolation('invalid_decimal', 'Value must be decimal');
+        }
+
         $decimal = filter_var($value, FILTER_VALIDATE_FLOAT);
         if ($decimal === false || !is_finite($decimal)) {
             return new RuleViolation('invalid_decimal', 'Value must be decimal');

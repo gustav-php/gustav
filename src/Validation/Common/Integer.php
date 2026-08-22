@@ -23,6 +23,10 @@ class Integer extends Validation
     }
     public function getViolation(mixed $value): ?RuleViolation
     {
+        if (!is_int($value) && !is_string($value)) {
+            return new RuleViolation('invalid_integer', 'Value must be integer');
+        }
+
         $integer = filter_var($value, FILTER_VALIDATE_INT);
         if ($integer === false) {
             return new RuleViolation('invalid_integer', 'Value must be integer');
