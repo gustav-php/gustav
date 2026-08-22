@@ -90,6 +90,15 @@ describe('response', function () use ($client) {
             ->and((string) $response->getBody())->toBe('null');
     });
 
+    it('serializes direct scalar and backed enum responses', function () use ($client) {
+        $boolean = $client->request('GET', '/responses/direct-false');
+        $enum = $client->request('GET', '/responses/direct-enum');
+
+        expect($boolean->getStatusCode())->toBe(200)
+            ->and((string) $boolean->getBody())->toBe('false')
+            ->and((string) $enum->getBody())->toBe('"active"');
+    });
+
     it('uses the same normalizer through the JSON helper', function () use ($client) {
         $response = $client->request('GET', '/responses/dto-helper');
         $body = json_decode((string) $response->getBody(), true);

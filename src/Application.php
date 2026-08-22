@@ -6,7 +6,7 @@ use Composer\InstalledVersions;
 use Exception;
 use GustavPHP\Gustav\Controller\{ControllerFactory, Response};
 use GustavPHP\Gustav\Http\Binding\RequestBinder;
-use GustavPHP\Gustav\Http\CallableRequestHandler;
+use GustavPHP\Gustav\Http\{CallableRequestHandler, ResponseHandler};
 use GustavPHP\Gustav\Http\Exception\{HttpException, RequestInputException, ValidationException};
 use GustavPHP\Gustav\Middleware\Pipeline;
 use GustavPHP\Gustav\Router\{Method, Router};
@@ -49,6 +49,10 @@ class Application implements RequestHandlerInterface
      * @var array<int,RequestBinder>
      */
     protected array $requestBinders = [];
+    /**
+     * @var array<int,ResponseHandler>
+     */
+    protected array $responseHandlers = [];
 
     /**
      * Creates a new application instance.
@@ -229,21 +233,12 @@ class Application implements RequestHandlerInterface
             throw new LogicException('Request binder has not been initialized');
         }
         $payload = $instance->{$route->getFunction()}(...$requestBinder->bind($request, $route->getPlaceholders()));
-
-        if ($payload instanceof Controller\Response) {
-            $serializer = $payload->getSerializer();
-            if ($serializer) {
-                $payload->setBody(Serializer\Manager::getEntity($serializer::class)->serialize($serializer));
-                $payload->setBody(json_encode($payload->getBody()));
-            }
-
-            return $payload->build();
-        }
-        if ($payload instanceof ResponseInterface) {
-            return $payload;
+        $responseHandler = $this->responseHandlers[spl_object_id($route)] ?? null;
+        if ($responseHandler === null) {
+            throw new LogicException('Response handler has not been initialized');
         }
 
-        throw new LogicException('Controller needs to return a response object');
+        return $responseHandler->respond($payload);
     }
 
     /**
@@ -448,6 +443,10 @@ class Application implements RequestHandlerInterface
      */
     private function prepareRoute(ReflectionMethod $method, Attribute\Route $route): void
     {
-        $this->requestBinders[spl_object_id($route)] = RequestBinder::compile($method, $route->getPath());
+        $requestBinder = RequestBinder::compile($method, $route->getPath());
+        $responseHandler = ResponseHandler::compile($method);
+        $routeId = spl_object_id($route);
+        $this->requestBinders[$routeId] = $requestBinder;
+        $this->responseHandlers[$routeId] = $responseHandler;
     }
 }

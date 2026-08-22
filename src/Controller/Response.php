@@ -3,7 +3,6 @@
 namespace GustavPHP\Gustav\Controller;
 
 use GustavPHP\Gustav\Serializer;
-use InvalidArgumentException;
 use Nyholm\Psr7\Response as Psr7Response;
 
 class Response
@@ -20,6 +19,7 @@ class Response
         protected int $status = 200,
         protected array $headers = [],
         protected mixed $body = '',
+        protected ResponseFormat $format = ResponseFormat::Raw,
     ) {
     }
     /**
@@ -29,14 +29,21 @@ class Response
      */
     public function build(): Psr7Response
     {
+        $headers = $this->headers;
+        $body = $this->body;
+        if ($this->format === ResponseFormat::Json) {
+            $headers = array_merge($headers, ['Content-Type' => 'application/json']);
+            $body = Serializer\Manager::encode($body);
+        }
+
         return new Psr7Response(
             $this->status,
-            $this->headers,
-            $this->body
+            $headers,
+            $body,
         );
     }
     /**
-     * Build a Response with a JSON body.
+     * Build a Response with an HTML body.
      *
      * @return Psr7Response
      */
@@ -52,14 +59,14 @@ class Response
      * Build a Response with a JSON body.
      *
      * @return Psr7Response
-     * @throws InvalidArgumentException
+     * @throws Serializer\SerializationException
      */
     public function buildJson(): Psr7Response
     {
         return new Psr7Response(
             $this->status,
             array_merge($this->headers, ['Content-Type' => 'application/json']),
-            (string) json_encode($this->body)
+            Serializer\Manager::encode($this->body),
         );
     }
     /**
@@ -126,6 +133,7 @@ class Response
         }
         if ($response->body) {
             $this->body = $response->body;
+            $this->format = $response->format;
         }
         $this->headers = array_merge($this->headers, $response->headers);
 

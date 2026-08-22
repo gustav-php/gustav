@@ -89,4 +89,11 @@ jobs:
                   test "$invalid_status" = "400"
                   php -r '$body = json_decode(file_get_contents($argv[1]), true, 512, JSON_THROW_ON_ERROR); exit($body["error"]["status"] === 400 ? 0 : 1);' /tmp/gustav-invalid.json
 
+                  typed_response=$(curl --fail --silent http://127.0.0.1:5173/responses/direct-dto)
+                  php -r '$body = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR); exit($body["state"] === "active" && $body["owner"] === ["name" => "Ada"] && is_float($body["rating"]) && !array_key_exists("internalNote", $body) ? 0 : 1);' <<< "$typed_response"
+
+                  serialization_status=$(curl --silent --output /tmp/gustav-serialization-error.json --write-out '%{http_code}' \
+                      http://127.0.0.1:5173/responses/circular)
+                  test "$serialization_status" = "500"
+
                   test "$(curl --fail --silent http://127.0.0.1:5173/responses/plaintext)" = "lorem ipsum"

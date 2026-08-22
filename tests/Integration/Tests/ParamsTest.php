@@ -252,7 +252,7 @@ describe('request input binding', function () use ($client) {
         expect($response->getStatusCode())->toBe(200)
             ->and(json_decode((string) $response->getBody(), true))->toBe([
                 'email' => 'ada@example.com',
-                'score' => -2,
+                'score' => -2.0,
             ]);
     });
 
