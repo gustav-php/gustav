@@ -3,7 +3,6 @@
 namespace GustavPHP\Gustav\Http;
 
 use BackedEnum;
-use GustavPHP\Gustav\Attribute\JsonResponse;
 use GustavPHP\Gustav\Controller\{Response, ResponseFormat};
 use GustavPHP\Gustav\Serializer\Manager;
 use JsonSerializable;
@@ -15,7 +14,7 @@ use UnitEnum;
 
 final readonly class ResponseHandler
 {
-    private function __construct(private ?JsonResponse $jsonResponse)
+    private function __construct(private bool $serializeAsJson)
     {
     }
 
@@ -27,25 +26,23 @@ final readonly class ResponseHandler
             throw new LogicException("{$location} must declare one response type");
         }
 
-        $attributes = $method->getAttributes(JsonResponse::class);
-        /** @var JsonResponse|null $jsonResponse */
-        $jsonResponse = $attributes === [] ? null : $attributes[0]->newInstance();
+        if (self::isResponseObject($type)) {
+            if ($type->allowsNull()) {
+                throw new LogicException("{$location} must return a non-null response object");
+            }
 
-        if ($jsonResponse === null) {
-            self::assertResponseObject($type, $location);
-        } else {
-            self::assertJsonType($type, $location);
+            return new self(false);
         }
 
-        return new self($jsonResponse);
+        self::assertJsonType($type, $location);
+
+        return new self(true);
     }
 
     public function respond(mixed $payload): ResponseInterface
     {
-        if ($this->jsonResponse !== null) {
+        if ($this->serializeAsJson) {
             return (new Response(
-                status: $this->jsonResponse->status,
-                headers: $this->jsonResponse->headers,
                 body: $payload,
                 format: ResponseFormat::Json,
             ))->build();
@@ -66,14 +63,14 @@ final readonly class ResponseHandler
         $name = $type->getName();
         if ($type->isBuiltin()) {
             if (!in_array($name, ['array', 'bool', 'false', 'float', 'int', 'null', 'string', 'true'], true)) {
-                throw new LogicException("{$location} declares an unsupported JsonResponse type {$name}");
+                throw new LogicException("{$location} declares an unsupported inferred JSON response type {$name}");
             }
 
             return;
         }
 
-        if (is_a($name, Response::class, true) || is_a($name, ResponseInterface::class, true)) {
-            throw new LogicException("{$location} cannot use JsonResponse with a response object return type");
+        if (in_array($name, ['parent', 'self', 'static'], true)) {
+            throw new LogicException("{$location} declares an unsupported inferred JSON response type {$name}");
         }
         if (is_a($name, UnitEnum::class, true) && !is_a($name, BackedEnum::class, true)) {
             throw new LogicException("{$location} cannot serialize an unbacked enum");
@@ -86,19 +83,13 @@ final readonly class ResponseHandler
         Manager::prepare($name);
     }
 
-    private static function assertResponseObject(ReflectionNamedType $type, string $location): void
+    private static function isResponseObject(ReflectionNamedType $type): bool
     {
-        if ($type->allowsNull()) {
-            throw new LogicException("{$location} must return a non-null response object");
+        if ($type->isBuiltin()) {
+            return false;
         }
-
         $name = $type->getName();
-        if (
-            in_array($name, ['parent', 'self', 'static'], true)
-            || $type->isBuiltin()
-            || (!is_a($name, Response::class, true) && !is_a($name, ResponseInterface::class, true))
-        ) {
-            throw new LogicException("{$location} must return a response object or use JsonResponse");
-        }
+
+        return is_a($name, Response::class, true) || is_a($name, ResponseInterface::class, true);
     }
 }
