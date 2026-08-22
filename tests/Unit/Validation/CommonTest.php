@@ -25,6 +25,7 @@ describe('built-in validation rules', function () {
         test()->fail('Expected integer validation to fail');
     })->with([
         'invalid' => ['1.2', 'invalid_integer'],
+        'boolean' => [true, 'invalid_integer'],
         'below minimum' => [-3, 'min_value'],
         'above maximum' => [3, 'max_value'],
     ]);
@@ -59,6 +60,7 @@ describe('built-in validation rules', function () {
         test()->fail('Expected decimal validation to fail');
     })->with([
         'invalid' => ['value', 'invalid_decimal'],
+        'boolean' => [true, 'invalid_decimal'],
         'below minimum' => [-2.1, 'min_value'],
         'above maximum' => [2.1, 'max_value'],
     ]);
