@@ -30,6 +30,14 @@ class View
     }
 
     /**
+     * Reset the shared view engine when a new application is created.
+     */
+    public static function reset(): void
+    {
+        self::$engine = null;
+    }
+
+    /**
      * Get the Latte engine.
      *
      * @return Engine

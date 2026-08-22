@@ -17,10 +17,11 @@ jobs:
                     - "8.2"
                     - "8.3"
                     - "8.4"
+                    - "8.5"
         runs-on: ubuntu-latest
 
         steps:
-            - uses: actions/checkout@v3
+            - uses: actions/checkout@v4
 
             - name: Setup PHP
               uses: shivammathur/setup-php@v2
@@ -32,15 +33,18 @@ jobs:
 
             - name: Cache Composer packages
               id: composer-cache
-              uses: actions/cache@v3
+              uses: actions/cache@v4
               with:
                   path: vendor
-                  key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+                  key: ${{ runner.os }}-php-${{ matrix.php }}-${{ hashFiles('**/composer.lock') }}
                   restore-keys: |
-                      ${{ runner.os }}-php-
+                      ${{ runner.os }}-php-${{ matrix.php }}-
 
             - name: Install dependencies
               run: composer install --prefer-dist --no-progress
+
+            - name: Audit dependencies
+              run: composer audit
 
             - name: Run static code check
               run: composer run check
@@ -53,3 +57,22 @@ jobs:
 
             - name: Run test suite
               run: composer run test
+
+            - name: Run RoadRunner transport smoke test
+              run: |
+                  ./rr serve -c .rr.yaml > /tmp/gustav-roadrunner.log 2>&1 &
+                  server_pid=$!
+                  trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+                  response=""
+                  for attempt in {1..20}; do
+                      if response=$(curl --fail --silent http://127.0.0.1:5173/responses/plaintext); then
+                          break
+                      fi
+                      sleep 0.25
+                  done
+
+                  test "$response" = "lorem ipsum"
+                  auth_status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:5173/kernel/auth)
+                  test "$auth_status" = "401"
+                  test "$(curl --fail --silent http://127.0.0.1:5173/responses/plaintext)" = "lorem ipsum"

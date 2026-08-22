@@ -5,11 +5,16 @@ namespace GustavPHP\Gustav;
 use Composer\InstalledVersions;
 use Exception;
 use GustavPHP\Gustav\Controller\{ControllerFactory, Response};
+use GustavPHP\Gustav\Http\CallableRequestHandler;
+use GustavPHP\Gustav\Http\Exception\HttpException;
+use GustavPHP\Gustav\Middleware\Pipeline;
 use GustavPHP\Gustav\Router\{Method, Router};
 use GustavPHP\Gustav\Service\Container;
+use LogicException;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response as Psr7Response;
-use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
+use Psr\Http\Server\{MiddlewareInterface, RequestHandlerInterface};
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
@@ -22,7 +27,7 @@ use SplFileInfo;
 use stdClass;
 use Throwable;
 
-class Application
+class Application implements RequestHandlerInterface
 {
     /**
      * @var Configuration
@@ -36,6 +41,10 @@ class Application
      * @var array<string,string>
      */
     protected array $files = [];
+    /**
+     * @var array<MiddlewareInterface>
+     */
+    protected array $middlewares = [];
 
     /**
      * Creates a new application instance.
@@ -48,6 +57,11 @@ class Application
         Configuration $configuration
     ) {
         self::$configuration = $configuration;
+        Router::reset();
+        Serializer\Manager::reset();
+        Event\Manager::reset();
+        View::reset();
+
         foreach (Discovery::discoverController() as $class) {
             $this->addRoutes([$class]);
         }
@@ -75,6 +89,16 @@ class Application
     }
 
     /**
+     * Add application-wide middleware.
+     */
+    public function addMiddleware(MiddlewareInterface ...$middlewares): self
+    {
+        array_push($this->middlewares, ...$middlewares);
+
+        return $this;
+    }
+
+    /**
      * Adds route classes to the application.
      *
      * @param array<class-string<Controller\Base>> $classes The classes to add as routes.
@@ -88,6 +112,24 @@ class Application
         }
 
         return $this;
+    }
+
+    /**
+     * Handle one PSR-7 request independently of the server transport.
+     */
+    public function handle(ServerRequestInterface $request): ResponseInterface
+    {
+        try {
+            $path = ltrim($request->getUri()->getPath(), '/');
+            $request = $request->withAttribute('Gustav-Path', $path);
+
+            return (new Pipeline(
+                $this->middlewares,
+                new CallableRequestHandler($this->handleRoutedRequestSafely(...)),
+            ))->handle($request);
+        } catch (Throwable $th) {
+            return $this->renderException($th);
+        }
     }
 
     /**
@@ -129,23 +171,9 @@ class Application
             }
 
             try {
-                $request = $this->initMiddleware($request);
-                $request = $this->customMiddleware($request);
-                if ($request instanceof Psr7Response) {
-                    $psr7->respond($request);
-                    break;
-                }
-
-                $response = $this->handleRequest($request);
-
-                $psr7->respond($response);
-            } catch (\Throwable $e) {
-                // In case of any exceptions in the application code, you should handle
-                // them and inform the client about the presence of a server error.
-                //
-                // Reply by the 500 Internal Server Error response
-                $psr7->respond(new Psr7Response(500, [], 'Something Went Wrong!'));
-                $psr7->getWorker()->error((string)$e);
+                $psr7->respond($this->handle($request));
+            } catch (Throwable $e) {
+                $psr7->getWorker()->error((string) $e);
             }
         }
     }
@@ -178,24 +206,36 @@ class Application
     }
 
     /**
-     * Handles custom middlewares.
-     *
-     * @param ServerRequestInterface $request
-     * @return ServerRequestInterface|Psr7Response
+     * Invoke the matched controller.
      */
-    protected function customMiddleware(ServerRequestInterface $request): ServerRequestInterface|Psr7Response
+    protected function dispatchRequest(ServerRequestInterface $request): ResponseInterface
     {
-        /**
-         * @var Middleware\Base[] $middlewares
-         */
-        $middlewares = $request->getAttribute('Gustav-Middlewares', []);
-        foreach ($middlewares as $middleware) {
-            $request = $middleware->handle($request);
-            if ($request instanceof Response) {
-                return $request->build();
-            }
+        $route = $request->getAttribute('Gustav-Route');
+        $controller = $request->getAttribute('Gustav-Controller');
+        if (!$route instanceof Attribute\Route || !$controller instanceof ControllerFactory) {
+            throw new LogicException('Request route has not been initialized');
         }
-        return $request;
+
+        $dependencies = new Container();
+        $dependencies->addDependency([ServerRequestInterface::class => fn () => $request]);
+        $dependencies->build();
+        $instance = $dependencies->make($controller->getClass());
+        $payload = $instance->{$route->getFunction()}(...$route->generateArguments($request));
+
+        if ($payload instanceof Controller\Response) {
+            $serializer = $payload->getSerializer();
+            if ($serializer) {
+                $payload->setBody(Serializer\Manager::getEntity($serializer::class)->serialize($serializer));
+                $payload->setBody(json_encode($payload->getBody()));
+            }
+
+            return $payload->build();
+        }
+        if ($payload instanceof ResponseInterface) {
+            return $payload;
+        }
+
+        throw new LogicException('Controller needs to return a response object');
     }
 
     /**
@@ -207,125 +247,60 @@ class Application
      */
     protected function getCodeBlockFromTrace(string $file, int $line): string
     {
-        $lines = file($file);
-        $code = '';
-        $code .= $lines[$line - 5] ?? null;
-        $code .= $lines[$line - 4] ?? null;
-        $code .= $lines[$line - 3] ?? null;
-        $code .= $lines[$line - 2] ?? null;
-        $code .= $lines[$line - 1] ?? null; // current line
-        $code .= $lines[$line] ?? null;
-        $code .= $lines[$line + 1] ?? null;
-        $code .= $lines[$line + 2] ?? null;
-        $code .= $lines[$line + 3] ?? null;
-
-        return $code;
-    }
-
-    /**
-     * Handles a given request.
-     *
-     * @param ServerRequestInterface $request
-     * @return Psr7Response
-     * @throws Throwable
-     */
-    protected function handleRequest(ServerRequestInterface $request): Psr7Response
-    {
-        $response = new Response();
-
-        try {
-            $context = new Context(
-                path: $request->getAttribute('Gustav-Path'),
-                route: $request->getAttribute('Gustav-Route'),
-                controllerFactory: $request->getAttribute('Gustav-Controller')
-            );
-            if ($request->getMethod() === 'GET' && array_key_exists($context->path, $this->files)) {
-                $path = $this->files[$context->path];
-                $contentType = mime_content_type($path);
-                return (new Response(
-                    status: 200,
-                    headers: [
-                        'Content-Type' => $contentType ?: 'application/octet-stream',
-                    ],
-                    body: file_get_contents($path)
-                ))->build();
-            }
-            if ($context->route === null || $context->controllerFactory === null) {
-                if ($request->getAttribute('Gustav-Exception') !== null) {
-                    throw $request->getAttribute('Gustav-Exception');
-                } else {
-                    throw new Exception(code: 500);
-                }
-            }
-            $dependencies = new Container();
-            $dependencies->addDependency([ServerRequestInterface::class => fn () => $request]);
-            $dependencies->build();
-            $instance = $dependencies->make($context->controllerFactory->getClass());
-            $payload = $instance->{$context->route->getFunction()}(...$context->route->generateArguments($request));
-            if (!$payload instanceof Controller\Response) {
-                throw new Exception('Controller needs to return a Response object');
-            }
-            $serializer = $payload->getSerializer();
-            if ($serializer) {
-                $payload->setBody(Serializer\Manager::getEntity($serializer::class)->serialize($serializer));
-                $payload->setBody(json_encode($payload->getBody()));
-            }
-            return $response->merge($payload)->build();
-        } catch (Throwable $th) {
-            if ($th->getCode() < 400 || $th->getCode() >= 600) {
-                $response->setStatus(500);
-            } else {
-                $response->setStatus($th->getCode());
-            }
-            if (self::isProduction()) {
-                $response->setBody(
-                    $th->getCode() >= 500
-                        ? 'Server Error'
-                        : $th->getMessage()
-                );
-            } else {
-                return (new Response(
-                    body: View::render(__DIR__ . '/../views/exception.latte', [
-                        'title' => get_class($th),
-                        'exception' => get_class($th),
-                        'message' => $th->getMessage(),
-                        'file' => $th->getFile(),
-                        'line' => $th->getLine(),
-                        'code' => $th->getCode(),
-                        'trace' => $this->prepareTrace($th),
-                        'snippet' => $this->getCodeBlockFromTrace($th->getFile(), $th->getLine()),
-                        'version' => InstalledVersions::getPrettyVersion('gustav-php/gustav')
-                    ]),
-                    status: $th->getCode() < 400 || $th->getCode() >= 600 ? 500 : (int) $th->getCode()
-                ))->buildHtml();
-            }
-            var_dump(5);
-            return $response->buildJson();
+        if ($line < 1 || !is_readable($file)) {
+            return '';
         }
+
+        $lines = file($file);
+        if ($lines === false) {
+            return '';
+        }
+
+        return implode('', array_slice($lines, max(0, $line - 5), 9));
     }
 
     /**
-     * Initializes the application middleware.
-     *
-     * @param ServerRequestInterface $request
-     * @return ServerRequestInterface
+     * Resolve a route and run its controller and method middleware.
      */
-    protected function initMiddleware(ServerRequestInterface $request): ServerRequestInterface
+    protected function handleRoutedRequest(ServerRequestInterface $request): ResponseInterface
+    {
+        $path = $request->getAttribute('Gustav-Path');
+        if (!is_string($path)) {
+            throw new LogicException('Request path has not been initialized');
+        }
+
+        if ($request->getMethod() === Method::GET->value && array_key_exists($path, $this->files)) {
+            return $this->serveStaticFile($this->files[$path]);
+        }
+
+        $route = Router::match(Method::fromRequest($request), $path);
+        $controller = $this->controllers[$route->getClass()] ?? null;
+        if ($controller === null) {
+            throw new LogicException("Controller '{$route->getClass()}' has not been registered");
+        }
+
+        $middlewares = $controller->getMiddlewares($route->getFunction());
+        $request = $request
+            ->withAttribute('Gustav-Route', $route)
+            ->withAttribute('Gustav-Controller', $controller)
+            ->withAttribute('Gustav-Middlewares', $middlewares);
+
+        return (new Pipeline(
+            $middlewares,
+            new CallableRequestHandler($this->dispatchRequest(...)),
+        ))->handle($request);
+    }
+
+    /**
+     * Convert route and controller exceptions inside the application middleware
+     * pipeline so outer middleware can inspect the resulting error response.
+     */
+    protected function handleRoutedRequestSafely(ServerRequestInterface $request): ResponseInterface
     {
         try {
-            $path = ltrim($request->getUri()->getPath(), '/');
-            $request = $request->withAttribute('Gustav-Path', $path);
-            $route = Router::match(Method::fromRequest($request), $path);
-            $controller = $this->controllers[$route->getClass()];
-
-            return $request
-                ->withAttribute('Gustav-Route', $route)
-                ->withAttribute('Gustav-Controller', $controller)
-                ->withAttribute('Gustav-Middlewares', $controller->getMiddlewares());
-        } catch (Throwable $th) {
-            return $request
-                ->withAttribute('Gustav-Route', null)
-                ->withAttribute('Gustav-Exception', $th);
+            return $this->handleRoutedRequest($request);
+        } catch (Throwable $throwable) {
+            return $this->renderException($throwable);
         }
     }
 
@@ -342,6 +317,7 @@ class Application
             $object->function = $trace['function'];
             $object->type = $trace['type'] ?? null;
             $object->class = $trace['class'] ?? null;
+            $object->snippet = '';
             if ($object->file !== null && $object->line !== null) {
                 $object->snippet = $this->getCodeBlockFromTrace($object->file, $object->line);
             }
@@ -364,6 +340,78 @@ class Application
         $reflector = new ReflectionClass($class);
         $this->addMethods($reflector);
         $this->controllers[$class] = $controller;
+    }
+
+    protected function renderException(Throwable $throwable): ResponseInterface
+    {
+        $status = $throwable instanceof HttpException
+            ? $throwable->getStatusCode()
+            : (int) $throwable->getCode();
+        if ($status < 400 || $status >= 600) {
+            $status = 500;
+        }
+
+        $headers = $throwable instanceof HttpException
+            ? $throwable->getHeaders()
+            : [];
+
+        if (self::isProduction()) {
+            $message = $status >= 500
+                ? 'Server Error'
+                : ($throwable->getMessage() ?: 'Request failed');
+
+            return new Psr7Response(
+                $status,
+                array_merge(['Content-Type' => 'application/json'], $headers),
+                (string) json_encode(
+                    [
+                        'error' => [
+                            'status' => $status,
+                            'message' => $message,
+                        ],
+                    ],
+                    JSON_INVALID_UTF8_SUBSTITUTE,
+                ),
+            );
+        }
+
+        try {
+            return (new Response(
+                body: View::render(__DIR__ . '/../views/exception.latte', [
+                    'title' => get_class($throwable),
+                    'exception' => get_class($throwable),
+                    'message' => $throwable->getMessage(),
+                    'file' => $throwable->getFile(),
+                    'line' => $throwable->getLine(),
+                    'code' => $status,
+                    'trace' => $this->prepareTrace($throwable),
+                    'snippet' => $this->getCodeBlockFromTrace($throwable->getFile(), $throwable->getLine()),
+                    'version' => InstalledVersions::getPrettyVersion('gustav-php/gustav'),
+                ]),
+                status: $status,
+                headers: $headers,
+            ))->buildHtml();
+        } catch (Throwable) {
+            return new Psr7Response(
+                500,
+                ['Content-Type' => 'text/plain'],
+                'Server Error',
+            );
+        }
+    }
+
+    protected function serveStaticFile(string $path): ResponseInterface
+    {
+        $body = file_get_contents($path);
+        if ($body === false) {
+            throw new HttpException(500, 'Unable to read static file');
+        }
+
+        return new Psr7Response(
+            200,
+            ['Content-Type' => mime_content_type($path) ?: 'application/octet-stream'],
+            $body,
+        );
     }
 
     /**
@@ -428,6 +476,24 @@ class Application
                     $type = $parameter->getType();
                     $instance->setDto(DTO\Mapper::fromReflection($type));
                 }
+                $route->addArgument($parameter->getName(), $instance);
+                continue;
+            }
+            $authUser = $parameter->getAttributes(Attribute\AuthUser::class)[0] ?? null;
+            if ($authUser) {
+                $type = $parameter->getType();
+                if (
+                    !$type instanceof ReflectionNamedType
+                    || $type->isBuiltin()
+                    || !is_a($type->getName(), Auth\Identity::class, true)
+                ) {
+                    throw new LogicException(
+                        "Auth user parameter \${$parameter->getName()} must implement " . Auth\Identity::class,
+                    );
+                }
+
+                /** @var Attribute\AuthUser $instance */
+                $instance = $authUser->newInstance();
                 $route->addArgument($parameter->getName(), $instance);
                 continue;
             }

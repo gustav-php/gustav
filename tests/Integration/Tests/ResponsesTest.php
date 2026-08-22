@@ -43,7 +43,7 @@ describe('response', function () use ($client) {
 
     it('can be a redirect', function () use ($client) {
         $response = $client->request('GET', '/responses/redirect');
-        expect($response->getBody()->getContents())->toBe('lorem ipsum');
-        expect($response->getStatusCode())->toBe(200);
+        expect($response->getHeaderLine('Location'))->toBe('/responses/plaintext');
+        expect($response->getStatusCode())->toBe(301);
     });
 });

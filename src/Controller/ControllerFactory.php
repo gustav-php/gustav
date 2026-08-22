@@ -2,8 +2,8 @@
 
 namespace GustavPHP\Gustav\Controller;
 
-use GustavPHP\Gustav;
 use GustavPHP\Gustav\Attribute\Middleware;
+use Psr\Http\Server\MiddlewareInterface;
 use ReflectionClass;
 use ReflectionException;
 
@@ -32,14 +32,20 @@ class ControllerFactory
     /**
      * Get the middlewares for the controller.
      *
-     * @return array<Gustav\Middleware\Base>
-     * @throws ReflectionException
+     * @return array<MiddlewareInterface>
      * @throws ReflectionException
      */
-    public function getMiddlewares(): array
+    public function getMiddlewares(?string $method = null): array
     {
         $reflection = new ReflectionClass($this->class);
         $attributes = $reflection->getAttributes(Middleware::class);
+
+        if ($method !== null) {
+            $attributes = [
+                ...$attributes,
+                ...$reflection->getMethod($method)->getAttributes(Middleware::class),
+            ];
+        }
 
         return array_map(
             fn ($attribute) => $attribute->newInstance()->getInstance(),
