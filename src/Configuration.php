@@ -63,6 +63,18 @@ readonly class Configuration
          * @var array<string>
          */
         public array $serializerNamespaces = [],
+        /**
+         * Namespace containing discoverable services.
+         *
+         * @var array<string>
+         */
+        public array $serviceNamespaces = [],
+        /**
+         * Namespace containing discoverable application-wide middleware.
+         *
+         * @var array<string>
+         */
+        public array $middlewareNamespaces = [],
     ) {
     }
 }

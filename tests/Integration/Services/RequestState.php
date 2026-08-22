@@ -2,8 +2,10 @@
 
 namespace GustavPHP\Tests\Integration\Services;
 
+use GustavPHP\Gustav\Attribute\Service;
 use Psr\Http\Message\ServerRequestInterface;
 
+#[Service]
 class RequestState
 {
     public readonly int $id;
