@@ -2,55 +2,21 @@
 
 namespace GustavPHP\Gustav\Serializer;
 
-use GustavPHP\Gustav\Attribute\Serializer\{AdditionalProperties, Exclude};
 use InvalidArgumentException;
-use ReflectionClass;
-use ReflectionException;
+use stdClass;
 
 class Entity
 {
     /**
-     * @var string
-     */
-    protected string $className;
-    /**
-     * @var array<string>
-     */
-    protected array $excluded = [];
-    /**
-     * @var bool
-     */
-    protected bool $hasAdditionalProperties = false;
-    /**
-     * @var array<string>
-     */
-    protected array $properties = [];
-    /**
-     * @var ReflectionClass
-     */
-    protected ReflectionClass $reflection;
-
-    /**
      * @param class-string<Base> $className
-     * @return void
-     * @throws ReflectionException
      */
     public function __construct(
-        string $className
+        protected string $className
     ) {
         if (!is_subclass_of($className, Base::class)) {
             throw new InvalidArgumentException("Class {$className} is not a subclass of " . Base::class);
         }
-        $this->reflection = new ReflectionClass($className);
-        $this->hasAdditionalProperties = !!$this->reflection->getAttributes(AdditionalProperties::class);
-        foreach ($this->reflection->getProperties() as $property) {
-            $excluded = !!$property->getAttributes(Exclude::class);
-            if ($excluded) {
-                $this->excluded[] = $property->getName();
-            } else {
-                $this->properties[] = $property->getName();
-            }
-        }
+        Manager::prepare($className);
     }
 
     /**
@@ -59,25 +25,38 @@ class Entity
      */
     public function serialize(Base $instance): array
     {
-        $data = get_object_vars($instance);
-        foreach ($this->excluded as $key) {
-            if (array_key_exists($key, $data)) {
-                unset($data[$key]);
-            }
+        if (!$instance instanceof $this->className) {
+            throw new InvalidArgumentException("Serializer instance must be an instance of {$this->className}");
         }
-        if (!$this->hasAdditionalProperties) {
-            foreach (array_keys($data) as $key) {
-                if (!in_array($key, $this->properties)) {
-                    unset($data[$key]);
-                }
-            }
+
+        $normalized = Manager::normalize($instance);
+        if (!$normalized instanceof stdClass) {
+            throw new SerializationException("Serializer {$this->className} did not normalize to an object");
         }
-        foreach ($data as $key => $value) {
-            if ($value instanceof Base) {
-                $data[$key] = Manager::getEntity($value::class)->serialize($value);
-            } elseif (is_array($value)) {
-                $data[$key] = array_map(fn ($p) => Manager::getEntity($p::class)->serialize($p), array_filter($value, fn ($p) => $p instanceof Base));
-            }
+
+        return self::objectToArray($normalized);
+    }
+
+    private static function normalizedToArray(mixed $value): mixed
+    {
+        if ($value instanceof stdClass) {
+            return self::objectToArray($value);
+        }
+        if (is_array($value)) {
+            return array_map(self::normalizedToArray(...), $value);
+        }
+
+        return $value;
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    private static function objectToArray(stdClass $object): array
+    {
+        $data = [];
+        foreach (get_object_vars($object) as $key => $value) {
+            $data[$key] = self::normalizedToArray($value);
         }
 
         return $data;

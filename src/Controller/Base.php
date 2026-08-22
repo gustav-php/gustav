@@ -36,22 +36,21 @@ class Base
     /**
      * Returns a JSON Response.
      *
-     * @param array<mixed>|object $data
+     * @param mixed $data
      * @param int $status
      * @param array<string,string|array<string>> $headers
      * @return Response
      */
     protected function json(
-        array|object $data,
+        mixed $data,
         int $status = 200,
         array $headers = []
     ): Response {
         return new Response(
             status: $status,
-            body: json_encode($data),
-            headers: array_merge($headers, [
-                'Content-Type' => 'application/json',
-            ])
+            body: $data,
+            headers: $headers,
+            format: ResponseFormat::Json,
         );
     }
 
@@ -109,9 +108,8 @@ class Base
         return new Response(
             status: $status,
             body: $object,
-            headers: array_merge($headers, [
-                'Content-Type' => 'application/json',
-            ])
+            headers: $headers,
+            format: ResponseFormat::Json,
         );
     }
 

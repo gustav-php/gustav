@@ -36,6 +36,20 @@ class Responses extends Controller\Base
         return $this->dog(1);
     }
 
+    #[Route('/responses/direct-enum')]
+    #[JsonResponse]
+    public function directEnum(): ResponseState
+    {
+        return ResponseState::Active;
+    }
+
+    #[Route('/responses/direct-false')]
+    #[JsonResponse]
+    public function directFalse(): bool
+    {
+        return false;
+    }
+
     #[Route('/responses/direct-null')]
     #[JsonResponse]
     public function directNull(): ?DogOutput
