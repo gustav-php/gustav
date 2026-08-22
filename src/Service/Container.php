@@ -2,198 +2,337 @@
 
 namespace GustavPHP\Gustav\Service;
 
-use Closure;
-use GustavPHP\Gustav\Controller\Base;
 use InvalidArgumentException;
 use LogicException;
+use Psr\Http\Message\ServerRequestInterface;
 use ReflectionClass;
-use ReflectionFunction;
 use ReflectionNamedType;
 use ReflectionParameter;
 
 class Container
 {
-    protected bool $built = false;
-    /**
-     * @var array<string, callable(self): mixed|object>
-     */
-    protected array $definitions = [];
+    private bool $released = false;
 
-    /**
-     * @var array<string, mixed>
-     */
-    protected array $resolved = [];
+    /** @var array<string, mixed> */
+    private array $resolved = [];
 
-    /**
-     * @var array<string, bool>
-     */
-    protected array $resolving = [];
+    /** @var array<string, bool> */
+    private array $resolving = [];
+    private Container $root;
 
-    /**
-     * Register dependencies that can later be resolved by the container.
-     *
-     * @param array<string, callable(self): mixed|object> $definitions Callables may
-     * accept the container as their only argument.
-     * @return void
-     */
-    public function addDependency(array $definitions): void
+    private ContainerState $state;
+
+    public function __construct()
     {
-        foreach ($definitions as $id => $factory) {
-            if (!is_string($id) || $id === '') {
-                throw new InvalidArgumentException(
-                    'Dependency id must be a non-empty string',
-                );
-            }
-            if (!is_callable($factory) && !is_object($factory)) {
-                throw new InvalidArgumentException(
-                    "Definition for '{$id}' must be an object or callable",
-                );
-            }
-
-            $this->definitions[$id] = $factory;
-        }
+        $this->root = $this;
+        $this->state = new ContainerState();
     }
 
     /**
-     * Finalizes the container configuration. Included for API parity with the
-     * previous php-di integration.
+     * Bind an abstraction to an injectable implementation.
+     *
+     * @param class-string $implementation
+     */
+    public function bind(
+        string $id,
+        string $implementation,
+        Lifetime $lifetime = Lifetime::Request,
+    ): self {
+        if (!class_exists($implementation)) {
+            throw new InvalidArgumentException("Service implementation '{$implementation}' does not exist");
+        }
+        if (
+            (class_exists($id) || interface_exists($id))
+            && !is_a($implementation, $id, true)
+        ) {
+            throw new InvalidArgumentException("{$implementation} must implement or extend {$id}");
+        }
+
+        return $this->register($id, $implementation, $lifetime);
+    }
+
+    /**
+     * Freeze service registration. Calling this method more than once is safe.
      */
     public function build(): void
     {
-        $this->built = true;
+        $this->assertRoot();
+        $this->state->built = true;
     }
 
     /**
-     * Create a new instance of the given class with constructor injection.
-     *
-     * @param class-string<Base> $class
-     * @return Base
+     * Create the isolated service scope for one HTTP request.
      */
-    public function make(string $class): Base
+    public function createRequestScope(ServerRequestInterface $request): self
     {
-        if (!$this->built) {
+        $this->assertRoot();
+        $this->assertBuilt();
+
+        $scope = new self();
+        $scope->root = $this;
+        $scope->state = $this->state;
+        $scope->resolved[ServerRequestInterface::class] = $request;
+
+        return $scope;
+    }
+
+    /**
+     * Resolve a service from the active container.
+     */
+    public function get(string $id): mixed
+    {
+        $this->assertActive();
+        $this->assertBuilt();
+
+        if ($id === self::class) {
+            return $this;
+        }
+        if (array_key_exists($id, $this->resolved)) {
+            return $this->resolved[$id];
+        }
+
+        $definition = $this->state->definitions[$id] ?? null;
+        if ($definition === null) {
+            if (!class_exists($id)) {
+                throw new InvalidArgumentException("Unable to resolve '{$id}'");
+            }
+            $definition = new Definition(Lifetime::Request, $id);
+        }
+
+        return match ($definition->lifetime) {
+            Lifetime::Singleton => $this->root->resolveSingleton($id, $definition),
+            Lifetime::Request => $this->resolveRequest($id, $definition),
+            Lifetime::Transient => $this->create($id, $definition),
+        };
+    }
+
+    /**
+     * Report whether an identifier has an explicit definition or can be autowired.
+     */
+    public function has(string $id): bool
+    {
+        return array_key_exists($id, $this->resolved)
+            || array_key_exists($id, $this->state->definitions)
+            || class_exists($id);
+    }
+
+    /**
+     * Create an uncached class instance while resolving its dependencies through
+     * the active container.
+     *
+     * @param class-string $class
+     */
+    public function make(string $class): object
+    {
+        $this->assertActive();
+        $this->assertBuilt();
+
+        return $this->autowire($class);
+    }
+
+    /**
+     * Release all references owned by this request scope.
+     */
+    public function release(): void
+    {
+        if ($this->root === $this) {
+            throw new LogicException('The application service container cannot be released');
+        }
+
+        $this->resolved = [];
+        $this->resolving = [];
+        $this->released = true;
+    }
+
+    /**
+     * Register one service instance per HTTP request.
+     */
+    public function request(string $id, mixed $definition = null): self
+    {
+        return $this->register($id, $definition ?? $id, Lifetime::Request);
+    }
+
+    /**
+     * Keep direct request injection aligned with the request passed down by
+     * middleware.
+     */
+    public function setRequest(ServerRequestInterface $request): void
+    {
+        $this->assertRequestScope();
+        $this->assertActive();
+        $this->resolved[ServerRequestInterface::class] = $request;
+    }
+
+    /**
+     * Register one service shared by the entire application process.
+     */
+    public function singleton(string $id, mixed $definition = null): self
+    {
+        return $this->register($id, $definition ?? $id, Lifetime::Singleton);
+    }
+
+    /**
+     * Register a service that is recreated for every resolution.
+     */
+    public function transient(string $id, mixed $definition = null): self
+    {
+        return $this->register($id, $definition ?? $id, Lifetime::Transient);
+    }
+
+    private function assertActive(): void
+    {
+        if ($this->released) {
+            throw new LogicException('Request service scope has already been released');
+        }
+    }
+
+    private function assertBuilt(): void
+    {
+        if (!$this->state->built) {
             throw new LogicException('Container not built');
         }
+    }
 
-        $instance = $this->autowire($class);
-        if (!$instance instanceof Base) {
-            throw new LogicException("{$class} must extend " . Base::class);
+    private function assertRequestScope(): void
+    {
+        if ($this->root === $this) {
+            throw new LogicException('This operation requires an active request scope');
         }
+    }
 
-        return $instance;
+    private function assertRoot(): void
+    {
+        if ($this->root !== $this) {
+            throw new LogicException('Services can only be registered on the application container');
+        }
     }
 
     /**
      * Instantiate a class and resolve its constructor dependencies.
      *
      * @param class-string $class
-     * @return object
      */
-    protected function autowire(string $class): object
+    private function autowire(string $class): object
     {
         if (!class_exists($class)) {
             throw new InvalidArgumentException("Unable to resolve '{$class}'");
         }
 
-        $reflector = new ReflectionClass($class);
+        $reflector = $this->state->reflectors[$class] ??= new ReflectionClass($class);
         if (!$reflector->isInstantiable()) {
             throw new InvalidArgumentException("{$class} is not instantiable");
         }
 
         $constructor = $reflector->getConstructor();
-        if (
-            $constructor === null ||
-            $constructor->getNumberOfParameters() === 0
-        ) {
-            return new $class();
+        if ($constructor === null || $constructor->getNumberOfParameters() === 0) {
+            return $reflector->newInstance();
         }
 
         $dependencies = array_map(
-            fn (ReflectionParameter $parameter) => $this->resolveParameter(
-                $class,
-                $parameter,
-            ),
+            fn (ReflectionParameter $parameter): mixed => $this->resolveParameter($class, $parameter),
             $constructor->getParameters(),
         );
 
         return $reflector->newInstanceArgs($dependencies);
     }
 
-    /**
-     * Execute a callable definition with optional container injection.
-     *
-     * @param string $id
-     * @param callable $definition
-     * @return mixed
-     */
-    protected function executeDefinition(
-        string $id,
-        callable $definition,
-    ): mixed {
-        $callable = Closure::fromCallable($definition);
-        $reflection = new ReflectionFunction($callable);
-        $parameterCount = $reflection->getNumberOfParameters();
+    private function create(string $id, Definition $definition): mixed
+    {
+        if (isset($this->resolving[$id])) {
+            $chain = implode(' -> ', [...array_keys($this->resolving), $id]);
+            throw new LogicException("Circular dependency detected: {$chain}");
+        }
 
-        if ($parameterCount > 1) {
+        $this->resolving[$id] = true;
+
+        try {
+            $resolver = $definition->resolver;
+            if (is_string($resolver)) {
+                if (!class_exists($resolver)) {
+                    throw new LogicException("Service implementation '{$resolver}' is no longer available");
+                }
+                $value = $this->autowire($resolver);
+            } elseif ($resolver instanceof Factory) {
+                $value = $resolver->invoke($this);
+            } else {
+                $value = $resolver;
+            }
+
+            if (
+                (class_exists($id) || interface_exists($id))
+                && !$value instanceof $id
+            ) {
+                $type = get_debug_type($value);
+                throw new InvalidArgumentException("Definition for '{$id}' returned {$type}");
+            }
+
+            return $value;
+        } finally {
+            unset($this->resolving[$id]);
+        }
+    }
+
+    private function register(string $id, mixed $resolver, Lifetime $lifetime): self
+    {
+        $this->assertRoot();
+        if ($this->state->built) {
+            throw new LogicException('Service container is already built');
+        }
+        if ($id === '') {
+            throw new InvalidArgumentException('Service id must be a non-empty string');
+        }
+        if (is_string($resolver)) {
+            if (!class_exists($resolver)) {
+                throw new InvalidArgumentException("Service implementation '{$resolver}' does not exist");
+            }
+            $reflection = new ReflectionClass($resolver);
+            if (!$reflection->isInstantiable()) {
+                throw new InvalidArgumentException("Service implementation '{$resolver}' is not instantiable");
+            }
+            if (
+                (class_exists($id) || interface_exists($id))
+                && !is_a($resolver, $id, true)
+            ) {
+                throw new InvalidArgumentException("{$resolver} must implement or extend {$id}");
+            }
+            $this->state->reflectors[$resolver] = $reflection;
+        } elseif (
+            is_callable($resolver)
+            && ($resolver instanceof \Closure || is_array($resolver))
+        ) {
+            $resolver = Factory::compile($id, $resolver);
+        } elseif (!is_object($resolver)) {
             throw new InvalidArgumentException(
-                "Definition for '{$id}' must accept 0 or 1 parameter, {$parameterCount} given",
+                "Definition for '{$id}' must be a class, object, or callable",
+            );
+        }
+        if (
+            is_object($resolver)
+            && !$resolver instanceof Factory
+            && (class_exists($id) || interface_exists($id))
+            && !$resolver instanceof $id
+        ) {
+            throw new InvalidArgumentException(
+                "Object definition for '{$id}' must implement or extend {$id}",
+            );
+        }
+        if (is_object($resolver) && !$resolver instanceof Factory && $lifetime !== Lifetime::Singleton) {
+            throw new InvalidArgumentException(
+                "Object definition for '{$id}' must use the singleton lifetime",
             );
         }
 
-        return $parameterCount === 0 ? $callable() : $callable($this);
+        $this->state->definitions[$id] = new Definition($lifetime, $resolver);
+
+        return $this;
     }
 
-    /**
-     * Resolve a dependency by identifier.
-     *
-     * @param string $id
-     * @return mixed
-     */
-    protected function resolve(string $id): mixed
+    private function resolveParameter(string $context, ReflectionParameter $parameter): mixed
     {
-        if (array_key_exists($id, $this->resolved)) {
-            return $this->resolved[$id];
-        }
-
-        if (isset($this->resolving[$id])) {
-            throw new LogicException("Unable to resolve '{$id}'");
-        }
-        $this->resolving[$id] = true;
-
-        if (array_key_exists($id, $this->definitions)) {
-            $definition = $this->definitions[$id];
-            $value = is_callable($definition)
-                ? $this->executeDefinition($id, $definition)
-                : $definition;
-        } else {
-            if (!class_exists($id)) {
-                throw new InvalidArgumentException("Unable to resolve '{$id}'");
-            }
-            $value = $this->autowire($id);
-        }
-
-        unset($this->resolving[$id]);
-
-        $this->resolved[$id] = $value;
-
-        return $value;
-    }
-
-    /**
-     * Resolve a single constructor parameter.
-     *
-     * @param string $context
-     * @param ReflectionParameter $parameter
-     * @return mixed
-     */
-    protected function resolveParameter(
-        string $context,
-        ReflectionParameter $parameter,
-    ): mixed {
         $type = $parameter->getType();
 
         if ($type instanceof ReflectionNamedType && !$type->isBuiltin()) {
-            return $this->resolve($type->getName());
+            return $this->get($type->getName());
         }
 
         if ($parameter->isDefaultValueAvailable()) {
@@ -207,5 +346,31 @@ class Container
         throw new InvalidArgumentException(
             "Unable to resolve parameter \${$parameter->getName()} for {$context}::__construct()",
         );
+    }
+
+    private function resolveRequest(string $id, Definition $definition): mixed
+    {
+        if ($this->root === $this) {
+            throw new LogicException("Request-scoped service '{$id}' requires an active request scope");
+        }
+
+        if (array_key_exists($id, $this->resolved)) {
+            return $this->resolved[$id];
+        }
+
+        $this->resolved[$id] = $this->create($id, $definition);
+
+        return $this->resolved[$id];
+    }
+
+    private function resolveSingleton(string $id, Definition $definition): mixed
+    {
+        if (array_key_exists($id, $this->state->singletons)) {
+            return $this->state->singletons[$id];
+        }
+
+        $this->state->singletons[$id] = $this->create($id, $definition);
+
+        return $this->state->singletons[$id];
     }
 }

@@ -7,17 +7,16 @@ use GustavPHP\Gustav\Auth\{AuthenticationMiddleware, Identity};
 use GustavPHP\Gustav\Auth\Exception\ForbiddenException;
 use GustavPHP\Gustav\Controller;
 use GustavPHP\Gustav\Http\Exception\HttpException;
-use GustavPHP\Tests\Integration\Auth\HeaderAuthenticator;
-use GustavPHP\Tests\Integration\Middleware\{Block, Legacy, Trace};
+use GustavPHP\Tests\Integration\Middleware\{Block, ControllerTrace, Legacy, RouteTrace};
 use Nyholm\Psr7\Response as Psr7Response;
 use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
 use RuntimeException;
 
-#[Middleware(new Trace('controller'))]
+#[Middleware(ControllerTrace::class)]
 class Kernel extends Controller\Base
 {
     #[Route('/kernel/auth')]
-    #[Middleware(new AuthenticationMiddleware(new HeaderAuthenticator()))]
+    #[Middleware(AuthenticationMiddleware::class)]
     public function auth(#[AuthUser] Identity $identity): Controller\Response
     {
         return $this->json([
@@ -33,7 +32,7 @@ class Kernel extends Controller\Base
     }
 
     #[Route('/kernel/blocked')]
-    #[Middleware(new Block())]
+    #[Middleware(Block::class)]
     public function blocked(): Controller\Response
     {
         return $this->plaintext('controller should not run');
@@ -58,14 +57,14 @@ class Kernel extends Controller\Base
     }
 
     #[Route('/kernel/legacy')]
-    #[Middleware(new Legacy())]
+    #[Middleware(Legacy::class)]
     public function legacy(#[Request] ServerRequestInterface $request): Controller\Response
     {
         return $this->plaintext(implode(',', $request->getAttribute('middleware-trace')));
     }
 
     #[Route('/kernel/middleware')]
-    #[Middleware(new Trace('route'))]
+    #[Middleware(RouteTrace::class)]
     public function middleware(#[Request] ServerRequestInterface $request): Controller\Response
     {
         return $this->plaintext(implode(',', $request->getAttribute('middleware-trace')));
