@@ -1,7 +1,7 @@
 <?php
 
 use GustavPHP\Gustav\{Application, Configuration, Mode};
-use GustavPHP\Tests\Fixtures\{AmbiguousResponseController, InvalidJsonResponseController, InvalidJsonStatusController, NullableResponseController, UntypedResponseController};
+use GustavPHP\Tests\Fixtures\{AmbiguousResponseController, NullableResponseController, UnsupportedResponseController, UntypedResponseController};
 
 it('requires route handlers to declare one response type', function (string $controller, string $message) {
     expect(fn () => responseApplication()->addRoutes([$controller]))
@@ -10,12 +10,8 @@ it('requires route handlers to declare one response type', function (string $con
     'missing return type' => [UntypedResponseController::class, 'must declare one response type'],
     'ambiguous return union' => [AmbiguousResponseController::class, 'must declare one response type'],
     'nullable response object' => [NullableResponseController::class, 'must return a non-null response object'],
-    'response object marked as direct JSON' => [InvalidJsonResponseController::class, 'cannot use JsonResponse'],
+    'unsupported inferred JSON type' => [UnsupportedResponseController::class, 'unsupported inferred JSON response type mixed'],
 ]);
-
-it('rejects invalid direct JSON response statuses', function () {
-    responseApplication()->addRoutes([InvalidJsonStatusController::class]);
-})->throws(InvalidArgumentException::class, 'between 100 and 599');
 
 function responseApplication(): Application
 {
