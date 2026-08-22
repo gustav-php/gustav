@@ -2,11 +2,62 @@
 
 namespace GustavPHP\Tests\Integration\Routes;
 
-use GustavPHP\Gustav\Attribute\Route;
+use GustavPHP\Gustav\Attribute\{JsonResponse, Route};
 use GustavPHP\Gustav\Controller;
+use GustavPHP\Tests\Integration\DTO\{CircularOutput, DogOutput, OwnerOutput, ResponseState, UninitializedOutput, UnsupportedOutput};
+use GustavPHP\Tests\Integration\Serializers\LegacyOutput;
 
 class Responses extends Controller\Base
 {
+    #[Route('/responses/circular')]
+    public function circular(): Controller\Response
+    {
+        $output = new CircularOutput('root');
+        $output->next = $output;
+
+        return $this->json($output);
+    }
+
+    #[Route('/responses/direct-collection')]
+    #[JsonResponse(status: 201, headers: ['X-Response-Mode' => 'compiled'])]
+    public function directCollection(): array
+    {
+        return [
+            'dogs' => [$this->dog(1), $this->dog(2)],
+            'state' => ResponseState::Active,
+            'empty' => null,
+        ];
+    }
+
+    #[Route('/responses/direct-dto')]
+    #[JsonResponse]
+    public function directDto(): DogOutput
+    {
+        return $this->dog(1);
+    }
+
+    #[Route('/responses/direct-null')]
+    #[JsonResponse]
+    public function directNull(): ?DogOutput
+    {
+        return null;
+    }
+
+    #[Route('/responses/dto-helper')]
+    public function dtoHelper(): Controller\Response
+    {
+        return $this->json($this->dog(1));
+    }
+
+    #[Route('/responses/legacy-serializer')]
+    public function legacySerializer(): Controller\Response
+    {
+        $output = new LegacyOutput();
+        $output->extra = 'included';
+
+        return $this->serialize($output);
+    }
+
     #[Route('/responses/html')]
     public function returnHtml(): Controller\Response
     {
@@ -52,5 +103,36 @@ class Responses extends Controller\Base
     public function returnXml(): Controller\Response
     {
         return $this->xml('<root><lorem>ipsum</lorem></root>');
+    }
+
+    #[Route('/responses/uninitialized')]
+    #[JsonResponse]
+    public function uninitialized(): UninitializedOutput
+    {
+        return new UninitializedOutput();
+    }
+
+    #[Route('/responses/unsupported')]
+    public function unsupported(): Controller\Response
+    {
+        return $this->json(new UnsupportedOutput());
+    }
+
+    private function dog(int $id): DogOutput
+    {
+        return new DogOutput(
+            id: $id,
+            name: "Dog {$id}",
+            state: ResponseState::Active,
+            nickname: null,
+            owner: new OwnerOutput('Ada', 'owner-secret'),
+            watchers: [
+                new OwnerOutput('Grace', 'watcher-secret'),
+                new OwnerOutput('Linus', 'watcher-secret'),
+            ],
+            labels: ['friendly', 0, false],
+            rating: 1.0,
+            internalNote: 'do not expose',
+        );
     }
 }
