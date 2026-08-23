@@ -239,6 +239,21 @@ try {
     );
     assertStatus($malformed, 400, 'Malformed JSON request');
 
+    $view = request($httpPort, 'GET', '/responses/direct-view');
+    assertStatus($view, 202, 'Native view request');
+    if (
+        responseHeader($view, 'Content-Type') !== 'text/html; charset=utf-8'
+        || !str_contains($view['body'], '&lt;strong&gt;escaped&lt;/strong&gt;')
+        || str_contains($view['body'], '<strong>escaped</strong>')
+    ) {
+        throw new RuntimeException('Native view response did not satisfy the transport contract');
+    }
+
+    $viewFailure = request($httpPort, 'GET', '/responses/view-missing');
+    assertStatus($viewFailure, 500, 'Native view failure');
+    $afterViewFailure = request($httpPort, 'GET', '/responses/view-helper');
+    assertStatus($afterViewFailure, 200, 'View request after rendering failure');
+
     $first = serviceLifecycle($httpPort);
     assertStatus(request($httpPort, 'GET', '/services/lifecycle/error'), 418, 'Forced service failure');
     $next = serviceLifecycle($httpPort);
@@ -288,6 +303,7 @@ try {
     echo "RoadRunner transport contract passed\n";
     echo "  JSON request: 200\n";
     echo "  Malformed JSON: 400\n";
+    echo "  Native views: 202 -> 500 -> 200\n";
     echo "  Worker sequence: 200 -> 418 -> 200\n";
     echo "  Server failure: 500 -> 200 (transport-request-500 logged)\n";
     echo "  Request scope: {$first['request']} -> {$next['request']}\n";

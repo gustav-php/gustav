@@ -26,7 +26,6 @@ function eventTestApplication(): Application
     return new Application(new Configuration(
         mode: Mode::Production,
         namespace: 'GustavPHP\\Tests\\EventFixtures\\ValidApplication',
-        cache: sys_get_temp_dir() . '/gustav-event-tests/',
         serviceNamespaces: ['GustavPHP\\Tests\\Fixtures\\QuietLogging\\Services'],
     ));
 }
@@ -132,6 +131,5 @@ it('fails application startup when a discovered listener is invalid', function (
     new Application(new Configuration(
         mode: Mode::Production,
         namespace: 'GustavPHP\\Tests\\EventFixtures\\Invalid',
-        cache: sys_get_temp_dir() . '/gustav-invalid-event-tests/',
     ));
 })->throws(InvalidArgumentException::class, 'Event listener');

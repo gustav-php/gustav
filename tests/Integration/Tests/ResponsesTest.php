@@ -5,6 +5,25 @@ use function GustavPHP\Tests\Integration\createClient;
 $client = createClient();
 
 describe('response', function () use ($client) {
+    it('renders a directly returned native view', function () use ($client) {
+        $response = $client->request('GET', '/responses/direct-view');
+
+        expect($response->getStatusCode())->toBe(202)
+            ->and($response->getHeaderLine('Content-Type'))->toBe('text/html; charset=utf-8')
+            ->and($response->getHeaderLine('X-View'))->toBe('native')
+            ->and((string) $response->getBody())->toContain('<title>Native views</title>')
+            ->toContain('&lt;strong&gt;escaped&lt;/strong&gt;')
+            ->not->toContain('<strong>escaped</strong>');
+    });
+
+    it('keeps the optional base controller view helper', function () use ($client) {
+        $response = $client->request('GET', '/responses/view-helper');
+
+        expect($response->getStatusCode())->toBe(200)
+            ->and((string) $response->getBody())->toContain('<title>View helper</title>')
+            ->toContain('Base remains optional');
+    });
+
     it('can be plain text', function () use ($client) {
         $response = $client->request('GET', '/responses/plaintext');
         expect($response->getBody()->getContents())->toBe('lorem ipsum');
@@ -162,6 +181,23 @@ describe('response', function () use ($client) {
         $next = $client->request('GET', '/responses/plaintext');
 
         expect($failed->getStatusCode())->toBe(500)
+            ->and($next->getStatusCode())->toBe(200)
+            ->and((string) $next->getBody())->toBe('lorem ipsum');
+    });
+
+    it('maps view rendering failures to a safe 500 and keeps serving', function () use ($client) {
+        $failed = $client->request('GET', '/responses/view-missing');
+        $next = $client->request('GET', '/responses/plaintext');
+        $body = json_decode((string) $failed->getBody(), true);
+
+        expect($failed->getStatusCode())->toBe(500)
+            ->and($body)->toBe([
+                'error' => [
+                    'status' => 500,
+                    'message' => 'Server Error',
+                ],
+            ])
+            ->and((string) $failed->getBody())->not->toContain('does-not-exist')
             ->and($next->getStatusCode())->toBe(200)
             ->and((string) $next->getBody())->toBe('lorem ipsum');
     });

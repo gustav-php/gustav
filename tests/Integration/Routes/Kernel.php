@@ -102,7 +102,7 @@ class Kernel extends Controller\Base
     #[Get('/server-error')]
     public function serverError(): Controller\Response
     {
-        throw new RuntimeException('internal secret');
+        throw new RuntimeException('internal secret <script>alert(1)</script>');
     }
 
     #[Get('/unavailable')]

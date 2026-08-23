@@ -13,7 +13,6 @@
         "php": ">=8.2",
         "ext-fileinfo": "*",
         "haydenpierce/class-finder": "^0.5.3",
-        "latte/latte": "^3.0",
         "nyholm/psr7": "^1.8",
         "psr/event-dispatcher": "^1.0",
         "psr/http-server-middleware": "^1.0",

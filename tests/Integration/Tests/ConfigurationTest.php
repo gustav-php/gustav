@@ -10,7 +10,6 @@ function configuredApplication(Environment $environment): Application
     return new Application(new Configuration(
         mode: Mode::Production,
         namespace: 'GustavPHP\\Tests\\ConfigurationFixtures\\ValidApplication',
-        cache: sys_get_temp_dir(),
         environment: $environment,
     ));
 }

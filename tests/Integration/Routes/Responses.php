@@ -3,7 +3,7 @@
 namespace GustavPHP\Tests\Integration\Routes;
 
 use GustavPHP\Gustav\Attribute\{Controller as ControllerAttribute, Get};
-use GustavPHP\Gustav\Controller;
+use GustavPHP\Gustav\{Controller, View};
 use GustavPHP\Tests\Integration\DTO\{CircularOutput, DogOutput, OwnerOutput, ResponseState, UninitializedOutput, UnsupportedOutput};
 use GustavPHP\Tests\Integration\Serializers\LegacyOutput;
 
@@ -51,6 +51,19 @@ class Responses extends Controller\Base
     public function directNull(): ?DogOutput
     {
         return null;
+    }
+    #[Get('/direct-view')]
+    public function directView(): View
+    {
+        return new View(
+            template: 'response',
+            data: [
+                'title' => 'Native views',
+                'message' => '<strong>escaped</strong>',
+            ],
+            status: 202,
+            headers: ['X-View' => 'native'],
+        );
     }
 
     #[Get('/dto-helper')]
@@ -135,6 +148,21 @@ class Responses extends Controller\Base
     public function unsupported(): Controller\Response
     {
         return $this->json(new UnsupportedOutput());
+    }
+
+    #[Get('/view-helper')]
+    public function viewHelper(): View
+    {
+        return $this->view('response', [
+            'title' => 'View helper',
+            'message' => 'Base remains optional',
+        ]);
+    }
+
+    #[Get('/view-missing')]
+    public function viewMissing(): View
+    {
+        return new View('does-not-exist');
     }
 
     private function dog(int $id): DogOutput

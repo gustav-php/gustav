@@ -1,7 +1,7 @@
 <?php
 
 use GustavPHP\Gustav\Router\RouteCompiler;
-use GustavPHP\Tests\Fixtures\{AmbiguousResponseController, NullableResponseController, UnsupportedResponseController, UntypedResponseController};
+use GustavPHP\Tests\Fixtures\{AmbiguousResponseController, NullableResponseController, NullableViewController, UnsupportedResponseController, UntypedResponseController};
 
 it('requires route handlers to declare one response type', function (string $controller, string $message) {
     expect(fn () => RouteCompiler::compile($controller))
@@ -10,5 +10,6 @@ it('requires route handlers to declare one response type', function (string $con
     'missing return type' => [UntypedResponseController::class, 'must declare one response type'],
     'ambiguous return union' => [AmbiguousResponseController::class, 'must declare one response type'],
     'nullable response object' => [NullableResponseController::class, 'must return a non-null response object'],
+    'nullable view' => [NullableViewController::class, 'must return a non-null view'],
     'unsupported inferred JSON type' => [UnsupportedResponseController::class, 'unsupported inferred JSON response type mixed'],
 ]);

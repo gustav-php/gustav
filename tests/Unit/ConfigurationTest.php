@@ -15,7 +15,6 @@ it('builds conventional project paths and mode from a captured environment', fun
 
     expect($configuration->mode)->toBe(Mode::Production)
         ->and($configuration->namespace)->toBe('App')
-        ->and($configuration->cache)->toBe('/srv/example/cache/')
         ->and($configuration->files)->toBe('/srv/example/public/')
         ->and($configuration->views)->toBe('/srv/example/views/')
         ->and($configuration->configurationNamespaces)->toBe(['Module\\Billing\\Config'])

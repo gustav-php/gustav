@@ -12,7 +12,6 @@ function observabilityApplication(
     return new Application(new Configuration(
         mode: $mode,
         namespace: $namespace,
-        cache: sys_get_temp_dir() . '/gustav-observability-tests/',
         routeNamespaces: ['GustavPHP\\Tests\\Integration\\Routes'],
     ));
 }
@@ -35,6 +34,9 @@ it('reports server failures in development mode too', function () {
 
     expect($response->getStatusCode())->toBe(500)
         ->and($response->getHeaderLine('X-Request-ID'))->not->toBe('')
+        ->and($response->getHeaderLine('Content-Type'))->toBe('text/html')
+        ->and((string) $response->getBody())->toContain('internal secret &lt;script&gt;alert(1)&lt;/script&gt;')
+        ->not->toContain('<script>alert(1)</script>')
         ->and(RecordingLogger::$records)->toHaveCount(1);
 });
 

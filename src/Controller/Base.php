@@ -2,11 +2,8 @@
 
 namespace GustavPHP\Gustav\Controller;
 
-use GustavPHP\Gustav\{Application, Serializer, View};
+use GustavPHP\Gustav\{Serializer, View};
 use GustavPHP\Gustav\Traits\Validate;
-use Latte\RuntimeException;
-use LogicException;
-use Throwable;
 
 class Base
 {
@@ -116,33 +113,22 @@ class Base
      * Returns a HTML View.
      *
      * @param string $template
-     * @param array<mixed> $params
+     * @param array<mixed>|object $params
      * @param int $status
      * @param array<string,string|array<string>> $headers
-     * @return Response
-     * @throws LogicException
-     * @throws RuntimeException
-     * @throws Throwable
+     * @return View
      */
     protected function view(
         string $template,
-        array $params = [],
+        array|object $params = [],
         int $status = 200,
         array $headers = []
-    ): Response {
-        if (Application::$configuration->views) {
-            $template =
-                Application::$configuration->views .
-                DIRECTORY_SEPARATOR .
-                $template;
-        }
-
-        $view = View::render($template, $params);
-
-        return new Response(
+    ): View {
+        return new View(
+            template: $template,
+            data: $params,
             status: $status,
-            body: $view,
-            headers: array_merge($headers, ['Content-Type' => 'text/html'])
+            headers: $headers,
         );
     }
 

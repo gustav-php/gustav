@@ -19,19 +19,13 @@ readonly class Configuration
          */
         public string $namespace,
         /**
-         * Path to cache directory.
-         *
-         * @var string
-         */
-        public string $cache,
-        /**
          * Path to the directory containing static files to serve.
          *
          * @var null|string
          */
         public ?string $files = null,
         /**
-         * Path to the directory containing view templates..
+         * Path to the directory containing view templates.
          *
          * @var null|string
          */
@@ -142,7 +136,6 @@ readonly class Configuration
         return new self(
             mode: $mode,
             namespace: $namespace,
-            cache: $root . 'cache' . DIRECTORY_SEPARATOR,
             files: $root . 'public' . DIRECTORY_SEPARATOR,
             views: $root . 'views' . DIRECTORY_SEPARATOR,
             routeNamespaces: $routeNamespaces,

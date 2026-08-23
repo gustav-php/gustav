@@ -2,56 +2,41 @@
 
 namespace GustavPHP\Gustav;
 
-use Latte\{Engine, RuntimeException};
-use LogicException;
-use Throwable;
+use InvalidArgumentException;
 
-class View
+final readonly class View
 {
     /**
-     * The Latte engine.
-     * @var null|Engine
+     * @param array<mixed>|object $data
+     * @param array<string,string|array<string>> $headers
      */
-    protected static ?Engine $engine = null;
-
-    /**
-     * Render a template.
-     *
-     * @param string $template
-     * @param array<mixed> $params
-     * @return string
-     * @throws LogicException
-     * @throws RuntimeException
-     * @throws Throwable
-     */
-    public static function render(string $template, array $params = []): string
-    {
-        return self::getEngine()->renderToString($template, $params);
-    }
-
-    /**
-     * Reset the shared view engine when a new application is created.
-     */
-    public static function reset(): void
-    {
-        self::$engine = null;
-    }
-
-    /**
-     * Get the Latte engine.
-     *
-     * @return Engine
-     */
-    protected static function getEngine(): Engine
-    {
-        if (self::$engine === null) {
-            self::$engine = new Engine();
-            if (Application::isProduction()) {
-                self::$engine
-                    ->setTempDirectory(Application::$configuration->cache)
-                    ->setAutoRefresh(false);
+    public function __construct(
+        public string $template,
+        public array|object $data = [],
+        public int $status = 200,
+        public array $headers = [],
+    ) {
+        if (trim($template) === '' || str_contains($template, "\0")) {
+            throw new InvalidArgumentException('View template must be a non-empty logical name');
+        }
+        if ($status < 100 || $status > 599) {
+            throw new InvalidArgumentException('View response status must be between 100 and 599');
+        }
+        foreach ($headers as $name => $values) {
+            if (!is_string($name) || trim($name) === '') {
+                throw new InvalidArgumentException('View response header names must be non-empty strings');
+            }
+            if (is_string($values)) {
+                continue;
+            }
+            if (!is_array($values)) {
+                throw new InvalidArgumentException('View response header values must be strings');
+            }
+            foreach ($values as $value) {
+                if (!is_string($value)) {
+                    throw new InvalidArgumentException('View response header values must be strings');
+                }
             }
         }
-        return self::$engine;
     }
 }
