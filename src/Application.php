@@ -18,6 +18,7 @@ use InvalidArgumentException;
 use LogicException;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response as Psr7Response;
+use Psr\EventDispatcher\{EventDispatcherInterface, ListenerProviderInterface};
 use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
 use Psr\Http\Server\{MiddlewareInterface, RequestHandlerInterface};
 use Psr\Log\LoggerInterface;
@@ -78,6 +79,7 @@ class Application implements RequestHandlerInterface
         self::$configuration = $configuration;
         $defaultLogger = new JsonLogger();
         $this->fallbackReporter = new ExceptionReporter($defaultLogger, $defaultLogger);
+        $eventListeners = Discovery::discoverEventListeners();
         $this->services = new Container();
         $this->services
             ->singleton(Configuration::class, $configuration)
@@ -93,6 +95,17 @@ class Application implements RequestHandlerInterface
 
                     return new ExceptionReporter($logger, $defaultLogger);
                 },
+            )
+            ->scoped(
+                ListenerProviderInterface::class,
+                fn (Container $services): ListenerProviderInterface => new Event\ListenerProvider(
+                    $services,
+                    $eventListeners,
+                ),
+            )
+            ->scoped(
+                EventDispatcherInterface::class,
+                Event\Dispatcher::class,
             );
         $environment = $configuration->getEnvironment() ?? Environment::system();
         foreach ((new Loader($environment))->load(Discovery::discoverConfigurations()) as $class => $instance) {
@@ -100,7 +113,6 @@ class Application implements RequestHandlerInterface
         }
         Router::reset();
         Serializer\Manager::reset();
-        Event\Manager::reset();
         View::reset();
 
         foreach (Discovery::discoverServices() as $service) {
@@ -112,6 +124,9 @@ class Application implements RequestHandlerInterface
         }
         foreach (Discovery::discoverServiceProviders() as $provider) {
             (new $provider())->register($this->services);
+        }
+        foreach ($eventListeners as $listener) {
+            $this->services->scoped($listener->listener);
         }
         foreach (Discovery::discoverMiddlewares() as $middleware) {
             $this->services->bind(
@@ -138,9 +153,6 @@ class Application implements RequestHandlerInterface
         }
         foreach (Discovery::discoverSerializers() as $class) {
             Serializer\Manager::addEntity($class);
-        }
-        foreach (Discovery::discoverEvents() as $class) {
-            Event\Manager::addListener($class);
         }
         if ($configuration->files) {
             if (is_dir($configuration->files)) {
