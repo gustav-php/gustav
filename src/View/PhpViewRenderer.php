@@ -69,10 +69,10 @@ final class PhpViewRenderer implements ViewRendererInterface
 
         $extension = pathinfo($template, PATHINFO_EXTENSION);
         if ($extension === '') {
-            return $template . '.php';
+            return $template . '.phtml';
         }
-        if ($extension !== 'php') {
-            throw new ViewNotFoundException("View '{$template}' must use the .php extension");
+        if ($extension !== 'phtml') {
+            throw new ViewNotFoundException("View '{$template}' must use the .phtml extension");
         }
 
         return $template;
