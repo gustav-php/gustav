@@ -4,6 +4,13 @@ use GustavPHP\Gustav\View;
 use GustavPHP\Gustav\View\Exception\{ViewNotFoundException, ViewRenderingException};
 use GustavPHP\Gustav\View\PhpViewRenderer;
 
+final readonly class NativeViewModel
+{
+    public function __construct(public string $title)
+    {
+    }
+}
+
 function nativeViewRenderer(): PhpViewRenderer
 {
     return new PhpViewRenderer(dirname(__DIR__, 2) . '/ViewFixtures');
@@ -28,11 +35,7 @@ it('renders escaped data, layouts, sections, partials, and explicitly trusted HT
 });
 
 it('makes an object available as a typed model', function () {
-    $model = new readonly class ('Gustav <Views>') {
-        public function __construct(public string $title)
-        {
-        }
-    };
+    $model = new NativeViewModel('Gustav <Views>');
 
     $html = nativeViewRenderer()->render(new View('model.php', $model));
 
