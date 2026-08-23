@@ -19,6 +19,7 @@ describe('application services', function () {
             ->and($first['request'])->toBe($first['middleware'])
             ->and($first['transientsDiffer'])->toBeTrue()
             ->and($first['path'])->toBe('/services/lifecycle')
+            ->and($first['url'])->toBe('/services/lifecycle?source=test')
             ->and($first['request'])->not->toBe($second['request'])
             ->and($first['singleton'])->toBe($second['singleton'])
             ->and($firstResponse->getHeaderLine('X-Singleton-Service'))->toBe((string) $first['singleton'])

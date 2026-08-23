@@ -2,42 +2,42 @@
 
 namespace GustavPHP\Tests\Integration\Routes;
 
-use GustavPHP\Gustav\Attribute\Route;
+use GustavPHP\Gustav\Attribute\{Controller as ControllerAttribute, Delete, Get, Options, Patch, Post, Put};
 use GustavPHP\Gustav\Controller;
-use GustavPHP\Gustav\Router\Method;
 
+#[ControllerAttribute('/methods')]
 class Methods extends Controller\Base
 {
-    #[Route('/methods', Method::DELETE)]
+    #[Delete]
     public function delete(): Controller\Response
     {
         return $this->plaintext('DELETE');
     }
-    #[Route('/methods')]
+    #[Get]
     public function get(): Controller\Response
     {
         return $this->plaintext('GET');
     }
 
-    #[Route('/methods', Method::OPTIONS)]
+    #[Options]
     public function options(): Controller\Response
     {
         return $this->plaintext('OPTIONS');
     }
 
-    #[Route('/methods', Method::PATCH)]
+    #[Patch]
     public function patch(): Controller\Response
     {
         return $this->plaintext('PATCH');
     }
 
-    #[Route('/methods', Method::POST)]
+    #[Post]
     public function post(): Controller\Response
     {
         return $this->plaintext('POST');
     }
 
-    #[Route('/methods', Method::PUT)]
+    #[Put]
     public function put(): Controller\Response
     {
         return $this->plaintext('PUT');

@@ -1,70 +1,84 @@
 <?php
 
-use GustavPHP\Gustav\Attribute\Route;
-use GustavPHP\Gustav\Router\{Method, Router};
+use GustavPHP\Gustav\Http\Exception\HttpException;
+use GustavPHP\Gustav\Router\{Method, RouteCompiler, Router};
+use GustavPHP\Tests\RouterFixtures\{AmbiguousController, DuplicateNameController, ValidController};
 
-beforeEach(fn () => Router::reset());
+function compiledRouter(): Router
+{
+    return new Router(RouteCompiler::compile(ValidController::class));
+}
 
-test('can match url', function () {
-    $routeIndex = new Route('/');
-    $routeAbout = new Route('/about');
-    $routeAboutMe = new Route('/about/me');
+it('matches static routes before parameter routes', function () {
+    $router = compiledRouter();
 
-    Router::addRoute($routeIndex);
-    Router::addRoute($routeAbout);
-    Router::addRoute($routeAboutMe);
-
-    expect($routeIndex)->toBe(Router::match(Method::GET, '/'));
-    expect($routeAbout)->toBe(Router::match(Method::GET, '/about'));
-    expect($routeAboutMe)->toBe(Router::match(Method::GET, '/about/me'));
+    expect($router->match(Method::GET, '/blog')->route->handler)->toBe('index')
+        ->and($router->match(Method::GET, '/blog/authors')->route->handler)->toBe('authors')
+        ->and($router->match(Method::GET, '/blog/42')->route->handler)->toBe('show');
 });
 
-test('can match url with placeholder', function () {
-    $routeBlog = new Route('/blog');
-    $routeBlogAuthors = new Route('/blog/authors');
-    $routeBlogAuthorsComments = new Route('/blog/authors/comments');
-    $routeBlogPost = new Route('/blog/{post}');
-    $routeBlogPostComments = new Route('/blog/{post}/comments');
-    $routeBlogPostCommentsSingle = new Route('/blog/{post}/comments/{comment}');
+it('returns decoded parameters with a route match', function () {
+    $match = compiledRouter()->match(Method::GET, '/blog/hello%20world/comments/first');
 
-    Router::addRoute($routeBlog);
-    Router::addRoute($routeBlogAuthors);
-    Router::addRoute($routeBlogAuthorsComments);
-    Router::addRoute($routeBlogPost);
-    Router::addRoute($routeBlogPostComments);
-    Router::addRoute($routeBlogPostCommentsSingle);
-
-    expect($routeBlog)->toBe(Router::match(Method::GET, '/blog'));
-    expect($routeBlogAuthors)->toBe(Router::match(Method::GET, '/blog/authors'));
-    expect($routeBlogAuthorsComments)->toBe(Router::match(Method::GET, '/blog/authors/comments'));
-    expect($routeBlogPost)->toBe(Router::match(Method::GET, '/blog/{post}'));
-    expect($routeBlogPostComments)->toBe(Router::match(Method::GET, '/blog/{post}/comments'));
-    expect($routeBlogPostCommentsSingle)->toBe(Router::match(Method::GET, '/blog/{post}/comments/{comment}'));
+    expect($match->route->handler)->toBe('comment')
+        ->and($match->parameters)->toBe([
+            'post' => 'hello world',
+            'comment' => 'first',
+        ]);
 });
 
-test('can match http method', function () {
-    $routeGET = new Route('/');
-    $routePOST = new Route('/', Method::POST);
+it('matches the declared HTTP method and lets HEAD fall back to GET', function () {
+    $router = compiledRouter();
 
-    Router::addRoute($routeGET);
-    Router::addRoute($routePOST);
-
-    expect($routeGET)->toBe(Router::match(Method::GET, '/'));
-    expect($routePOST)->toBe(Router::match(Method::POST, '/'));
-
-    expect($routeGET)->not()->toBe(Router::match(Method::POST, '/'));
-    expect($routePOST)->not()->toBe(Router::match(Method::GET, '/'));
+    expect($router->match(Method::POST, '/blog')->route->handler)->toBe('create')
+        ->and($router->match(Method::HEAD, '/blog')->route->handler)->toBe('index')
+        ->and(array_map(
+            fn (Method $method): string => $method->value,
+            $router->allowedMethods('/blog/authors'),
+        ))->toBe(['GET', 'HEAD', 'OPTIONS']);
 });
 
-test('cannot find unknwon route by path', function () {
-    Router::match(Method::GET, '/404');
-})->throws(Exception::class);
+it('distinguishes missing paths from unsupported methods', function () {
+    $router = compiledRouter();
 
-test('cannot find unknwon route by method', function () {
-    $route = new Route('/404');
-    Router::addRoute($route);
+    try {
+        $router->match(Method::GET, '/missing');
+        throw new LogicException('Missing path should throw');
+    } catch (HttpException $exception) {
+        expect($exception->getStatusCode())->toBe(404);
+    }
 
-    expect($route)->toBe(Router::match(Method::GET, '/404'));
+    try {
+        $router->match(Method::DELETE, '/blog/authors');
+        throw new LogicException('Unsupported method should throw');
+    } catch (HttpException $exception) {
+        expect($exception->getStatusCode())->toBe(405)
+            ->and($exception->getHeaders())->toBe(['Allow' => 'GET, HEAD, OPTIONS']);
+    }
+});
 
-    Router::match(Method::POST, '/404');
-})->throws(Exception::class);
+it('generates encoded paths and query strings for named routes', function () {
+    $url = compiledRouter()->generate(
+        'blog.show',
+        ['post' => 'hello world'],
+        ['page' => 2, 'filter' => 'recent'],
+    );
+
+    expect($url)->toBe('/blog/hello%20world?page=2&filter=recent');
+});
+
+it('rejects invalid named-route parameters', function (array $parameters, string $message) {
+    expect(fn () => compiledRouter()->generate('blog.show', $parameters))
+        ->toThrow(InvalidArgumentException::class, $message);
+})->with([
+    'missing' => [[], 'Missing route parameters: post'],
+    'unknown' => [['post' => 1, 'extra' => 2], 'Unknown route parameters: extra'],
+]);
+
+it('rejects ambiguous route patterns during compilation', function () {
+    new Router(RouteCompiler::compile(AmbiguousController::class));
+})->throws(InvalidArgumentException::class, 'conflicts with');
+
+it('rejects duplicate route names during compilation', function () {
+    new Router(RouteCompiler::compile(DuplicateNameController::class));
+})->throws(InvalidArgumentException::class, "Route name 'duplicate' is declared by both");

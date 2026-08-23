@@ -4,23 +4,25 @@ namespace GustavPHP\Tests\Integration\Routes;
 
 use GustavPHP\Gustav\Attribute\{
     Body,
+    Controller as ControllerAttribute,
     Cookie,
+    Get,
     Header,
     Param,
+    Post,
     Query,
     Request,
-    Route,
     Validate
 };
 use GustavPHP\Gustav\Controller;
-use GustavPHP\Gustav\Router\Method;
 use GustavPHP\Gustav\Validation\Common\{Decimal, Email};
 use GustavPHP\Tests\Integration\DTO\{BodyInput, LegacyQueryInput, QueryInput};
 use Psr\Http\Message\ServerRequestInterface;
 
+#[ControllerAttribute('/params')]
 class Params extends Controller\Base
 {
-    #[Route('/params/body', Method::POST)]
+    #[Post('/body')]
     public function body(
         #[Body] array $all,
         #[Body('required')] string $required,
@@ -33,7 +35,7 @@ class Params extends Controller\Base
         ]);
     }
 
-    #[Route('/params/body-dto', Method::POST)]
+    #[Post('/body-dto')]
     public function bodyDto(
         #[Body] BodyInput $input,
         #[Request] ServerRequestInterface $request,
@@ -48,7 +50,7 @@ class Params extends Controller\Base
             'stream_position' => $request->getBody()->tell(),
         ]);
     }
-    #[Route('/params/cookie')]
+    #[Get('/cookie')]
     public function cookie(
         #[Cookie] array $all,
         #[Cookie('required')] string $required,
@@ -61,7 +63,7 @@ class Params extends Controller\Base
         ]);
     }
 
-    #[Route('/params/header')]
+    #[Get('/header')]
     public function header(
         #[Header] array $all,
         #[Header('required')] string $required,
@@ -74,13 +76,13 @@ class Params extends Controller\Base
         ]);
     }
 
-    #[Route('/params/legacy-query-dto')]
+    #[Get('/legacy-query-dto')]
     public function legacyQueryDto(#[Query] LegacyQueryInput $input): Controller\Response
     {
         return $this->json(['term' => $input->term, 'page' => $input->page]);
     }
 
-    #[Route('/params/manual-validation')]
+    #[Get('/manual-validation')]
     public function manualValidation(
         #[Query('email')] string $email,
         #[Query('score')] float $score,
@@ -93,7 +95,7 @@ class Params extends Controller\Base
         return $this->json(['email' => $email, 'score' => $score]);
     }
 
-    #[Route('/params/path/{required}')]
+    #[Get('/path/{required}')]
     public function param(
         #[Param('required')] string $required,
     ): Controller\Response {
@@ -102,13 +104,13 @@ class Params extends Controller\Base
         ]);
     }
 
-    #[Route('/params/path-alias/{id}')]
+    #[Get('/path-alias/{id}')]
     public function paramAlias(#[Param('id')] int $value): Controller\Response
     {
         return $this->json(['value' => $value]);
     }
 
-    #[Route('/params/query')]
+    #[Get('/query')]
     public function query(
         #[Query] array $all,
         #[Query('required')] string $required,
@@ -121,7 +123,7 @@ class Params extends Controller\Base
         ]);
     }
 
-    #[Route('/params/query-dto')]
+    #[Get('/query-dto')]
     public function queryDto(#[Query] QueryInput $input): Controller\Response
     {
         return $this->json([
@@ -132,7 +134,7 @@ class Params extends Controller\Base
         ]);
     }
 
-    #[Route('/params/typed/{id}', Method::POST)]
+    #[Post('/typed/{id}')]
     public function typed(
         #[Param('id')] int $id,
         #[Query('zero')] int $zero,
@@ -153,7 +155,7 @@ class Params extends Controller\Base
         ]);
     }
 
-    #[Route('/params/validated')]
+    #[Get('/validated')]
     public function validated(
         #[Query('email')]
         #[Validate(new Email())]

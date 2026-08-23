@@ -10,16 +10,12 @@ final class BindingContext
     private array $body = [];
     private bool $bodyParsed = false;
 
-    /** @var array<string,string> */
-    private array $params = [];
-    private bool $paramsResolved = false;
-
     /**
-     * @param array<string,int> $placeholders
+     * @param array<string,string> $params
      */
     public function __construct(
         public readonly ServerRequestInterface $request,
-        private readonly array $placeholders,
+        private readonly array $params,
         private readonly RequestBodyParser $bodyParser = new RequestBodyParser(),
     ) {
     }
@@ -42,16 +38,6 @@ final class BindingContext
      */
     public function params(): array
     {
-        if (!$this->paramsResolved) {
-            $parts = explode('/', trim($this->request->getUri()->getPath(), '/'));
-            foreach ($this->placeholders as $name => $index) {
-                if (array_key_exists($index, $parts)) {
-                    $this->params[$name] = $parts[$index];
-                }
-            }
-            $this->paramsResolved = true;
-        }
-
         return $this->params;
     }
 }

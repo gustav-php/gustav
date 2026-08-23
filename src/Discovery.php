@@ -6,7 +6,9 @@ use Exception;
 use GustavPHP\Gustav\Service\{Provider, Registration};
 use HaydenPierce\ClassFinder\ClassFinder;
 use InvalidArgumentException;
+use LogicException;
 use Psr\Http\Server\MiddlewareInterface;
+use ReflectionAttribute;
 use ReflectionClass;
 
 class Discovery
@@ -44,16 +46,26 @@ class Discovery
     }
 
     /**
-     * @return iterable<class-string<Controller\Base>>
+     * @return iterable<class-string>
      * @throws Exception
      */
-    public static function discoverController(): iterable
+    public static function discoverControllers(): iterable
     {
-        foreach (self::discover('Routes', Controller\Base::class, 'routeNamespaces') as $route) {
-            /**
-             * @var class-string<Controller\Base> $route
-             */
-            yield $route;
+        foreach (self::discoverClasses('Routes', 'routeNamespaces') as $class) {
+            $reflection = new ReflectionClass($class);
+            if ($reflection->getAttributes(Attribute\Controller::class) === []) {
+                foreach ($reflection->getMethods() as $method) {
+                    if ($method->getAttributes(Attribute\Route::class, ReflectionAttribute::IS_INSTANCEOF) !== []) {
+                        throw new LogicException(
+                            "Route handler {$class}::{$method->getName()}() requires a #[Controller] attribute on {$class}",
+                        );
+                    }
+                }
+
+                continue;
+            }
+
+            yield $class;
         }
     }
     /**

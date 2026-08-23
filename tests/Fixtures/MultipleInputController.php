@@ -2,12 +2,13 @@
 
 namespace GustavPHP\Tests\Fixtures;
 
-use GustavPHP\Gustav\Attribute\{Header, Query, Route};
+use GustavPHP\Gustav\Attribute\{Controller as ControllerAttribute, Get, Header, Query};
 use GustavPHP\Gustav\Controller;
 
+#[ControllerAttribute]
 class MultipleInputController extends Controller\Base
 {
-    #[Route('/invalid-sources')]
+    #[Get('/invalid-sources')]
     public function invalid(
         #[Query('value')]
         #[Header('X-Value')]
