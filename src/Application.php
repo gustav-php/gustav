@@ -6,8 +6,9 @@ use Composer\InstalledVersions;
 use Exception;
 use GustavPHP\Gustav\Controller\{ControllerFactory, Response};
 use GustavPHP\Gustav\Http\Binding\RequestBinder;
-use GustavPHP\Gustav\Http\{CallableRequestHandler, ResponseHandler};
+use GustavPHP\Gustav\Http\{CallableRequestHandler, RequestId, ResponseHandler};
 use GustavPHP\Gustav\Http\Exception\{HttpException, RequestInputException, ValidationException};
+use GustavPHP\Gustav\Logger\{ExceptionReporter, JsonLogger};
 use GustavPHP\Gustav\Middleware\Pipeline;
 use GustavPHP\Gustav\Router\{Method, Router};
 use GustavPHP\Gustav\Service\Container;
@@ -17,6 +18,7 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response as Psr7Response;
 use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
 use Psr\Http\Server\{MiddlewareInterface, RequestHandlerInterface};
+use Psr\Log\LoggerInterface;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
@@ -57,6 +59,8 @@ class Application implements RequestHandlerInterface
 
     protected Container $services;
 
+    private ExceptionReporter $fallbackReporter;
+
     /**
      * Creates a new application instance.
      *
@@ -68,10 +72,24 @@ class Application implements RequestHandlerInterface
         Configuration $configuration
     ) {
         self::$configuration = $configuration;
+        $defaultLogger = new JsonLogger();
+        $this->fallbackReporter = new ExceptionReporter($defaultLogger, $defaultLogger);
         $this->services = new Container();
         $this->services
             ->singleton(Configuration::class, $configuration)
-            ->singleton(self::class, $this);
+            ->singleton(self::class, $this)
+            ->singleton(LoggerInterface::class, $defaultLogger)
+            ->request(
+                ExceptionReporter::class,
+                function (Container $services) use ($defaultLogger): ExceptionReporter {
+                    $logger = $services->get(LoggerInterface::class);
+                    if (!$logger instanceof LoggerInterface) {
+                        throw new LogicException('Logger service is invalid');
+                    }
+
+                    return new ExceptionReporter($logger, $defaultLogger);
+                },
+            );
         Router::reset();
         Serializer\Manager::reset();
         Event\Manager::reset();
@@ -162,28 +180,50 @@ class Application implements RequestHandlerInterface
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
         $scope = null;
+        $serverFailureReported = false;
+        $requestId = RequestId::fromRequest($request);
+        $request = $request->withAttribute(RequestId::ATTRIBUTE, $requestId);
 
         try {
             $this->services->build();
-            $scope = $this->services->createRequestScope($request);
+            $scope = $this->services->createRequestScope($request, [
+                RequestId::class => $requestId,
+            ]);
             $path = ltrim($request->getUri()->getPath(), '/');
             $request = $request->withAttribute('Gustav-Path', $path);
             $scope->setRequest($request);
 
-            return (new Pipeline(
+            $response = (new Pipeline(
                 $this->resolveMiddlewares($this->middlewares, $scope),
                 new CallableRequestHandler(
-                    fn (ServerRequestInterface $nextRequest): ResponseInterface => $this->handleRoutedRequestSafely(
-                        $nextRequest,
+                    function (ServerRequestInterface $nextRequest) use (
                         $scope,
-                    ),
+                        $requestId,
+                        &$serverFailureReported,
+                    ): ResponseInterface {
+                        return $this->handleRoutedRequestSafely(
+                            $nextRequest,
+                            $scope,
+                            $requestId,
+                            $serverFailureReported,
+                        );
+                    },
                 ),
             ))->handle($request);
         } catch (Throwable $th) {
-            return $this->renderException($th);
+            $this->reportExceptionOnce(
+                $th,
+                $request,
+                $requestId,
+                $scope,
+                $serverFailureReported,
+            );
+            $response = $this->renderException($th);
         } finally {
             $scope?->release();
         }
+
+        return $response->withHeader(RequestId::HEADER, (string) $requestId);
     }
 
     /**
@@ -371,10 +411,20 @@ class Application implements RequestHandlerInterface
     protected function handleRoutedRequestSafely(
         ServerRequestInterface $request,
         Container $scope,
+        RequestId $requestId,
+        bool &$serverFailureReported,
     ): ResponseInterface {
         try {
             return $this->handleRoutedRequest($request, $scope);
         } catch (Throwable $throwable) {
+            $this->reportExceptionOnce(
+                $throwable,
+                $request,
+                $requestId,
+                $scope,
+                $serverFailureReported,
+            );
+
             return $this->renderException($throwable);
         }
     }
@@ -424,9 +474,7 @@ class Application implements RequestHandlerInterface
 
     protected function renderException(Throwable $throwable): ResponseInterface
     {
-        $status = $throwable instanceof HttpException
-            ? $throwable->getStatusCode()
-            : 500;
+        $status = $this->exceptionStatus($throwable);
 
         $headers = $throwable instanceof HttpException
             ? $throwable->getHeaders()
@@ -510,6 +558,13 @@ class Application implements RequestHandlerInterface
         );
     }
 
+    private function exceptionStatus(Throwable $throwable): int
+    {
+        return $throwable instanceof HttpException
+            ? $throwable->getStatusCode()
+            : 500;
+    }
+
     /**
      * Adds parameters from a given reflection method to a route.
      *
@@ -525,6 +580,36 @@ class Application implements RequestHandlerInterface
         $routeId = spl_object_id($route);
         $this->requestBinders[$routeId] = $requestBinder;
         $this->responseHandlers[$routeId] = $responseHandler;
+    }
+
+    private function reportExceptionOnce(
+        Throwable $throwable,
+        ServerRequestInterface $request,
+        RequestId $requestId,
+        ?Container $scope,
+        bool &$serverFailureReported,
+    ): void {
+        $status = $this->exceptionStatus($throwable);
+        if ($status < 500 || $serverFailureReported) {
+            return;
+        }
+        $serverFailureReported = true;
+
+        if ($scope === null) {
+            $this->fallbackReporter->report($throwable, $request, $requestId, $status);
+
+            return;
+        }
+
+        try {
+            $reporter = $scope->get(ExceptionReporter::class);
+            if (!$reporter instanceof ExceptionReporter) {
+                throw new LogicException('Exception reporter service is invalid');
+            }
+            $reporter->report($throwable, $request, $requestId, $status);
+        } catch (Throwable) {
+            $this->fallbackReporter->report($throwable, $request, $requestId, $status);
+        }
     }
 
     /**

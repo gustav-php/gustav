@@ -80,7 +80,7 @@ function roadRunnerBinary(string $root): string
 
 /**
  * @param array<string, string> $headers
- * @return array{status: int, body: string}
+ * @return array{status: int, body: string, headers: array<int, string>}
  */
 function request(
     int $port,
@@ -122,11 +122,15 @@ function request(
         throw new RuntimeException('RoadRunner returned an invalid HTTP status line');
     }
 
-    return ['status' => (int) $matches[1], 'body' => $responseBody];
+    return [
+        'status' => (int) $matches[1],
+        'body' => $responseBody,
+        'headers' => $responseHeaders,
+    ];
 }
 
 /**
- * @param array{status: int, body: string} $response
+ * @param array{status: int, body: string, headers: array<int, string>} $response
  */
 function assertStatus(array $response, int $expected, string $context): void
 {
@@ -135,6 +139,22 @@ function assertStatus(array $response, int $expected, string $context): void
             "{$context} returned {$response['status']}; expected {$expected}. Body: {$response['body']}",
         );
     }
+}
+
+/**
+ * @param array{status: int, body: string, headers: array<int, string>} $response
+ */
+function responseHeader(array $response, string $name): string
+{
+    foreach ($response['headers'] as $header) {
+        if (!str_starts_with(strtolower($header), strtolower($name) . ':')) {
+            continue;
+        }
+
+        return trim(substr($header, strlen($name) + 1));
+    }
+
+    return '';
 }
 
 /**
@@ -210,6 +230,15 @@ try {
         throw new RuntimeException('JSON input was not converted to the declared scalar types');
     }
 
+    $malformed = request(
+        $httpPort,
+        'POST',
+        '/params/body-dto',
+        '{"email":',
+        ['Content-Type' => 'application/json'],
+    );
+    assertStatus($malformed, 400, 'Malformed JSON request');
+
     $first = serviceLifecycle($httpPort);
     assertStatus(request($httpPort, 'GET', '/services/lifecycle/error'), 418, 'Forced service failure');
     $next = serviceLifecycle($httpPort);
@@ -220,9 +249,47 @@ try {
         throw new RuntimeException('Singleton service was not preserved by the worker');
     }
 
+    $failed = request(
+        $httpPort,
+        'GET',
+        '/kernel/server-error',
+        headers: ['X-Request-ID' => 'transport-request-500'],
+    );
+    assertStatus($failed, 500, 'Server failure');
+    $failedBody = decodeJson($failed['body'], 'Server failure response');
+    if (($failedBody['error']['message'] ?? null) !== 'Server Error') {
+        throw new RuntimeException('Production server failure response exposed an unsafe message');
+    }
+    if (responseHeader($failed, 'X-Request-ID') !== 'transport-request-500') {
+        throw new RuntimeException('Server failure response did not preserve the request ID');
+    }
+
+    $afterFailure = request($httpPort, 'GET', '/responses/plaintext');
+    assertStatus($afterFailure, 200, 'Request after server failure');
+
+    $logDeadline = microtime(true) + 3;
+    do {
+        $serverOutput = $server->getOutput() . $server->getErrorOutput();
+        if (
+            str_contains($serverOutput, 'transport-request-500')
+            && str_contains($serverOutput, 'http.status_code')
+        ) {
+            break;
+        }
+        usleep(50_000);
+    } while (microtime(true) < $logDeadline);
+    if (
+        !str_contains($serverOutput, 'transport-request-500')
+        || !str_contains($serverOutput, 'http.status_code')
+    ) {
+        throw new RuntimeException('RoadRunner did not collect the structured server failure log');
+    }
+
     echo "RoadRunner transport contract passed\n";
     echo "  JSON request: 200\n";
+    echo "  Malformed JSON: 400\n";
     echo "  Worker sequence: 200 -> 418 -> 200\n";
+    echo "  Server failure: 500 -> 200 (transport-request-500 logged)\n";
     echo "  Request scope: {$first['request']} -> {$next['request']}\n";
     echo "  Singleton: {$first['singleton']} -> {$next['singleton']}\n";
 } catch (Throwable $exception) {

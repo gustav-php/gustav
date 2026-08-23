@@ -62,8 +62,10 @@ class Container
 
     /**
      * Create the isolated service scope for one HTTP request.
+     *
+     * @param array<string, mixed> $seed
      */
-    public function createRequestScope(ServerRequestInterface $request): self
+    public function createRequestScope(ServerRequestInterface $request, array $seed = []): self
     {
         $this->assertRoot();
         $this->assertBuilt();
@@ -71,7 +73,10 @@ class Container
         $scope = new self();
         $scope->root = $this;
         $scope->state = $this->state;
-        $scope->resolved[ServerRequestInterface::class] = $request;
+        $scope->resolved = [
+            ...$seed,
+            ServerRequestInterface::class => $request,
+        ];
 
         return $scope;
     }

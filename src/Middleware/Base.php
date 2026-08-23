@@ -3,13 +3,12 @@
 namespace GustavPHP\Gustav\Middleware;
 
 use GustavPHP\Gustav\Controller\Response as GustavResponse;
-use GustavPHP\Gustav\Traits\{Logger, Validate};
+use GustavPHP\Gustav\Traits\Validate;
 use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
 use Psr\Http\Server\{MiddlewareInterface, RequestHandlerInterface};
 
 abstract class Base implements MiddlewareInterface
 {
-    use Logger;
     use Validate;
 
     /**

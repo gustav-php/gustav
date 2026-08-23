@@ -126,6 +126,19 @@ it('injects the current request and isolates autowired services by request', fun
         ->and($firstConsumer->service)->not->toBe($secondConsumer->service);
 });
 
+it('seeds request-scoped values without replacing the active request', function () {
+    $container = new Container();
+    $container->build();
+    $request = new ServerRequest('GET', '/seeded');
+    $seeded = new ContainerTestPlainDependency();
+    $scope = $container->createRequestScope($request, [
+        ContainerTestPlainDependency::class => $seeded,
+    ]);
+
+    expect($scope->get(ContainerTestPlainDependency::class))->toBe($seeded)
+        ->and($scope->get(ServerRequestInterface::class))->toBe($request);
+});
+
 it('prevents singletons from capturing request-scoped services', function () {
     $container = new Container();
     $container
