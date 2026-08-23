@@ -2,14 +2,15 @@
 
 namespace GustavPHP\Tests\Integration\Routes;
 
-use GustavPHP\Gustav\Attribute\Route;
+use GustavPHP\Gustav\Attribute\{Controller as ControllerAttribute, Get};
 use GustavPHP\Gustav\Controller;
 use GustavPHP\Tests\Integration\DTO\{CircularOutput, DogOutput, OwnerOutput, ResponseState, UninitializedOutput, UnsupportedOutput};
 use GustavPHP\Tests\Integration\Serializers\LegacyOutput;
 
+#[ControllerAttribute('/responses')]
 class Responses extends Controller\Base
 {
-    #[Route('/responses/circular')]
+    #[Get('/circular')]
     public function circular(): Controller\Response
     {
         $output = new CircularOutput('root');
@@ -18,7 +19,7 @@ class Responses extends Controller\Base
         return $this->json($output);
     }
 
-    #[Route('/responses/direct-collection')]
+    #[Get('/direct-collection')]
     public function directCollection(): array
     {
         return [
@@ -28,37 +29,37 @@ class Responses extends Controller\Base
         ];
     }
 
-    #[Route('/responses/direct-dto')]
+    #[Get('/direct-dto')]
     public function directDto(): DogOutput
     {
         return $this->dog(1);
     }
 
-    #[Route('/responses/direct-enum')]
+    #[Get('/direct-enum')]
     public function directEnum(): ResponseState
     {
         return ResponseState::Active;
     }
 
-    #[Route('/responses/direct-false')]
+    #[Get('/direct-false')]
     public function directFalse(): bool
     {
         return false;
     }
 
-    #[Route('/responses/direct-null')]
+    #[Get('/direct-null')]
     public function directNull(): ?DogOutput
     {
         return null;
     }
 
-    #[Route('/responses/dto-helper')]
+    #[Get('/dto-helper')]
     public function dtoHelper(): Controller\Response
     {
         return $this->json($this->dog(1));
     }
 
-    #[Route('/responses/dto-helper-created')]
+    #[Get('/dto-helper-created')]
     public function dtoHelperCreated(): Controller\Response
     {
         return $this->json(
@@ -68,7 +69,7 @@ class Responses extends Controller\Base
         );
     }
 
-    #[Route('/responses/legacy-serializer')]
+    #[Get('/legacy-serializer')]
     public function legacySerializer(): Controller\Response
     {
         $output = new LegacyOutput();
@@ -77,13 +78,13 @@ class Responses extends Controller\Base
         return $this->serialize($output);
     }
 
-    #[Route('/responses/html')]
+    #[Get('/html')]
     public function returnHtml(): Controller\Response
     {
         return $this->html('<h1>lorem ipsum</h1>');
     }
 
-    #[Route('/responses/json')]
+    #[Get('/json')]
     public function returnJson(): Controller\Response
     {
         return $this->json([
@@ -106,31 +107,31 @@ class Responses extends Controller\Base
         ]);
     }
 
-    #[Route('/responses/plaintext')]
+    #[Get('/plaintext')]
     public function returnPlaintext(): Controller\Response
     {
         return $this->plaintext('lorem ipsum');
     }
 
-    #[Route('/responses/redirect')]
+    #[Get('/redirect')]
     public function returnRedirect(): Controller\Response
     {
         return $this->redirect('/responses/plaintext', 301);
     }
 
-    #[Route('/responses/xml')]
+    #[Get('/xml')]
     public function returnXml(): Controller\Response
     {
         return $this->xml('<root><lorem>ipsum</lorem></root>');
     }
 
-    #[Route('/responses/uninitialized')]
+    #[Get('/uninitialized')]
     public function uninitialized(): UninitializedOutput
     {
         return new UninitializedOutput();
     }
 
-    #[Route('/responses/unsupported')]
+    #[Get('/unsupported')]
     public function unsupported(): Controller\Response
     {
         return $this->json(new UnsupportedOutput());

@@ -2,18 +2,18 @@
 
 namespace GustavPHP\Tests\EventFixtures\ValidApplication\Routes;
 
-use GustavPHP\Gustav\Attribute\Route;
-use GustavPHP\Gustav\Controller;
+use GustavPHP\Gustav\Attribute\{Controller, Get};
 use GustavPHP\Tests\EventFixtures\ValidApplication\Events\{FailingEvent, RecordedEvent};
 use Psr\EventDispatcher\EventDispatcherInterface;
 
-final class EventRoutes extends Controller\Base
+#[Controller('/events')]
+final class EventRoutes
 {
     public function __construct(private readonly EventDispatcherInterface $events)
     {
     }
 
-    #[Route('/events')]
+    #[Get]
     /** @return array{records:list<array{listener:string,listenerId:int,dependencyId:int}>} */
     public function dispatch(): array
     {
@@ -23,7 +23,7 @@ final class EventRoutes extends Controller\Base
         return ['records' => $event->records];
     }
 
-    #[Route('/events/fail')]
+    #[Get('/fail')]
     /** @return array{} */
     public function fail(): array
     {

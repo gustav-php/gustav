@@ -6,13 +6,12 @@ use Composer\InstalledVersions;
 use Exception;
 use GustavPHP\Gustav\CLI\{CommandDefinition, Kernel as ConsoleKernel};
 use GustavPHP\Gustav\Config\{Environment, Loader};
-use GustavPHP\Gustav\Controller\{ControllerFactory, Response};
-use GustavPHP\Gustav\Http\Binding\RequestBinder;
-use GustavPHP\Gustav\Http\{CallableRequestHandler, RequestId, ResponseHandler};
+use GustavPHP\Gustav\Controller\Response;
+use GustavPHP\Gustav\Http\{CallableRequestHandler, RequestId};
 use GustavPHP\Gustav\Http\Exception\{HttpException, RequestInputException, ValidationException};
 use GustavPHP\Gustav\Logger\{ExceptionReporter, JsonLogger};
 use GustavPHP\Gustav\Middleware\Pipeline;
-use GustavPHP\Gustav\Router\{Method, Router};
+use GustavPHP\Gustav\Router\{Method, RouteCompiler, RouteMatch, Router, UrlGeneratorInterface};
 use GustavPHP\Gustav\Service\Container;
 use InvalidArgumentException;
 use LogicException;
@@ -24,9 +23,6 @@ use Psr\Http\Server\{MiddlewareInterface, RequestHandlerInterface};
 use Psr\Log\LoggerInterface;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use ReflectionClass;
-use ReflectionException;
-use ReflectionMethod;
 use Spiral\RoadRunner\Http\PSR7Worker;
 use Spiral\RoadRunner\Worker;
 use SplFileInfo;
@@ -40,10 +36,6 @@ class Application implements RequestHandlerInterface
      */
     public static Configuration $configuration;
     /**
-     * @var ControllerFactory[]
-     */
-    protected array $controllers = [];
-    /**
      * @var array<string,string>
      */
     protected array $files = [];
@@ -51,20 +43,14 @@ class Application implements RequestHandlerInterface
      * @var array<class-string<MiddlewareInterface>>
      */
     protected array $middlewares = [];
-    /**
-     * @var array<int,RequestBinder>
-     */
-    protected array $requestBinders = [];
-    /**
-     * @var array<int,ResponseHandler>
-     */
-    protected array $responseHandlers = [];
 
     protected Container $services;
     /** @var list<CommandDefinition> */
     private array $commands = [];
 
     private ExceptionReporter $fallbackReporter;
+
+    private Router $router;
 
     /**
      * Creates a new application instance.
@@ -80,10 +66,19 @@ class Application implements RequestHandlerInterface
         $defaultLogger = new JsonLogger();
         $this->fallbackReporter = new ExceptionReporter($defaultLogger, $defaultLogger);
         $eventListeners = Discovery::discoverEventListeners();
+        Serializer\Manager::reset();
+        View::reset();
+        $routes = [];
+        foreach (Discovery::discoverControllers() as $class) {
+            array_push($routes, ...RouteCompiler::compile($class));
+        }
+        $this->router = new Router($routes);
         $this->services = new Container();
         $this->services
             ->singleton(Configuration::class, $configuration)
             ->singleton(self::class, $this)
+            ->singleton(Router::class, $this->router)
+            ->singleton(UrlGeneratorInterface::class, $this->router)
             ->singleton(LoggerInterface::class, $defaultLogger)
             ->scoped(
                 ExceptionReporter::class,
@@ -111,10 +106,6 @@ class Application implements RequestHandlerInterface
         foreach ((new Loader($environment))->load(Discovery::discoverConfigurations()) as $class => $instance) {
             $this->services->singleton($class, $instance);
         }
-        Router::reset();
-        Serializer\Manager::reset();
-        View::reset();
-
         foreach (Discovery::discoverServices() as $service) {
             $this->services->bind(
                 $service->service,
@@ -148,9 +139,6 @@ class Application implements RequestHandlerInterface
             $commandNames[$definition->name] = $class;
             $this->commands[] = $definition;
         }
-        foreach (Discovery::discoverController() as $class) {
-            $this->addRoutes([$class]);
-        }
         foreach (Discovery::discoverSerializers() as $class) {
             Serializer\Manager::addEntity($class);
         }
@@ -164,7 +152,7 @@ class Application implements RequestHandlerInterface
                     if ($file->isDir()) {
                         continue;
                     }
-                    $relative = substr($file->getPathname(), strlen($configuration->files));
+                    $relative = ltrim(substr($file->getPathname(), strlen($configuration->files)), '/\\');
                     $this->files[$relative] = $file->getRealPath();
                 }
             }
@@ -186,22 +174,6 @@ class Application implements RequestHandlerInterface
             }
         }
         array_push($this->middlewares, ...$middlewares);
-
-        return $this;
-    }
-
-    /**
-     * Adds route classes to the application.
-     *
-     * @param array<class-string<Controller\Base>> $classes The classes to add as routes.
-     * @return self Returns the application instance.
-     * @throws ReflectionException
-     */
-    public function addRoutes(array $classes): self
-    {
-        foreach ($classes as $class) {
-            $this->registerRoute($class);
-        }
 
         return $this;
     }
@@ -232,7 +204,7 @@ class Application implements RequestHandlerInterface
                 RequestId::class => $requestId,
                 ServerRequestInterface::class => $request,
             ]);
-            $path = ltrim($request->getUri()->getPath(), '/');
+            $path = $request->getUri()->getPath();
             $request = $request->withAttribute('Gustav-Path', $path);
             $scope->setRequest($request);
 
@@ -264,6 +236,10 @@ class Application implements RequestHandlerInterface
             $response = $this->renderException($th);
         } finally {
             $scope?->release();
+        }
+
+        if ($request->getMethod() === Method::HEAD->value) {
+            $response = $response->withBody((new Psr17Factory())->createStream());
         }
 
         return $response->withHeader(RequestId::HEADER, (string) $requestId);
@@ -333,63 +309,19 @@ class Application implements RequestHandlerInterface
     }
 
     /**
-     * Adds methods from a given reflection class to the application.
-     *
-     * @param ReflectionClass $reflector The reflection class to add methods from.
-     * @return void
-     * @throws Exception
-     */
-    protected function addMethods(ReflectionClass $reflector): void
-    {
-        foreach ($reflector->getMethods() as $method) {
-            $routes = $method->getAttributes(Attribute\Route::class);
-
-            foreach ($routes as $route) {
-                /**
-                 * @var Attribute\Route $instance
-                 */
-                $instance = $route->newInstance();
-                $instance
-                    ->setClass($reflector->getName())
-                    ->setFunction($method->getName());
-
-                $this->prepareRoute($method, $instance);
-                Router::addRoute($instance);
-            }
-        }
-    }
-
-    /**
      * Invoke the matched controller.
      */
     protected function dispatchRequest(
         ServerRequestInterface $request,
         Container $scope,
+        RouteMatch $match,
     ): ResponseInterface {
-        $route = $request->getAttribute('Gustav-Route');
-        $controller = $request->getAttribute('Gustav-Controller');
-        if (!$route instanceof Attribute\Route || !$controller instanceof ControllerFactory) {
-            throw new LogicException('Request route has not been initialized');
-        }
-
+        $route = $match->route;
         $scope->setRequest($request);
-        $instance = $scope->make($controller->getClass());
-        if (!$instance instanceof Controller\Base) {
-            throw new LogicException(
-                "Controller '{$controller->getClass()}' must extend " . Controller\Base::class,
-            );
-        }
-        $requestBinder = $this->requestBinders[spl_object_id($route)] ?? null;
-        if ($requestBinder === null) {
-            throw new LogicException('Request binder has not been initialized');
-        }
-        $payload = $instance->{$route->getFunction()}(...$requestBinder->bind($request, $route->getPlaceholders()));
-        $responseHandler = $this->responseHandlers[spl_object_id($route)] ?? null;
-        if ($responseHandler === null) {
-            throw new LogicException('Response handler has not been initialized');
-        }
+        $instance = $scope->make($route->controller);
+        $payload = $instance->{$route->handler}(...$route->requestBinder->bind($request, $match->parameters));
 
-        return $responseHandler->respond($payload);
+        return $route->responseHandler->respond($payload);
     }
 
     /**
@@ -426,23 +358,30 @@ class Application implements RequestHandlerInterface
             throw new LogicException('Request path has not been initialized');
         }
 
-        if ($request->getMethod() === Method::GET->value && array_key_exists($path, $this->files)) {
-            return $this->serveStaticFile($this->files[$path]);
+        $filePath = ltrim($path, '/');
+        if (
+            in_array($request->getMethod(), [Method::GET->value, Method::HEAD->value], true)
+            && array_key_exists($filePath, $this->files)
+        ) {
+            return $this->serveStaticFile($this->files[$filePath]);
         }
 
-        $route = Router::match(Method::fromRequest($request), $path);
-        $controller = $this->controllers[$route->getClass()] ?? null;
-        if ($controller === null) {
-            throw new LogicException("Controller '{$route->getClass()}' has not been registered");
+        $method = Method::fromRequest($request);
+        if ($method === Method::OPTIONS && !$this->router->hasExplicitRoute($method, $path)) {
+            $allowed = $this->router->allowedMethods($path);
+            if ($allowed !== []) {
+                return new Psr7Response(
+                    204,
+                    ['Allow' => implode(', ', array_map(fn (Method $item): string => $item->value, $allowed))],
+                );
+            }
         }
 
-        $middlewares = $this->resolveMiddlewares(
-            $controller->getMiddlewareClasses($route->getFunction()),
-            $scope,
-        );
+        $match = $this->router->match($method, $path);
+        $middlewares = $this->resolveMiddlewares($match->route->middlewares, $scope);
         $request = $request
-            ->withAttribute('Gustav-Route', $route)
-            ->withAttribute('Gustav-Controller', $controller);
+            ->withAttribute('Gustav-Route', $match->route)
+            ->withAttribute('Gustav-Route-Parameters', $match->parameters);
 
         return (new Pipeline(
             $middlewares,
@@ -450,6 +389,7 @@ class Application implements RequestHandlerInterface
                 fn (ServerRequestInterface $nextRequest): ResponseInterface => $this->dispatchRequest(
                     $nextRequest,
                     $scope,
+                    $match,
                 ),
             ),
         ))->handle($request);
@@ -501,28 +441,6 @@ class Application implements RequestHandlerInterface
             return $object;
         }, $th->getTrace());
     }
-
-
-    /**
-     * Registers a route in the application.
-     *
-     * @param class-string<Controller\Base> $class The class to register as a route.
-     * @return void
-     * @throws ReflectionException
-     */
-    protected function registerRoute(string $class): void
-    {
-        $reflector = new ReflectionClass($class);
-        if (!$reflector->isSubclassOf(Controller\Base::class)) {
-            throw new InvalidArgumentException(
-                "Controller '{$class}' must extend " . Controller\Base::class,
-            );
-        }
-        $controller = new ControllerFactory($class, $reflector);
-        $this->addMethods($reflector);
-        $this->controllers[$class] = $controller;
-    }
-
     protected function renderException(Throwable $throwable): ResponseInterface
     {
         $status = $this->exceptionStatus($throwable);
@@ -614,23 +532,6 @@ class Application implements RequestHandlerInterface
         return $throwable instanceof HttpException
             ? $throwable->getStatusCode()
             : 500;
-    }
-
-    /**
-     * Adds parameters from a given reflection method to a route.
-     *
-     * @param ReflectionMethod $method The reflection method to add parameters from.
-     * @param Attribute\Route $route The route to add parameters to.
-     * @return void
-     * @throws Exception
-     */
-    private function prepareRoute(ReflectionMethod $method, Attribute\Route $route): void
-    {
-        $requestBinder = RequestBinder::compile($method, $route->getPath());
-        $responseHandler = ResponseHandler::compile($method);
-        $routeId = spl_object_id($route);
-        $this->requestBinders[$routeId] = $requestBinder;
-        $this->responseHandlers[$routeId] = $responseHandler;
     }
 
     private function reportExceptionOnce(

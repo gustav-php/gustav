@@ -20,6 +20,27 @@ After the project has been created, start GustavPHP's local development server u
 php gustav dev
 ```
 
+Controllers are plain constructor-injected classes. `#[Controller]` supplies a
+shared path prefix and concise HTTP method attributes declare handlers:
+
+```php
+use GustavPHP\Gustav\Attribute\{Controller, Get, Param};
+
+#[Controller('/dogs')]
+final readonly class DogsController
+{
+    #[Get('/{dog}', name: 'dogs.show')]
+    public function show(#[Param('dog')] int $id): DogOutput
+    {
+        // ...
+    }
+}
+```
+
+Routes, request binders, response handlers, and middleware metadata are
+compiled once during startup. Inject `Router\UrlGeneratorInterface` to generate
+paths for named routes.
+
 Application commands are discovered from `src/Commands` and use typed
 arguments, options, validation, and constructor injection. List every built-in
 and project command with:

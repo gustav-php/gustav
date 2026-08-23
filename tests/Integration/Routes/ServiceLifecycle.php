@@ -2,14 +2,16 @@
 
 namespace GustavPHP\Tests\Integration\Routes;
 
-use GustavPHP\Gustav\Attribute\{Middleware, Request, Route};
-use GustavPHP\Gustav\Controller;
+use GustavPHP\Gustav\Attribute\{Controller, Get, Middleware, Request};
+use GustavPHP\Gustav\Controller\Response;
 use GustavPHP\Gustav\Http\Exception\HttpException;
+use GustavPHP\Gustav\Router\UrlGeneratorInterface;
 use GustavPHP\Tests\Integration\Middleware\Injected;
 use GustavPHP\Tests\Integration\Services\{Greeting, RequestState, SingletonState, TransientState};
 use Psr\Http\Message\ServerRequestInterface;
 
-class ServiceLifecycle extends Controller\Base
+#[Controller('/services/lifecycle')]
+class ServiceLifecycle
 {
     public function __construct(
         private readonly Greeting $greeting,
@@ -17,11 +19,12 @@ class ServiceLifecycle extends Controller\Base
         private readonly SingletonState $singletonState,
         private readonly TransientState $firstTransient,
         private readonly TransientState $secondTransient,
+        private readonly UrlGeneratorInterface $urls,
     ) {
     }
 
-    #[Route('/services/lifecycle/error')]
-    public function error(): Controller\Response
+    #[Get('/error')]
+    public function error(): Response
     {
         throw new HttpException(418, (string) $this->requestState->id);
     }
@@ -29,7 +32,7 @@ class ServiceLifecycle extends Controller\Base
     /**
      * @return array<string, bool|int|string>
      */
-    #[Route('/services/lifecycle')]
+    #[Get(name: 'services.lifecycle')]
     #[Middleware(Injected::class)]
     public function lifecycle(#[Request] ServerRequestInterface $request): array
     {
@@ -40,6 +43,7 @@ class ServiceLifecycle extends Controller\Base
             'singleton' => $this->singletonState->id,
             'transientsDiffer' => $this->firstTransient !== $this->secondTransient,
             'path' => $this->requestState->request->getUri()->getPath(),
+            'url' => $this->urls->generate('services.lifecycle', query: ['source' => 'test']),
         ];
     }
 }

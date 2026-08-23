@@ -2,180 +2,171 @@
 
 namespace GustavPHP\Gustav\Router;
 
-use Exception;
-use GustavPHP\Gustav\Attribute\Route;
+use BackedEnum;
 use GustavPHP\Gustav\Http\Exception\HttpException;
+use InvalidArgumentException;
+use Stringable;
 
-class Router
+final readonly class Router implements UrlGeneratorInterface
 {
-    /**
-     * Placeholder token.
-     */
-    public const PLACEHOLDER_TOKEN = ':::';
+    /** @var array<string,RouteDefinition> */
+    private array $namedRoutes;
+    /** @var array<string,list<RouteDefinition>> */
+    private array $routes;
 
     /**
-     * Contains the positions of all params in the paths of all registered Routes.
-     *
-     * @var array<int>
+     * @param list<RouteDefinition> $definitions
      */
-    protected static array $params = [];
-
-    /**
-     * Contains all registered Routes.
-     *
-     * @var array<string,Route[]>
-     */
-    protected static array $routes = [];
-
-    /**
-     * Add a Route to the Router.
-     *
-     * @param Route $route
-     * @return void
-     * @throws Exception
-     */
-    public static function addRoute(Route $route): void
+    public function __construct(array $definitions)
     {
-        [$path, $placeholders] = self::preparePath($route->getPath());
+        $routes = [];
+        $namedRoutes = [];
 
-        if (!array_key_exists($route->getMethod()->value, self::$routes)) {
-            self::$routes[$route->getMethod()->value] = [];
+        foreach ($definitions as $definition) {
+            $method = $definition->method->value;
+            foreach ($routes[$method] ?? [] as $registered) {
+                if ($definition->path->conflictsWith($registered->path)) {
+                    throw new InvalidArgumentException(
+                        "Route {$method} {$definition->path->template} for {$definition->location()} conflicts with "
+                        . "{$registered->path->template} for {$registered->location()}",
+                    );
+                }
+            }
+            $routes[$method][] = $definition;
+
+            if ($definition->name === null) {
+                continue;
+            }
+            if (preg_match('/^[A-Za-z0-9][A-Za-z0-9_.-]*$/', $definition->name) !== 1) {
+                throw new InvalidArgumentException("Route name '{$definition->name}' is invalid");
+            }
+            if (isset($namedRoutes[$definition->name])) {
+                throw new InvalidArgumentException(
+                    "Route name '{$definition->name}' is declared by both "
+                    . "{$namedRoutes[$definition->name]->location()} and {$definition->location()}",
+                );
+            }
+            $namedRoutes[$definition->name] = $definition;
         }
 
-        if (array_key_exists($path, self::$routes[$route->getMethod()->value])) {
-            throw new Exception("Route for ({$path}) " . $route->getClass() . ' already assigned to ' . self::$routes[$route->getMethod()->value][$path]->getClass());
+        foreach ($routes as &$methodRoutes) {
+            usort(
+                $methodRoutes,
+                fn (RouteDefinition $left, RouteDefinition $right): int =>
+                    $right->path->staticSegments <=> $left->path->staticSegments
+                    ?: strcmp($left->path->template, $right->path->template)
+                    ?: strcmp($left->location(), $right->location()),
+            );
         }
+        unset($methodRoutes);
 
-        foreach ($placeholders as $key => $index) {
-            $route->addPlaceholder($key, $index);
-        }
-
-        self::$routes[$route->getMethod()->value][$path] = $route;
+        $this->routes = $routes;
+        $this->namedRoutes = $namedRoutes;
     }
 
     /**
-     * Match a Route to the given Method and Path.
-     *
-     * @param Method $method
-     * @param string $path
-     * @return Route
-     * @throws Exception
+     * @return list<Method>
      */
-    public static function match(Method $method, string $path): Route
+    public function allowedMethods(string $path): array
     {
-        $route = self::matchMethod($method->value, $path);
-        if ($route !== null) {
-            return $route;
-        }
-
         $allowed = [];
-        foreach (array_keys(self::$routes) as $routeMethod) {
-            if ($routeMethod !== $method->value && self::matchMethod($routeMethod, $path) !== null) {
-                $allowed[] = $routeMethod;
+        foreach (Method::cases() as $method) {
+            if ($this->find($method, $path) !== null) {
+                $allowed[$method->value] = $method;
+                if ($method === Method::GET) {
+                    $allowed[Method::HEAD->value] = Method::HEAD;
+                }
             }
         }
         if ($allowed !== []) {
-            sort($allowed);
+            $allowed[Method::OPTIONS->value] = Method::OPTIONS;
+        }
 
+        $ordered = [];
+        foreach (Method::cases() as $method) {
+            if (isset($allowed[$method->value])) {
+                $ordered[] = $method;
+            }
+        }
+
+        return $ordered;
+    }
+
+    /**
+     * @param array<string,mixed> $parameters
+     * @param array<string,mixed> $query
+     */
+    public function generate(string $name, array $parameters = [], array $query = []): string
+    {
+        $route = $this->namedRoutes[$name] ?? null;
+        if ($route === null) {
+            throw new InvalidArgumentException("Unknown route name '{$name}'");
+        }
+
+        $path = $route->path->generate($parameters);
+        if ($query === []) {
+            return $path;
+        }
+
+        $encoded = http_build_query(self::normalizeQuery($query), '', '&', PHP_QUERY_RFC3986);
+
+        return $encoded === '' ? $path : $path . '?' . $encoded;
+    }
+
+    public function hasExplicitRoute(Method $method, string $path): bool
+    {
+        return $this->find($method, $path) !== null;
+    }
+
+    public function match(Method $method, string $path): RouteMatch
+    {
+        $match = $this->find($method, $path);
+        if ($match === null && $method === Method::HEAD) {
+            $match = $this->find(Method::GET, $path);
+        }
+        if ($match !== null) {
+            return $match;
+        }
+
+        $allowed = $this->allowedMethods($path);
+        if ($allowed !== []) {
             throw new HttpException(
                 405,
                 'Method not allowed',
-                ['Allow' => implode(', ', $allowed)],
+                ['Allow' => implode(', ', array_map(fn (Method $allowedMethod): string => $allowedMethod->value, $allowed))],
             );
         }
 
         throw new HttpException(404, 'Not found');
     }
 
-    /**
-     * Reset the Router.
-     *
-     * @return void
-     */
-    public static function reset(): void
+    private function find(Method $method, string $path): ?RouteMatch
     {
-        self::$params = [];
-        self::$routes = [];
-    }
-
-    /**
-     * Generate all possible combinations of the given set.
-     *
-     * @param array<int> $set
-     * @return iterable<array<int>>
-     */
-    protected static function combinations(array $set): iterable
-    {
-        yield [];
-
-        $results = [[]];
-
-        foreach ($set as $element) {
-            foreach ($results as $combination) {
-                $ret = array_merge([$element], $combination);
-                $results[] = $ret;
-
-                yield $ret;
-            }
-        }
-    }
-
-    protected static function matchMethod(string $method, string $path): ?Route
-    {
-        if (!array_key_exists($method, self::$routes)) {
-            return null;
-        }
-
-        $parts = array_values(array_filter(explode('/', $path)));
-        $length = count($parts) - 1;
-        $filteredParams = array_filter(self::$params, fn ($i) => $i <= $length);
-
-        foreach (self::combinations($filteredParams) as $sample) {
-            $sample = array_filter($sample, fn ($i) => $i <= $length);
-            $match = implode(
-                '/',
-                array_replace(
-                    $parts,
-                    array_fill_keys($sample, self::PLACEHOLDER_TOKEN)
-                )
-            );
-
-            if (array_key_exists($match, self::$routes[$method])) {
-                return self::$routes[$method][$match];
+        foreach ($this->routes[$method->value] ?? [] as $route) {
+            $parameters = $route->path->match($path);
+            if ($parameters !== null) {
+                return new RouteMatch($route, $parameters);
             }
         }
 
         return null;
     }
 
-    /**
-     * Prepare the given path with placeholder tokens.
-     * .
-     * @param string $path
-     * @return array{string,array<string,int>}
-     */
-    protected static function preparePath(string $path): array
+    private static function normalizeQuery(mixed $value): mixed
     {
-        $parts = array_values(array_filter(explode('/', $path)));
-        $prepare = '';
-        $params = [];
-
-        foreach ($parts as $key => $part) {
-            if ($key !== 0) {
-                $prepare .= '/';
-            }
-
-            if (str_starts_with($part, '{') && str_ends_with($part, '}')) {
-                $prepare .= self::PLACEHOLDER_TOKEN;
-                $params[trim($part, '{}')] = $key;
-                if (!in_array($key, self::$params)) {
-                    self::$params[] = $key;
-                }
-            } else {
-                $prepare .= $part;
-            }
+        if ($value instanceof BackedEnum) {
+            return $value->value;
+        }
+        if ($value instanceof Stringable) {
+            return (string) $value;
+        }
+        if (is_array($value)) {
+            return array_map(self::normalizeQuery(...), $value);
+        }
+        if ($value === null || is_scalar($value)) {
+            return $value;
         }
 
-        return [$prepare, $params];
+        throw new InvalidArgumentException('Query values must be scalar, stringable, backed enums, arrays, or null');
     }
 }

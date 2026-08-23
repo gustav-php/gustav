@@ -91,7 +91,7 @@ describe('http kernel', function () use ($client) {
 
         expect($missing->getStatusCode())->toBe(404)
             ->and($wrongMethod->getStatusCode())->toBe(405)
-            ->and($wrongMethod->getHeaderLine('Allow'))->toBe('GET');
+            ->and($wrongMethod->getHeaderLine('Allow'))->toBe('GET, HEAD, OPTIONS');
     });
 
     it('allows controllers to return a PSR response directly', function () use ($client) {

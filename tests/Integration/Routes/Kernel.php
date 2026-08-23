@@ -2,7 +2,7 @@
 
 namespace GustavPHP\Tests\Integration\Routes;
 
-use GustavPHP\Gustav\Attribute\{AuthUser, Middleware, Request, Route};
+use GustavPHP\Gustav\Attribute\{AuthUser, Controller as ControllerAttribute, Get, Middleware, Request};
 use GustavPHP\Gustav\Auth\{AuthenticationMiddleware, Identity};
 use GustavPHP\Gustav\Auth\Exception\ForbiddenException;
 use GustavPHP\Gustav\Controller;
@@ -13,6 +13,7 @@ use Nyholm\Psr7\Response as Psr7Response;
 use Psr\Http\Message\{ResponseInterface, ServerRequestInterface};
 use RuntimeException;
 
+#[ControllerAttribute('/kernel')]
 #[Middleware(ControllerTrace::class)]
 class Kernel extends Controller\Base
 {
@@ -20,7 +21,7 @@ class Kernel extends Controller\Base
     {
     }
 
-    #[Route('/kernel/auth')]
+    #[Get('/auth')]
     #[Middleware(AuthenticationMiddleware::class)]
     public function auth(#[AuthUser] Identity $identity): Controller\Response
     {
@@ -30,58 +31,58 @@ class Kernel extends Controller\Base
         ]);
     }
 
-    #[Route('/kernel/auth/missing')]
+    #[Get('/auth/missing')]
     public function authMissing(#[AuthUser] Identity $identity): Controller\Response
     {
         return $this->plaintext($identity->getIdentifier());
     }
 
-    #[Route('/kernel/blocked')]
+    #[Get('/blocked')]
     #[Middleware(Block::class)]
     public function blocked(): Controller\Response
     {
         return $this->plaintext('controller should not run');
     }
 
-    #[Route('/kernel/coded-server-error')]
+    #[Get('/coded-server-error')]
     public function codedServerError(): Controller\Response
     {
         throw new RuntimeException('coded internal secret', 422);
     }
 
-    #[Route('/kernel/error')]
+    #[Get('/error')]
     public function error(): Controller\Response
     {
         throw new HttpException(418, 'Short and stout', ['X-Error' => 'mapped']);
     }
 
-    #[Route('/kernel/forbidden')]
+    #[Get('/forbidden')]
     public function forbidden(): Controller\Response
     {
         throw new ForbiddenException('Insufficient permissions');
     }
 
-    #[Route('/kernel/legacy')]
+    #[Get('/legacy')]
     #[Middleware(Legacy::class)]
     public function legacy(#[Request] ServerRequestInterface $request): Controller\Response
     {
         return $this->plaintext(implode(',', $request->getAttribute('middleware-trace')));
     }
 
-    #[Route('/kernel/middleware')]
+    #[Get('/middleware')]
     #[Middleware(RouteTrace::class)]
     public function middleware(#[Request] ServerRequestInterface $request): Controller\Response
     {
         return $this->plaintext(implode(',', $request->getAttribute('middleware-trace')));
     }
 
-    #[Route('/kernel/psr-response')]
+    #[Get('/psr-response')]
     public function psrResponse(): ResponseInterface
     {
         return new Psr7Response(202, ['X-Response' => 'psr'], 'accepted');
     }
 
-    #[Route('/kernel/request-id')]
+    #[Get('/request-id')]
     public function requestId(#[Request] ServerRequestInterface $request): Controller\Response
     {
         $attribute = $request->getAttribute(RequestId::ATTRIBUTE);
@@ -92,19 +93,19 @@ class Kernel extends Controller\Base
         ]);
     }
 
-    #[Route('/kernel/request-id-override')]
+    #[Get('/request-id-override')]
     public function requestIdOverride(): Controller\Response
     {
         return $this->plaintext('ok', headers: ['X-Request-ID' => 'controller-value']);
     }
 
-    #[Route('/kernel/server-error')]
+    #[Get('/server-error')]
     public function serverError(): Controller\Response
     {
         throw new RuntimeException('internal secret');
     }
 
-    #[Route('/kernel/unavailable')]
+    #[Get('/unavailable')]
     public function unavailable(): Controller\Response
     {
         throw new HttpException(503, 'Dependency unavailable');

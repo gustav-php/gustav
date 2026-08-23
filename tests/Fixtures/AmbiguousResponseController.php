@@ -2,13 +2,14 @@
 
 namespace GustavPHP\Tests\Fixtures;
 
-use GustavPHP\Gustav\Attribute\Route;
+use GustavPHP\Gustav\Attribute\{Controller as ControllerAttribute, Get};
 use GustavPHP\Gustav\Controller;
 use Psr\Http\Message\ResponseInterface;
 
+#[ControllerAttribute]
 final class AmbiguousResponseController extends Controller\Base
 {
-    #[Route('/invalid-response/union')]
+    #[Get('/invalid-response/union')]
     public function invalid(): Controller\Response|ResponseInterface
     {
         return $this->json([]);

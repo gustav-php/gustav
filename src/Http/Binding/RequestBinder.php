@@ -25,12 +25,12 @@ final readonly class RequestBinder
     }
 
     /**
-     * @param array<string,int> $placeholders
+     * @param array<string,string> $parameters
      * @return array<string,mixed>
      */
-    public function bind(ServerRequestInterface $request, array $placeholders): array
+    public function bind(ServerRequestInterface $request, array $parameters): array
     {
-        $context = new BindingContext($request, $placeholders);
+        $context = new BindingContext($request, $parameters);
         $bound = [];
         $violations = [];
 
