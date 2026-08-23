@@ -36,7 +36,9 @@ composer test:transport
 
 The transport command downloads the ignored local RoadRunner binary when it is
 missing, selects free ports, starts and stops the worker automatically, and
-prints its logs if the contract fails.
+prints its logs if the contract fails. It covers JSON binding, malformed JSON,
+request-scope isolation, structured `5xx` reporting, request IDs, and worker
+recovery after a failed request.
 
 ## Documentation
 

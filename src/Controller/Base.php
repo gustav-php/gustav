@@ -3,14 +3,13 @@
 namespace GustavPHP\Gustav\Controller;
 
 use GustavPHP\Gustav\{Application, Serializer, View};
-use GustavPHP\Gustav\Traits\{Logger, Validate};
+use GustavPHP\Gustav\Traits\Validate;
 use Latte\RuntimeException;
 use LogicException;
 use Throwable;
 
 class Base
 {
-    use Logger;
     use Validate;
 
     /**

@@ -2,10 +2,9 @@
 
 namespace GustavPHP\Gustav\Service;
 
-use GustavPHP\Gustav\Traits\{Logger, Validate};
+use GustavPHP\Gustav\Traits\Validate;
 
 class Base
 {
-    use Logger;
     use Validate;
 }
