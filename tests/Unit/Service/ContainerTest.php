@@ -13,7 +13,9 @@ it('requires the container to be built before resolving controllers', function (
 it('autowires nested dependencies and caches resolved services', function () {
     $container = new Container();
     $container->build();
-    $scope = $container->createRequestScope(new ServerRequest('GET', '/'));
+    $scope = $container->createScope([
+        ServerRequestInterface::class => new ServerRequest('GET', '/'),
+    ]);
 
     /** @var ContainerTestAutowiredController $first */
     $first = $scope->make(ContainerTestAutowiredController::class);
@@ -27,11 +29,11 @@ it('autowires nested dependencies and caches resolved services', function () {
     expect($first->dependency->plain)->toBe($second->dependency->plain);
 });
 
-it('uses factories and injects the active request container when requested', function () {
+it('uses factories and injects the active execution scope when requested', function () {
     $container = new Container();
     $captured = null;
 
-    $container->request(
+    $container->scoped(
         ContainerTestProvidedService::class,
         function (Container $current) use (&$captured) {
             $captured = $current;
@@ -40,7 +42,9 @@ it('uses factories and injects the active request container when requested', fun
     );
 
     $container->build();
-    $scope = $container->createRequestScope(new ServerRequest('GET', '/'));
+    $scope = $container->createScope([
+        ServerRequestInterface::class => new ServerRequest('GET', '/'),
+    ]);
 
     /** @var ContainerTestDefinitionController $controller */
     $controller = $scope->make(ContainerTestDefinitionController::class);
@@ -51,18 +55,18 @@ it('uses factories and injects the active request container when requested', fun
 
 it('rejects invalid dependency identifiers', function () {
     $container = new Container();
-    $container->request('', fn () => null);
+    $container->scoped('', fn () => null);
 })->throws(InvalidArgumentException::class);
 
 it('rejects definitions that are neither callable nor objects', function () {
     $container = new Container();
-    $container->request('foo', 'bar');
+    $container->scoped('foo', 'bar');
 })->throws(InvalidArgumentException::class);
 
 it('detects circular dependencies when instantiating controllers', function () {
     $container = new Container();
     $container->build();
-    $scope = $container->createRequestScope(new ServerRequest('GET', '/'));
+    $scope = $container->createScope();
 
     $scope->make(ContainerTestCircularController::class);
 })->throws(LogicException::class, 'Circular dependency detected');
@@ -70,7 +74,7 @@ it('detects circular dependencies when instantiating controllers', function () {
 it('throws when a constructor parameter cannot be resolved', function () {
     $container = new Container();
     $container->build();
-    $scope = $container->createRequestScope(new ServerRequest('GET', '/'));
+    $scope = $container->createScope();
 
     $scope->make(ContainerTestUnresolvableController::class);
 })->throws(InvalidArgumentException::class);
@@ -80,23 +84,23 @@ it('binds interfaces to concrete implementations', function () {
     $container->bind(ContainerTestContract::class, ContainerTestImplementation::class);
     $container->build();
 
-    $scope = $container->createRequestScope(new ServerRequest('GET', '/'));
+    $scope = $container->createScope();
 
     expect($scope->get(ContainerTestContract::class))
         ->toBeInstanceOf(ContainerTestImplementation::class)
         ->value()->toBe('implementation');
 });
 
-it('honors singleton, request, and transient lifetimes', function () {
+it('honors singleton, scoped, and transient lifetimes', function () {
     $container = new Container();
     $container
         ->singleton(ContainerTestSingletonService::class)
-        ->request(ContainerTestRequestService::class)
+        ->scoped(ContainerTestRequestService::class)
         ->transient(ContainerTestTransientService::class);
     $container->build();
 
-    $first = $container->createRequestScope(new ServerRequest('GET', '/first'));
-    $second = $container->createRequestScope(new ServerRequest('GET', '/second'));
+    $first = $container->createScope();
+    $second = $container->createScope();
 
     expect($first->get(ContainerTestSingletonService::class))
         ->toBe($first->get(ContainerTestSingletonService::class))
@@ -113,8 +117,10 @@ it('injects the current request and isolates autowired services by request', fun
     $container->build();
 
     $request = new ServerRequest('GET', '/first');
-    $first = $container->createRequestScope($request);
-    $second = $container->createRequestScope(new ServerRequest('GET', '/second'));
+    $first = $container->createScope([ServerRequestInterface::class => $request]);
+    $second = $container->createScope([
+        ServerRequestInterface::class => new ServerRequest('GET', '/second'),
+    ]);
 
     $firstConsumer = $first->get(ContainerTestScopedConsumer::class);
     $secondConsumer = $second->get(ContainerTestScopedConsumer::class);
@@ -126,12 +132,13 @@ it('injects the current request and isolates autowired services by request', fun
         ->and($firstConsumer->service)->not->toBe($secondConsumer->service);
 });
 
-it('seeds request-scoped values without replacing the active request', function () {
+it('seeds scoped values without replacing the active request', function () {
     $container = new Container();
     $container->build();
     $request = new ServerRequest('GET', '/seeded');
     $seeded = new ContainerTestPlainDependency();
-    $scope = $container->createRequestScope($request, [
+    $scope = $container->createScope([
+        ServerRequestInterface::class => $request,
         ContainerTestPlainDependency::class => $seeded,
     ]);
 
@@ -139,16 +146,16 @@ it('seeds request-scoped values without replacing the active request', function 
         ->and($scope->get(ServerRequestInterface::class))->toBe($request);
 });
 
-it('prevents singletons from capturing request-scoped services', function () {
+it('prevents singletons from capturing scoped services', function () {
     $container = new Container();
     $container
-        ->request(ContainerTestRequestService::class)
+        ->scoped(ContainerTestRequestService::class)
         ->singleton(ContainerTestInvalidSingleton::class);
     $container->build();
 
-    $scope = $container->createRequestScope(new ServerRequest('GET', '/'));
+    $scope = $container->createScope();
     $scope->get(ContainerTestInvalidSingleton::class);
-})->throws(LogicException::class, 'requires an active request scope');
+})->throws(LogicException::class, 'requires an active application scope');
 
 it('freezes registrations after the container is built', function () {
     $container = new Container();
@@ -156,10 +163,10 @@ it('freezes registrations after the container is built', function () {
     $container->singleton(ContainerTestSingletonService::class);
 })->throws(LogicException::class, 'already built');
 
-it('cannot use a released request scope', function () {
+it('cannot use a released execution scope', function () {
     $container = new Container();
     $container->build();
-    $scope = $container->createRequestScope(new ServerRequest('GET', '/'));
+    $scope = $container->createScope();
     $scope->release();
 
     $scope->get(ContainerTestRequestService::class);
@@ -167,12 +174,12 @@ it('cannot use a released request scope', function () {
 
 it('validates factory signatures during registration', function () {
     $container = new Container();
-    $container->request('invalid', fn (string $value): string => $value);
+    $container->scoped('invalid', fn (string $value): string => $value);
 })->throws(InvalidArgumentException::class, Container::class);
 
 it('rejects shared object instances outside the singleton lifetime', function () {
     $container = new Container();
-    $container->request(
+    $container->scoped(
         ContainerTestProvidedService::class,
         new ContainerTestProvidedService('shared'),
     );
@@ -180,11 +187,11 @@ it('rejects shared object instances outside the singleton lifetime', function ()
 
 it('caches null factory results according to their lifetime', function () {
     $container = new Container();
-    $requestCalls = 0;
+    $scopedCalls = 0;
     $singletonCalls = 0;
     $container
-        ->request('nullable.request', function () use (&$requestCalls) {
-            $requestCalls++;
+        ->scoped('nullable.scoped', function () use (&$scopedCalls) {
+            $scopedCalls++;
             return;
         })
         ->singleton('nullable.singleton', function () use (&$singletonCalls) {
@@ -193,16 +200,16 @@ it('caches null factory results according to their lifetime', function () {
         });
     $container->build();
 
-    $first = $container->createRequestScope(new ServerRequest('GET', '/first'));
-    $second = $container->createRequestScope(new ServerRequest('GET', '/second'));
+    $first = $container->createScope();
+    $second = $container->createScope();
 
-    $first->get('nullable.request');
-    $first->get('nullable.request');
-    $second->get('nullable.request');
+    $first->get('nullable.scoped');
+    $first->get('nullable.scoped');
+    $second->get('nullable.scoped');
     $first->get('nullable.singleton');
     $second->get('nullable.singleton');
 
-    expect($requestCalls)->toBe(2)
+    expect($scopedCalls)->toBe(2)
         ->and($singletonCalls)->toBe(1);
 });
 
@@ -212,7 +219,7 @@ it('registers invokable objects as singleton instances instead of factories', fu
     $container->singleton(ContainerTestInvokableService::class, $service);
     $container->build();
 
-    $scope = $container->createRequestScope(new ServerRequest('GET', '/'));
+    $scope = $container->createScope();
 
     expect($scope->get(ContainerTestInvokableService::class))->toBe($service);
 });

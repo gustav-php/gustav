@@ -14,7 +14,7 @@ final readonly class Service
      */
     public function __construct(
         private ?string $as = null,
-        private Lifetime $lifetime = Lifetime::Request,
+        private Lifetime $lifetime = Lifetime::Scoped,
     ) {
         if (
             $as !== null

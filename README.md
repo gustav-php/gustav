@@ -20,6 +20,14 @@ After the project has been created, start GustavPHP's local development server u
 php gustav dev
 ```
 
+Application commands are discovered from `src/Commands` and use typed
+arguments, options, validation, and constructor injection. List every built-in
+and project command with:
+
+```bash
+php gustav list
+```
+
 ## Development
 
 Run the fast in-process test suite with:

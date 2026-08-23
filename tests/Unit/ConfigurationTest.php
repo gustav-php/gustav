@@ -10,6 +10,7 @@ it('builds conventional project paths and mode from a captured environment', fun
         root: '/srv/example',
         environment: Environment::fromArray(['MODE' => 'production']),
         configurationNamespaces: ['Module\\Billing\\Config'],
+        commandNamespaces: ['Module\\Billing\\Commands'],
     );
 
     expect($configuration->mode)->toBe(Mode::Production)
@@ -17,7 +18,8 @@ it('builds conventional project paths and mode from a captured environment', fun
         ->and($configuration->cache)->toBe('/srv/example/cache/')
         ->and($configuration->files)->toBe('/srv/example/public/')
         ->and($configuration->views)->toBe('/srv/example/views/')
-        ->and($configuration->configurationNamespaces)->toBe(['Module\\Billing\\Config']);
+        ->and($configuration->configurationNamespaces)->toBe(['Module\\Billing\\Config'])
+        ->and($configuration->commandNamespaces)->toBe(['Module\\Billing\\Commands']);
 });
 
 it('defaults conventional projects to development mode', function () {

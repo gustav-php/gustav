@@ -1,6 +1,6 @@
 <?php
 
-namespace GustavPHP\Gustav\Http\Binding;
+namespace GustavPHP\Gustav\Input;
 
 use BackedEnum;
 use GustavPHP\Gustav\DTO\Hydrator;
@@ -91,6 +91,16 @@ final readonly class TypeConverter
 
         /** @var class-string<object> $name */
         return new self($name, $type->allowsNull(), hydrator: new Hydrator($name));
+    }
+
+    public function isArray(): bool
+    {
+        return $this->name === 'array';
+    }
+
+    public function isBoolean(): bool
+    {
+        return $this->name === 'bool';
     }
 
     private function convertBoolean(mixed $value, string $source, string $path): ConversionResult

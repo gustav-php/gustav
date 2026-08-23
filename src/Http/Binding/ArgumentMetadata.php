@@ -3,6 +3,7 @@
 namespace GustavPHP\Gustav\Http\Binding;
 
 use GustavPHP\Gustav\Http\Binding\Resolver\InputResolver;
+use GustavPHP\Gustav\Input\TypeConverter;
 use GustavPHP\Gustav\Validation\Validation;
 
 final readonly class ArgumentMetadata

@@ -2,21 +2,14 @@
 
 <?php
 
-use GustavPHP\Gustav\CLI\{
-    DevCommand,
-    InstalledCommand,
-    StartCommand
-};
-use Symfony\Component\Console\Application;
+use GustavPHP\Gustav\Application;
+use GustavPHP\Gustav\CLI\{Kernel, ProjectBootstrap};
 
 include $_composer_autoload_path ?? __DIR__ . '/../vendor/autoload.php';
 
-$installed = new InstalledCommand();
-$start = new StartCommand();
-$dev = new DevCommand();
+$configuration = ProjectBootstrap::load();
+$console = $configuration === null
+    ? new Kernel()
+    : (new Application($configuration))->console();
 
-$application = new Application();
-$application->add($dev);
-$application->add($installed);
-$application->add($start);
-$application->run();
+exit($console->run());

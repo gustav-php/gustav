@@ -3,7 +3,7 @@
 namespace GustavPHP\Gustav\DTO;
 
 use GustavPHP\Gustav\Attribute\Validate;
-use GustavPHP\Gustav\Http\Binding\{ConversionResult, TypeConverter};
+use GustavPHP\Gustav\Input\{ConversionResult, TypeConverter};
 use GustavPHP\Gustav\Validation\{Validation, Violation};
 use LogicException;
 use ReflectionClass;

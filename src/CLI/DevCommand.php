@@ -11,11 +11,9 @@ use Symfony\Component\Console\Input\{InputArgument, InputInterface};
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\Process;
 
-#[AsCommand(name: 'dev')]
+#[AsCommand(name: 'dev', description: 'Starts the development server.')]
 class DevCommand extends Command
 {
-    protected static string $defaultDescription = 'Starts development server.';
-
     protected function configure(): void
     {
         $this

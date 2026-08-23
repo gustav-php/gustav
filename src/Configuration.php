@@ -85,6 +85,12 @@ readonly class Configuration
          */
         public array $configurationNamespaces = [],
         /**
+         * Namespace containing discoverable application commands.
+         *
+         * @var array<string>
+         */
+        public array $commandNamespaces = [],
+        /**
          * Captured environment used to hydrate typed application configuration.
          */
         private ?Environment $environment = null,
@@ -101,6 +107,7 @@ readonly class Configuration
      * @param array<string> $serviceNamespaces
      * @param array<string> $middlewareNamespaces
      * @param array<string> $configurationNamespaces
+     * @param array<string> $commandNamespaces
      * @throws ConfigurationException
      */
     public static function forProject(
@@ -113,6 +120,7 @@ readonly class Configuration
         array $serviceNamespaces = [],
         array $middlewareNamespaces = [],
         array $configurationNamespaces = [],
+        array $commandNamespaces = [],
     ): self {
         $environment ??= Environment::load($root);
         $mode = match ($environment->get('MODE')) {
@@ -143,6 +151,7 @@ readonly class Configuration
             serviceNamespaces: $serviceNamespaces,
             middlewareNamespaces: $middlewareNamespaces,
             configurationNamespaces: $configurationNamespaces,
+            commandNamespaces: $commandNamespaces,
             environment: $environment,
         );
     }
