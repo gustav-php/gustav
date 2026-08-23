@@ -3,13 +3,7 @@
 use GustavPHP\Gustav\View;
 use GustavPHP\Gustav\View\Exception\{ViewNotFoundException, ViewRenderingException};
 use GustavPHP\Gustav\View\PhpViewRenderer;
-
-final readonly class NativeViewModel
-{
-    public function __construct(public string $title)
-    {
-    }
-}
+use GustavPHP\Tests\Fixtures\NativeViewModel;
 
 function nativeViewRenderer(): PhpViewRenderer
 {
@@ -37,7 +31,7 @@ it('renders escaped data, layouts, sections, partials, and explicitly trusted HT
 it('makes an object available as a typed model', function () {
     $model = new NativeViewModel('Gustav <Views>');
 
-    $html = nativeViewRenderer()->render(new View('model.php', $model));
+    $html = nativeViewRenderer()->render(new View('model.phtml', $model));
 
     expect($html)->toContain('<h1>Gustav &lt;Views&gt;</h1>');
 });
@@ -77,6 +71,7 @@ it('rejects missing views and paths outside the configured root', function (stri
     'missing view' => ['missing', "View 'missing' was not found"],
     'parent traversal' => ['../composer.json', 'must stay within the configured directory'],
     'absolute path' => ['/etc/passwd', 'must be a relative logical name'],
+    'PHP source extension' => ['plain.php', 'must use the .phtml extension'],
 ]);
 
 it('requires a configured view directory', function () {
