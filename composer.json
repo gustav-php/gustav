@@ -20,6 +20,7 @@
         "spiral/roadrunner-cli": "^2.6",
         "spiral/roadrunner-http": "^4.1",
         "symfony/console": "^7.0",
+        "symfony/dotenv": "^7.0",
         "symfony/process": "^7.0"
     },
     "scripts": {

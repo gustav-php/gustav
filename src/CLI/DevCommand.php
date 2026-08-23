@@ -26,12 +26,8 @@ class DevCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $env = realpath(getcwd() . DIRECTORY_SEPARATOR . '.env');
         $roadrunner = realpath(getcwd() . DIRECTORY_SEPARATOR . 'rr');
         $command = "{$roadrunner} serve";
-        if ($env) {
-            $command .= " --dotenv {$env}";
-        }
 
         $latest = $this->getLatestModificationTimestamp();
         $process = Process::fromShellCommandline(escapeshellcmd($command));
@@ -66,6 +62,12 @@ class DevCommand extends Command
     {
         $root = getcwd() . DIRECTORY_SEPARATOR;
         $latest = 0;
+        foreach (['.env', '.env.local'] as $file) {
+            $path = $root . $file;
+            if (is_file($path)) {
+                $latest = max($latest, filemtime($path) ?: 0);
+            }
+        }
         foreach (['src', 'app', 'views'] as $directory) {
             $path = realpath($root . DIRECTORY_SEPARATOR . $directory);
             if (!$path) {
