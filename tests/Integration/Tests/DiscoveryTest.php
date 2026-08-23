@@ -7,7 +7,6 @@ it('discovers application-wide middleware without imperative bootstrap calls', f
     $app = new Application(new Configuration(
         mode: Mode::Production,
         namespace: 'GustavPHP\\Tests\\Fixtures',
-        cache: sys_get_temp_dir(),
     ));
 
     $response = $app->handle(new ServerRequest('GET', '/missing'));

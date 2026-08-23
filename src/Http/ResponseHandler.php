@@ -5,8 +5,11 @@ namespace GustavPHP\Gustav\Http;
 use BackedEnum;
 use GustavPHP\Gustav\Controller\{Response, ResponseFormat};
 use GustavPHP\Gustav\Serializer\Manager;
+use GustavPHP\Gustav\View;
+use GustavPHP\Gustav\View\ViewRendererInterface;
 use JsonSerializable;
 use LogicException;
+use Nyholm\Psr7\Response as Psr7Response;
 use Psr\Http\Message\ResponseInterface;
 use ReflectionMethod;
 use ReflectionNamedType;
@@ -14,8 +17,10 @@ use UnitEnum;
 
 final readonly class ResponseHandler
 {
-    private function __construct(private bool $serializeAsJson)
-    {
+    private function __construct(
+        private bool $serializeAsJson,
+        private bool $renderAsView,
+    ) {
     }
 
     public static function compile(ReflectionMethod $method): self
@@ -26,21 +31,48 @@ final readonly class ResponseHandler
             throw new LogicException("{$location} must declare one response type");
         }
 
+        if (self::isView($type)) {
+            if ($type->allowsNull()) {
+                throw new LogicException("{$location} must return a non-null view");
+            }
+
+            return new self(false, true);
+        }
+
         if (self::isResponseObject($type)) {
             if ($type->allowsNull()) {
                 throw new LogicException("{$location} must return a non-null response object");
             }
 
-            return new self(false);
+            return new self(false, false);
         }
 
         self::assertJsonType($type, $location);
 
-        return new self(true);
+        return new self(true, false);
     }
 
-    public function respond(mixed $payload): ResponseInterface
+    public function requiresViewRenderer(): bool
     {
+        return $this->renderAsView;
+    }
+
+    public function respond(
+        mixed $payload,
+        ?ViewRendererInterface $viewRenderer = null,
+    ): ResponseInterface {
+        if ($this->renderAsView) {
+            if (!$payload instanceof View || $viewRenderer === null) {
+                throw new LogicException('Controller returned a value that does not match its compiled response type');
+            }
+
+            return new Psr7Response(
+                $payload->status,
+                array_merge($payload->headers, ['Content-Type' => 'text/html; charset=utf-8']),
+                $viewRenderer->render($payload),
+            );
+        }
+
         if ($this->serializeAsJson) {
             return (new Response(
                 body: $payload,
@@ -91,5 +123,10 @@ final readonly class ResponseHandler
         $name = $type->getName();
 
         return is_a($name, Response::class, true) || is_a($name, ResponseInterface::class, true);
+    }
+
+    private static function isView(ReflectionNamedType $type): bool
+    {
+        return !$type->isBuiltin() && is_a($type->getName(), View::class, true);
     }
 }

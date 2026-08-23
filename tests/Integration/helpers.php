@@ -9,7 +9,7 @@ function createApplication(Mode $mode = Mode::Production): Application
     return new Application(new Configuration(
         mode: $mode,
         namespace: __NAMESPACE__,
-        cache: __DIR__ . '/cache/',
+        views: __DIR__ . '/views/',
         serviceNamespaces: ['GustavPHP\\Tests\\Fixtures\\QuietLogging\\Services'],
     ));
 }

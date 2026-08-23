@@ -15,7 +15,6 @@ function commandTestApplication(
     return new Application(new Configuration(
         mode: $mode,
         namespace: $namespace,
-        cache: sys_get_temp_dir(),
     ));
 }
 
@@ -164,7 +163,6 @@ it('discovers additional command namespaces and treats void as success', functio
     $application = new Application(new Configuration(
         mode: Mode::Production,
         namespace: 'GustavPHP\\Tests\\CommandFixtures\\ValidApplication',
-        cache: sys_get_temp_dir(),
         commandNamespaces: ['GustavPHP\\Tests\\CommandFixtures\\Module\\Commands'],
     ));
     $tester = new ApplicationTester($application->console());

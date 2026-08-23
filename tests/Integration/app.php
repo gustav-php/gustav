@@ -9,6 +9,6 @@ use GustavPHP\Gustav\{Application, Configuration, Mode};
 Application::run(new Configuration(
     mode: Mode::Production,
     namespace: __NAMESPACE__,
-    cache: __DIR__ . '/cache/',
-    files: __DIR__ . '/public/'
+    files: __DIR__ . '/public/',
+    views: __DIR__ . '/views/',
 ));

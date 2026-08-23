@@ -13,6 +13,7 @@ use GustavPHP\Gustav\Logger\{ExceptionReporter, JsonLogger};
 use GustavPHP\Gustav\Middleware\Pipeline;
 use GustavPHP\Gustav\Router\{Method, RouteCompiler, RouteMatch, Router, UrlGeneratorInterface};
 use GustavPHP\Gustav\Service\Container;
+use GustavPHP\Gustav\View\{PhpViewRenderer, ViewRendererInterface};
 use InvalidArgumentException;
 use LogicException;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -48,6 +49,8 @@ class Application implements RequestHandlerInterface
     /** @var list<CommandDefinition> */
     private array $commands = [];
 
+    private PhpViewRenderer $exceptionViews;
+
     private ExceptionReporter $fallbackReporter;
 
     private Router $router;
@@ -63,11 +66,11 @@ class Application implements RequestHandlerInterface
         Configuration $configuration
     ) {
         self::$configuration = $configuration;
+        $this->exceptionViews = new PhpViewRenderer(__DIR__ . '/../views');
         $defaultLogger = new JsonLogger();
         $this->fallbackReporter = new ExceptionReporter($defaultLogger, $defaultLogger);
         $eventListeners = Discovery::discoverEventListeners();
         Serializer\Manager::reset();
-        View::reset();
         $routes = [];
         foreach (Discovery::discoverControllers() as $class) {
             array_push($routes, ...RouteCompiler::compile($class));
@@ -79,6 +82,7 @@ class Application implements RequestHandlerInterface
             ->singleton(self::class, $this)
             ->singleton(Router::class, $this->router)
             ->singleton(UrlGeneratorInterface::class, $this->router)
+            ->singleton(ViewRendererInterface::class, new PhpViewRenderer($configuration->views))
             ->singleton(LoggerInterface::class, $defaultLogger)
             ->scoped(
                 ExceptionReporter::class,
@@ -321,7 +325,15 @@ class Application implements RequestHandlerInterface
         $instance = $scope->make($route->controller);
         $payload = $instance->{$route->handler}(...$route->requestBinder->bind($request, $match->parameters));
 
-        return $route->responseHandler->respond($payload);
+        $viewRenderer = null;
+        if ($route->responseHandler->requiresViewRenderer()) {
+            $viewRenderer = $scope->get(ViewRendererInterface::class);
+            if (!$viewRenderer instanceof ViewRendererInterface) {
+                throw new LogicException('View renderer service is invalid');
+            }
+        }
+
+        return $route->responseHandler->respond($payload, $viewRenderer);
     }
 
     /**
@@ -490,7 +502,7 @@ class Application implements RequestHandlerInterface
 
         try {
             return (new Response(
-                body: View::render(__DIR__ . '/../views/exception.latte', [
+                body: $this->exceptionViews->render(new View('exception', [
                     'title' => get_class($throwable),
                     'exception' => get_class($throwable),
                     'message' => $throwable->getMessage(),
@@ -500,7 +512,7 @@ class Application implements RequestHandlerInterface
                     'trace' => $this->prepareTrace($throwable),
                     'snippet' => $this->getCodeBlockFromTrace($throwable->getFile(), $throwable->getLine()),
                     'version' => InstalledVersions::getPrettyVersion('gustav-php/gustav'),
-                ]),
+                ])),
                 status: $status,
                 headers: $headers,
             ))->buildHtml();
