@@ -1,0 +1,15 @@
+<?php
+
+namespace GustavPHP\Tests\ConfigurationFixtures\Unit;
+
+use GustavPHP\Gustav\Attribute\{Config, Env};
+
+#[Config]
+final readonly class RequiredNullableConfig
+{
+    public function __construct(
+        #[Env('APP_NOTE')]
+        public ?string $note,
+    ) {
+    }
+}

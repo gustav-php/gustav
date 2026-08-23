@@ -12,6 +12,22 @@ use ReflectionClass;
 class Discovery
 {
     /**
+     * @return iterable<class-string>
+     * @throws Exception
+     */
+    public static function discoverConfigurations(): iterable
+    {
+        foreach (self::discoverClasses('Config', 'configurationNamespaces') as $class) {
+            $reflection = new ReflectionClass($class);
+            if ($reflection->getAttributes(Attribute\Config::class) === []) {
+                continue;
+            }
+
+            yield $class;
+        }
+    }
+
+    /**
      * @return iterable<class-string<Controller\Base>>
      * @throws Exception
      */

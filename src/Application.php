@@ -4,6 +4,7 @@ namespace GustavPHP\Gustav;
 
 use Composer\InstalledVersions;
 use Exception;
+use GustavPHP\Gustav\Config\{Environment, Loader};
 use GustavPHP\Gustav\Controller\{ControllerFactory, Response};
 use GustavPHP\Gustav\Http\Binding\RequestBinder;
 use GustavPHP\Gustav\Http\{CallableRequestHandler, RequestId, ResponseHandler};
@@ -90,6 +91,10 @@ class Application implements RequestHandlerInterface
                     return new ExceptionReporter($logger, $defaultLogger);
                 },
             );
+        $environment = $configuration->getEnvironment() ?? Environment::system();
+        foreach ((new Loader($environment))->load(Discovery::discoverConfigurations()) as $class => $instance) {
+            $this->services->singleton($class, $instance);
+        }
         Router::reset();
         Serializer\Manager::reset();
         Event\Manager::reset();
@@ -234,6 +239,14 @@ class Application implements RequestHandlerInterface
     public static function isProduction(): bool
     {
         return self::$configuration->mode === Mode::Production;
+    }
+
+    /**
+     * Construct and start an application without imperative instance setup.
+     */
+    public static function run(Configuration $configuration): void
+    {
+        (new self($configuration))->start();
     }
 
     /**
