@@ -91,16 +91,16 @@ it('aggregates missing, conversion, enum, and validation failures', function () 
 });
 
 it('rejects ambiguous configuration types during startup compilation', function () {
-    new Loader(Environment::fromArray(['APP_VALUE' => 'value']))
+    (new Loader(Environment::fromArray(['APP_VALUE' => 'value'])))
         ->load([AmbiguousConfig::class]);
 })->throws(LogicException::class, 'ambiguous unions are not supported');
 
 it('requires immutable configuration classes', function () {
-    new Loader(Environment::fromArray(['APP_VALUE' => 'value']))
+    (new Loader(Environment::fromArray(['APP_VALUE' => 'value'])))
         ->load([MutableConfig::class]);
 })->throws(LogicException::class, 'must be readonly');
 
 it('requires an environment mapping for every constructor parameter', function () {
-    new Loader(Environment::fromArray(['APP_VALUE' => 'value']))
+    (new Loader(Environment::fromArray(['APP_VALUE' => 'value'])))
         ->load([MissingAttributeConfig::class]);
 })->throws(LogicException::class, 'must declare exactly one');
