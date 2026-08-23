@@ -2,7 +2,7 @@
 
 namespace GustavPHP\Gustav\DTO;
 
-use GustavPHP\Gustav\Http\Binding\TypeConverter;
+use GustavPHP\Gustav\Input\TypeConverter;
 use GustavPHP\Gustav\Validation\Validation;
 use ReflectionProperty;
 

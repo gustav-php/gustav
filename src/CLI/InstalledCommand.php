@@ -7,11 +7,9 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(name: 'installed', hidden: true)]
+#[AsCommand(name: 'installed', description: 'Show post-install instructions.', hidden: true)]
 class InstalledCommand extends Command
 {
-    protected static string $defaultDescription = 'Show post install instructions.';
-
     protected function configure(): void
     {
         $this->setHelp('This command is run after installing the starter template..');

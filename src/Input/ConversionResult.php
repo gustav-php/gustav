@@ -1,6 +1,6 @@
 <?php
 
-namespace GustavPHP\Gustav\Http\Binding;
+namespace GustavPHP\Gustav\Input;
 
 use GustavPHP\Gustav\Validation\Violation;
 

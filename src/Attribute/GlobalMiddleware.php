@@ -10,7 +10,7 @@ final readonly class GlobalMiddleware
 {
     public function __construct(
         private int $priority = 0,
-        private Lifetime $lifetime = Lifetime::Request,
+        private Lifetime $lifetime = Lifetime::Scoped,
     ) {
     }
 

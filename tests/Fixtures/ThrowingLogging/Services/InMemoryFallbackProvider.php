@@ -17,7 +17,7 @@ final class InMemoryFallbackProvider implements Provider
         }
 
         $fallback = new JsonLogger($stream);
-        $services->request(
+        $services->scoped(
             ExceptionReporter::class,
             function (Container $scope) use ($fallback): ExceptionReporter {
                 $logger = $scope->get(LoggerInterface::class);

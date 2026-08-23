@@ -4,7 +4,7 @@ namespace GustavPHP\Gustav\Service;
 
 enum Lifetime
 {
-    case Request;
+    case Scoped;
     case Singleton;
     case Transient;
 }

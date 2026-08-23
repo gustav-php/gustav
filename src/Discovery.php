@@ -15,6 +15,22 @@ class Discovery
      * @return iterable<class-string>
      * @throws Exception
      */
+    public static function discoverCommands(): iterable
+    {
+        foreach (self::discoverClasses('Commands', 'commandNamespaces') as $class) {
+            $reflection = new ReflectionClass($class);
+            if ($reflection->getAttributes(Attribute\Command::class) === []) {
+                continue;
+            }
+
+            yield $class;
+        }
+    }
+
+    /**
+     * @return iterable<class-string>
+     * @throws Exception
+     */
     public static function discoverConfigurations(): iterable
     {
         foreach (self::discoverClasses('Config', 'configurationNamespaces') as $class) {

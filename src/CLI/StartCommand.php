@@ -7,11 +7,9 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(name: 'start')]
+#[AsCommand(name: 'start', description: 'Starts the production server.')]
 class StartCommand extends Command
 {
-    protected static string $defaultDescription = 'Starts production server.';
-
     protected function configure(): void
     {
         $this->setHelp('This command starts the production server.');

@@ -4,6 +4,7 @@ namespace GustavPHP\Gustav;
 
 use Composer\InstalledVersions;
 use Exception;
+use GustavPHP\Gustav\CLI\{CommandDefinition, Kernel as ConsoleKernel};
 use GustavPHP\Gustav\Config\{Environment, Loader};
 use GustavPHP\Gustav\Controller\{ControllerFactory, Response};
 use GustavPHP\Gustav\Http\Binding\RequestBinder;
@@ -59,6 +60,8 @@ class Application implements RequestHandlerInterface
     protected array $responseHandlers = [];
 
     protected Container $services;
+    /** @var list<CommandDefinition> */
+    private array $commands = [];
 
     private ExceptionReporter $fallbackReporter;
 
@@ -80,7 +83,7 @@ class Application implements RequestHandlerInterface
             ->singleton(Configuration::class, $configuration)
             ->singleton(self::class, $this)
             ->singleton(LoggerInterface::class, $defaultLogger)
-            ->request(
+            ->scoped(
                 ExceptionReporter::class,
                 function (Container $services) use ($defaultLogger): ExceptionReporter {
                     $logger = $services->get(LoggerInterface::class);
@@ -117,6 +120,18 @@ class Application implements RequestHandlerInterface
                 $middleware['lifetime'],
             );
             $this->addMiddleware($middleware['class']);
+        }
+        $commandNames = [];
+        foreach (Discovery::discoverCommands() as $class) {
+            $definition = CommandDefinition::compile($class);
+            if (isset($commandNames[$definition->name])) {
+                throw new LogicException(
+                    "Command name '{$definition->name}' is declared by both "
+                    . "{$commandNames[$definition->name]} and {$class}",
+                );
+            }
+            $commandNames[$definition->name] = $class;
+            $this->commands[] = $definition;
         }
         foreach (Discovery::discoverController() as $class) {
             $this->addRoutes([$class]);
@@ -180,6 +195,16 @@ class Application implements RequestHandlerInterface
     }
 
     /**
+     * Create the application console with all discovered commands.
+     */
+    public function console(): ConsoleKernel
+    {
+        $this->services->build();
+
+        return new ConsoleKernel($this->services, $this->commands, self::$configuration->mode);
+    }
+
+    /**
      * Handle one PSR-7 request independently of the server transport.
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
@@ -191,8 +216,9 @@ class Application implements RequestHandlerInterface
 
         try {
             $this->services->build();
-            $scope = $this->services->createRequestScope($request, [
+            $scope = $this->services->createScope([
                 RequestId::class => $requestId,
+                ServerRequestInterface::class => $request,
             ]);
             $path = ltrim($request->getUri()->getPath(), '/');
             $request = $request->withAttribute('Gustav-Path', $path);

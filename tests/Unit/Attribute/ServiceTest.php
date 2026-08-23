@@ -14,6 +14,11 @@ it('describes a discovered service binding and lifetime', function () {
         ->and($service->getLifetime())->toBe(Lifetime::Singleton);
 });
 
+it('uses execution scope as the default service lifetime', function () {
+    expect((new Service())->getLifetime())->toBe(Lifetime::Scoped)
+        ->and((new GlobalMiddleware())->getLifetime())->toBe(Lifetime::Scoped);
+});
+
 it('rejects an unknown discovered service abstraction', function () {
     new Service(as: 'MissingService');
 })->throws(InvalidArgumentException::class, 'does not exist');

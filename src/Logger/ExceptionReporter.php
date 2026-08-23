@@ -46,4 +46,25 @@ final readonly class ExceptionReporter
             }
         }
     }
+
+    public function reportCommand(Throwable $exception, string $command): void
+    {
+        $context = [
+            'command' => $command,
+            'exception' => $exception,
+        ];
+
+        try {
+            $this->logger->error('Command failed', $context);
+        } catch (Throwable $loggerFailure) {
+            try {
+                $this->fallback->error('Command failed', [
+                    ...$context,
+                    'logger_failure' => $loggerFailure,
+                ]);
+            } catch (Throwable) {
+                // Reporting failures must not alter the command result.
+            }
+        }
+    }
 }

@@ -36,7 +36,7 @@ class Container
     public function bind(
         string $id,
         string $implementation,
-        Lifetime $lifetime = Lifetime::Request,
+        Lifetime $lifetime = Lifetime::Scoped,
     ): self {
         if (!class_exists($implementation)) {
             throw new InvalidArgumentException("Service implementation '{$implementation}' does not exist");
@@ -61,11 +61,11 @@ class Container
     }
 
     /**
-     * Create the isolated service scope for one HTTP request.
+     * Create one isolated application execution scope.
      *
      * @param array<string, mixed> $seed
      */
-    public function createRequestScope(ServerRequestInterface $request, array $seed = []): self
+    public function createScope(array $seed = []): self
     {
         $this->assertRoot();
         $this->assertBuilt();
@@ -73,10 +73,7 @@ class Container
         $scope = new self();
         $scope->root = $this;
         $scope->state = $this->state;
-        $scope->resolved = [
-            ...$seed,
-            ServerRequestInterface::class => $request,
-        ];
+        $scope->resolved = $seed;
 
         return $scope;
     }
@@ -101,12 +98,12 @@ class Container
             if (!class_exists($id)) {
                 throw new InvalidArgumentException("Unable to resolve '{$id}'");
             }
-            $definition = new Definition(Lifetime::Request, $id);
+            $definition = new Definition(Lifetime::Scoped, $id);
         }
 
         return match ($definition->lifetime) {
             Lifetime::Singleton => $this->root->resolveSingleton($id, $definition),
-            Lifetime::Request => $this->resolveRequest($id, $definition),
+            Lifetime::Scoped => $this->resolveScoped($id, $definition),
             Lifetime::Transient => $this->create($id, $definition),
         };
     }
@@ -136,7 +133,7 @@ class Container
     }
 
     /**
-     * Release all references owned by this request scope.
+     * Release all references owned by this execution scope.
      */
     public function release(): void
     {
@@ -150,11 +147,12 @@ class Container
     }
 
     /**
-     * Register one service instance per HTTP request.
+     * Register one service instance per HTTP request, console command, or
+     * future application execution boundary.
      */
-    public function request(string $id, mixed $definition = null): self
+    public function scoped(string $id, mixed $definition = null): self
     {
-        return $this->register($id, $definition ?? $id, Lifetime::Request);
+        return $this->register($id, $definition ?? $id, Lifetime::Scoped);
     }
 
     /**
@@ -163,7 +161,7 @@ class Container
      */
     public function setRequest(ServerRequestInterface $request): void
     {
-        $this->assertRequestScope();
+        $this->assertScope();
         $this->assertActive();
         $this->resolved[ServerRequestInterface::class] = $request;
     }
@@ -187,7 +185,7 @@ class Container
     private function assertActive(): void
     {
         if ($this->released) {
-            throw new LogicException('Request service scope has already been released');
+            throw new LogicException('Application service scope has already been released');
         }
     }
 
@@ -198,17 +196,17 @@ class Container
         }
     }
 
-    private function assertRequestScope(): void
-    {
-        if ($this->root === $this) {
-            throw new LogicException('This operation requires an active request scope');
-        }
-    }
-
     private function assertRoot(): void
     {
         if ($this->root !== $this) {
             throw new LogicException('Services can only be registered on the application container');
+        }
+    }
+
+    private function assertScope(): void
+    {
+        if ($this->root === $this) {
+            throw new LogicException('This operation requires an active application scope');
         }
     }
 
@@ -353,10 +351,10 @@ class Container
         );
     }
 
-    private function resolveRequest(string $id, Definition $definition): mixed
+    private function resolveScoped(string $id, Definition $definition): mixed
     {
         if ($this->root === $this) {
-            throw new LogicException("Request-scoped service '{$id}' requires an active request scope");
+            throw new LogicException("Scoped service '{$id}' requires an active application scope");
         }
 
         if (array_key_exists($id, $this->resolved)) {
