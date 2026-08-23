@@ -57,17 +57,29 @@ class Discovery
         }
     }
     /**
-     * @return iterable<class-string<Event\Base>>
+     * @return list<Event\ListenerDefinition>
      * @throws Exception
      */
-    public static function discoverEvents(): iterable
+    public static function discoverEventListeners(): array
     {
-        foreach (self::discover('Events', Event\Base::class, 'eventNamespaces') as $event) {
-            /**
-             * @var class-string<Event\Base> $event
-             */
-            yield $event;
+        $listeners = [];
+        foreach (self::discoverClasses('Events', 'eventNamespaces') as $class) {
+            $reflection = new ReflectionClass($class);
+            if ($reflection->getAttributes(Attribute\Listener::class) === []) {
+                continue;
+            }
+
+            $listeners[] = Event\ListenerDefinition::compile($class);
         }
+
+        usort(
+            $listeners,
+            fn (Event\ListenerDefinition $left, Event\ListenerDefinition $right): int =>
+                $right->priority <=> $left->priority
+                ?: strcmp($left->listener, $right->listener),
+        );
+
+        return $listeners;
     }
 
     /**

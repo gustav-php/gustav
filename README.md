@@ -28,6 +28,10 @@ and project command with:
 php gustav list
 ```
 
+Typed event objects are dispatched through PSR-14. Invokable `#[Listener]`
+classes under `src/Events` are discovered automatically, receive constructor
+dependencies, and live only for the current request or command scope.
+
 ## Development
 
 Run the fast in-process test suite with:
