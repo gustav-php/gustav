@@ -3,16 +3,16 @@
 namespace GustavPHP\Gustav\CLI;
 
 use Composer\InstalledVersions;
-use GustavPHP\Gustav\Mode;
+use GustavPHP\Gustav\{Application, Mode};
 use GustavPHP\Gustav\Service\Container;
 use LogicException;
-use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Application as ConsoleApplication;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Exception\RuntimeException as ConsoleRuntimeException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-final class Kernel extends Application
+final class Kernel extends ConsoleApplication
 {
     /**
      * @param list<CommandDefinition> $commands
@@ -50,5 +50,15 @@ final class Kernel extends Application
         } catch (ConsoleRuntimeException $exception) {
             throw new \RuntimeException($exception->getMessage(), Command::INVALID);
         }
+    }
+
+    public static function forProject(?string $root = null): self
+    {
+        $configuration = ProjectBootstrap::load($root);
+        if ($configuration === null) {
+            return new self();
+        }
+
+        return (new Application($configuration))->console();
     }
 }

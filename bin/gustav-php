@@ -2,14 +2,8 @@
 
 <?php
 
-use GustavPHP\Gustav\Application;
-use GustavPHP\Gustav\CLI\{Kernel, ProjectBootstrap};
+use GustavPHP\Gustav\CLI\Kernel;
 
 include $_composer_autoload_path ?? __DIR__ . '/../vendor/autoload.php';
 
-$configuration = ProjectBootstrap::load();
-$console = $configuration === null
-    ? new Kernel()
-    : (new Application($configuration))->console();
-
-exit($console->run());
+exit(Kernel::forProject()->run());
