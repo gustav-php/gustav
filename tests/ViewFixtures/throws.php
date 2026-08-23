@@ -1,1 +1,3 @@
-<?php throw new RuntimeException('template exploded');
+<?php
+
+throw new RuntimeException('template exploded');
