@@ -116,10 +116,11 @@ replace those defaults, preserving the current customization behavior for
 loggers, view renderers, session stores, and other framework interfaces.
 
 Attributed application registrations are compiled as one deterministic set.
-Two `#[Factory]` declarations for the same product, or a `#[Factory]` product
-that collides with a discovered `#[Service]` identifier, fail application
-startup. The error identifies both declaring classes. Registration order must
-not decide the winner.
+Two `#[Factory]` declarations for the same product, two `#[Service]`
+declarations for the same identifier, or a `#[Factory]` product that collides
+with a discovered `#[Service]` identifier fail application startup. The error
+identifies both declaring classes. Registration order must not decide the
+winner.
 
 Discovered legacy providers run after attributed services and factories.
 Their imperative registrations remain the explicit low-level override escape
