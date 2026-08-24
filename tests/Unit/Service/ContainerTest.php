@@ -228,3 +228,11 @@ it('validates singleton object types during registration', function () {
     $container = new Container();
     $container->singleton(ContainerTestContract::class, new stdClass());
 })->throws(InvalidArgumentException::class, 'must implement or extend');
+
+it('validates factory product types during resolution', function () {
+    $container = new Container();
+    $container->scoped(ContainerTestContract::class, fn (): stdClass => new stdClass());
+    $container->build();
+
+    $container->createScope()->get(ContainerTestContract::class);
+})->throws(InvalidArgumentException::class, 'returned stdClass');

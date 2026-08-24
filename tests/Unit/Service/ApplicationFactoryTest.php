@@ -3,6 +3,14 @@
 use GustavPHP\Gustav\{Application, Configuration, Mode};
 use GustavPHP\Gustav\Config\Environment;
 use GustavPHP\Tests\FactoryFixtures\AdditionalServices\Products\{AdditionalContract, AdditionalProduct};
+use GustavPHP\Tests\FactoryFixtures\CollisionApplication\Products\CollisionContract;
+use GustavPHP\Tests\FactoryFixtures\CollisionApplication\Services\{CollisionFactory, CollisionService};
+use GustavPHP\Tests\FactoryFixtures\DuplicateApplication\Products\DuplicateProduct;
+use GustavPHP\Tests\FactoryFixtures\DuplicateApplication\Services\{FirstFactory, SecondFactory};
+use GustavPHP\Tests\FactoryFixtures\DuplicateServiceApplication\Products\DuplicateContract;
+use GustavPHP\Tests\FactoryFixtures\DuplicateServiceApplication\Services\{FirstService, SecondService};
+use GustavPHP\Tests\FactoryFixtures\InvalidLifetimeApplication\Products\InvalidSingletonProduct;
+use GustavPHP\Tests\FactoryFixtures\ProviderApplication\Products\{ProviderContract, ProviderProduct};
 use GustavPHP\Tests\FactoryFixtures\ValidApplication\Commands\FactoryScopeCommand;
 use GustavPHP\Tests\FactoryFixtures\ValidApplication\Products\{ConfiguredProduct, FactoryContract, ScopedProduct, SingletonProduct, TransientProduct};
 use GustavPHP\Tests\FactoryFixtures\ValidApplication\Services\{FailingProductFactory, ScopedProductFactory, SingletonProductFactory, TransientProductFactory};
@@ -118,4 +126,58 @@ it('keeps lazy factory failures production safe and releases the scope', functio
         ->and((string) $failed->getBody())->not->toContain('private factory failure')
         ->and(FailingProductFactory::$calls)->toBe(1)
         ->and($next->getStatusCode())->toBe(200);
+});
+
+it('rejects duplicate attributed factory products deterministically', function () {
+    expect(fn () => new Application(new Configuration(
+        mode: Mode::Production,
+        namespace: 'GustavPHP\Tests\FactoryFixtures\DuplicateApplication',
+    )))->toThrow(
+        LogicException::class,
+        "Service '" . DuplicateProduct::class . "' is declared by both "
+            . FirstFactory::class . ' and ' . SecondFactory::class,
+    );
+});
+
+it('rejects duplicate attributed service identifiers deterministically', function () {
+    expect(fn () => new Application(new Configuration(
+        mode: Mode::Production,
+        namespace: 'GustavPHP\Tests\FactoryFixtures\DuplicateServiceApplication',
+    )))->toThrow(
+        LogicException::class,
+        "Service '" . DuplicateContract::class . "' is declared by both "
+            . FirstService::class . ' and ' . SecondService::class,
+    );
+});
+
+it('rejects service and factory declarations for one identifier', function () {
+    expect(fn () => new Application(new Configuration(
+        mode: Mode::Production,
+        namespace: 'GustavPHP\Tests\FactoryFixtures\CollisionApplication',
+    )))->toThrow(
+        LogicException::class,
+        "Service '" . CollisionContract::class . "' is declared by both "
+            . CollisionFactory::class . ' and ' . CollisionService::class,
+    );
+});
+
+it('prevents singleton factory products from capturing scoped dependencies', function () {
+    $services = (new Application(new Configuration(
+        mode: Mode::Production,
+        namespace: 'GustavPHP\Tests\FactoryFixtures\InvalidLifetimeApplication',
+    )))->services();
+    $services->build();
+
+    $services->createScope()->get(InvalidSingletonProduct::class);
+})->throws(LogicException::class, 'requires an active application scope');
+
+it('keeps providers as the final explicit override', function () {
+    $services = (new Application(new Configuration(
+        mode: Mode::Production,
+        namespace: 'GustavPHP\Tests\FactoryFixtures\ProviderApplication',
+    )))->services();
+    $services->build();
+
+    expect($services->createScope()->get(ProviderContract::class))
+        ->toBeInstanceOf(ProviderProduct::class);
 });
