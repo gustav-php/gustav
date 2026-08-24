@@ -1,4 +1,5 @@
 /vendor
+docs/superpowers/
 .env
 .envrc
 .idea
