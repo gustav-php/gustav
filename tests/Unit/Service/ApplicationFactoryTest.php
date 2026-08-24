@@ -139,6 +139,13 @@ it('rejects duplicate attributed factory products deterministically', function (
     );
 });
 
+it('rejects an invalid discovered factory while the application starts', function () {
+    expect(fn () => new Application(new Configuration(
+        mode: Mode::Production,
+        namespace: 'GustavPHP\Tests\FactoryFixtures\InvalidSignatureApplication',
+    )))->toThrow(LogicException::class, 'class or interface return type');
+});
+
 it('rejects duplicate attributed service identifiers deterministically', function () {
     expect(fn () => new Application(new Configuration(
         mode: Mode::Production,
