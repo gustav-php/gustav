@@ -10,7 +10,7 @@
         "source": "https://github.com/gustav-php/gustav"
     },
     "require": {
-        "php": ">=8.2",
+        "php": "^8.2",
         "ext-fileinfo": "*",
         "haydenpierce/class-finder": "^0.5.3",
         "nyholm/psr7": "^1.8",
@@ -38,9 +38,9 @@
         "format": "@php ./vendor/bin/pint src tests"
     },
     "require-dev": {
-        "laravel/pint": "^1.15",
+        "laravel/pint": "^1.30.4",
         "pestphp/pest": "^3.8",
-        "phpstan/phpstan": "^2.1"
+        "phpstan/phpstan": "^2.2.9"
     },
     "bin": ["./bin/gustav-php"],
     "autoload": {

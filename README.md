@@ -37,9 +37,8 @@ final readonly class DogsController
 }
 ```
 
-Routes, request binders, response handlers, and middleware metadata are
-compiled once during startup. Inject `Router\UrlGeneratorInterface` to generate
-paths for named routes.
+Inject `Router\UrlGeneratorInterface` when you need to generate paths for named
+routes.
 
 Application commands are discovered from `src/Commands` and use typed
 arguments, options, validation, and constructor injection. List every built-in
@@ -50,29 +49,18 @@ php gustav list
 ```
 
 Typed event objects are dispatched through PSR-14. Invokable `#[Listener]`
-classes under `src/Events` are discovered automatically, receive constructor
-dependencies, and live only for the current request or command scope.
-
-## Development
-
-Run the fast in-process test suite with:
-
-```bash
-composer test
-```
-
-Run the focused RoadRunner boundary contract locally with:
-
-```bash
-composer test:transport
-```
-
-The transport command downloads the ignored local RoadRunner binary when it is
-missing, selects free ports, starts and stops the worker automatically, and
-prints its logs if the contract fails. It covers JSON binding, malformed JSON,
-request-scope isolation, structured `5xx` reporting, request IDs, and worker
-recovery after a failed request.
+classes under `src/Events` are discovered automatically and may receive
+constructor dependencies.
 
 ## Documentation
 
 - https://gustav-php.github.io
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) to work on the framework itself.
+
+## Versioning
+
+Gustav follows [Semantic Versioning](https://semver.org/) from version 1.0.
+Public and protected APIs that are not marked `@internal`, together with
+documented configuration and command behavior, are covered by that promise.
+Breaking changes are reserved for major releases.
