@@ -95,6 +95,31 @@ class Discovery
     }
 
     /**
+     * @return list<Http\ExceptionHandlerDefinition>
+     * @throws Exception
+     */
+    public static function discoverExceptionHandlers(): array
+    {
+        $handlers = [];
+        foreach (self::discoverClasses('ExceptionHandlers', 'exceptionHandlerNamespaces') as $class) {
+            $reflection = new ReflectionClass($class);
+            if ($reflection->getAttributes(Attribute\ExceptionHandler::class) === []) {
+                continue;
+            }
+
+            $handlers[] = Http\ExceptionHandlerDefinition::compile($class);
+        }
+
+        usort(
+            $handlers,
+            fn (Http\ExceptionHandlerDefinition $left, Http\ExceptionHandlerDefinition $right): int =>
+                strcmp($left->handler, $right->handler),
+        );
+
+        return $handlers;
+    }
+
+    /**
      * @return array<int, array{
      *     class: class-string<MiddlewareInterface>,
      *     lifetime: Service\Lifetime,

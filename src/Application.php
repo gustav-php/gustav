@@ -7,7 +7,7 @@ use Exception;
 use GustavPHP\Gustav\CLI\{CommandDefinition, Kernel as ConsoleKernel};
 use GustavPHP\Gustav\Config\{Environment, Loader};
 use GustavPHP\Gustav\Controller\Response;
-use GustavPHP\Gustav\Http\{CallableRequestHandler, RequestId};
+use GustavPHP\Gustav\Http\{CallableRequestHandler, ExceptionHandlerRegistry, RequestId};
 use GustavPHP\Gustav\Http\Exception\{HttpException, RequestInputException, ValidationException};
 use GustavPHP\Gustav\Logger\{ExceptionReporter, JsonLogger};
 use GustavPHP\Gustav\Middleware\Pipeline;
@@ -51,6 +51,8 @@ class Application implements RequestHandlerInterface
     /** @var list<CommandDefinition> */
     private array $commands = [];
 
+    private ExceptionHandlerRegistry $exceptionHandlers;
+
     private PhpViewRenderer $exceptionViews;
 
     private ExceptionReporter $fallbackReporter;
@@ -73,6 +75,7 @@ class Application implements RequestHandlerInterface
         $this->exceptionViews = new PhpViewRenderer(__DIR__ . '/../views');
         $defaultLogger = new JsonLogger();
         $this->fallbackReporter = new ExceptionReporter($defaultLogger, $defaultLogger);
+        $this->exceptionHandlers = new ExceptionHandlerRegistry(Discovery::discoverExceptionHandlers());
         $eventListeners = Discovery::discoverEventListeners();
         Serializer\Manager::reset();
         $routes = [];
@@ -268,14 +271,13 @@ class Application implements RequestHandlerInterface
                 ),
             ))->handle($request);
         } catch (Throwable $th) {
-            $this->reportExceptionOnce(
+            $response = $this->mapException(
                 $th,
                 $request,
                 $requestId,
                 $scope,
                 $serverFailureReported,
             );
-            $response = $this->renderException($th);
         } finally {
             $scope?->release();
         }
@@ -461,15 +463,13 @@ class Application implements RequestHandlerInterface
         try {
             return $this->handleRoutedRequest($request, $scope);
         } catch (Throwable $throwable) {
-            $this->reportExceptionOnce(
+            return $this->mapException(
                 $throwable,
                 $request,
                 $requestId,
                 $scope,
                 $serverFailureReported,
             );
-
-            return $this->renderException($throwable);
         }
     }
 
@@ -629,14 +629,63 @@ class Application implements RequestHandlerInterface
             : 500;
     }
 
+    private function mapException(
+        Throwable $throwable,
+        ServerRequestInterface $request,
+        RequestId $requestId,
+        ?Container $scope,
+        bool &$serverFailureReported,
+    ): ResponseInterface {
+        if (!$throwable instanceof HttpException && $scope !== null) {
+            try {
+                $response = $this->exceptionHandlers->handle($throwable, $scope);
+            } catch (Throwable $handlerFailure) {
+                $this->reportExceptionOnce(
+                    $handlerFailure,
+                    $request,
+                    $requestId,
+                    $scope,
+                    $serverFailureReported,
+                    500,
+                );
+
+                return $this->renderException($handlerFailure);
+            }
+
+            if ($response !== null) {
+                $this->reportExceptionOnce(
+                    $throwable,
+                    $request,
+                    $requestId,
+                    $scope,
+                    $serverFailureReported,
+                    $response->getStatusCode(),
+                );
+
+                return $response;
+            }
+        }
+
+        $this->reportExceptionOnce(
+            $throwable,
+            $request,
+            $requestId,
+            $scope,
+            $serverFailureReported,
+        );
+
+        return $this->renderException($throwable);
+    }
+
     private function reportExceptionOnce(
         Throwable $throwable,
         ServerRequestInterface $request,
         RequestId $requestId,
         ?Container $scope,
         bool &$serverFailureReported,
+        ?int $status = null,
     ): void {
-        $status = $this->exceptionStatus($throwable);
+        $status ??= $this->exceptionStatus($throwable);
         if ($status < 500 || $serverFailureReported) {
             return;
         }

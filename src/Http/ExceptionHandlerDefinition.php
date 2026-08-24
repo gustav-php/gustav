@@ -70,6 +70,11 @@ final readonly class ExceptionHandlerDefinition
                 "{$location}::__invoke() exception type '{$exception}' does not exist",
             );
         }
+        if ($exception !== Throwable::class && !class_exists($exception)) {
+            throw new LogicException(
+                "{$location}::__invoke() must declare an exception class or Throwable",
+            );
+        }
         if (!is_a($exception, Throwable::class, true)) {
             throw new LogicException(
                 "{$location}::__invoke() exception type '{$exception}' must implement Throwable",

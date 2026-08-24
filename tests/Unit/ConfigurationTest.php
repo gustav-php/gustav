@@ -12,6 +12,7 @@ it('builds conventional project paths and mode from a captured environment', fun
         environment: Environment::fromArray(['MODE' => 'production']),
         configurationNamespaces: ['Module\\Billing\\Config'],
         commandNamespaces: ['Module\\Billing\\Commands'],
+        exceptionHandlerNamespaces: ['Module\\Billing\\ExceptionHandlers'],
     );
 
     expect($configuration->mode)->toBe(Mode::Production)
@@ -20,7 +21,8 @@ it('builds conventional project paths and mode from a captured environment', fun
         ->and($configuration->views)->toBe('/srv/example/views/')
         ->and($configuration->session?->directory)->toBe('/srv/example/storage/sessions/')
         ->and($configuration->configurationNamespaces)->toBe(['Module\\Billing\\Config'])
-        ->and($configuration->commandNamespaces)->toBe(['Module\\Billing\\Commands']);
+        ->and($configuration->commandNamespaces)->toBe(['Module\\Billing\\Commands'])
+        ->and($configuration->exceptionHandlerNamespaces)->toBe(['Module\\Billing\\ExceptionHandlers']);
 });
 
 it('defaults conventional projects to development mode', function () {
