@@ -133,14 +133,17 @@ class Application implements RequestHandlerInterface
         foreach ((new Loader($environment))->load(Discovery::discoverConfigurations()) as $class => $instance) {
             $this->services->singleton($class, $instance);
         }
-        foreach (Discovery::discoverServices() as $service) {
+        $discoveredServices = iterator_to_array(Discovery::discoverServices(), false);
+        $discoveredFactories = iterator_to_array(Discovery::discoverServiceFactories(), false);
+        $this->assertUniqueAttributedServices($discoveredServices, $discoveredFactories);
+        foreach ($discoveredServices as $service) {
             $this->services->bind(
                 $service->service,
                 $service->implementation,
                 $service->lifetime,
             );
         }
-        foreach (Discovery::discoverServiceFactories() as $factory) {
+        foreach ($discoveredFactories as $factory) {
             match ($factory->lifetime) {
                 Lifetime::Singleton => $this->services->singleton($factory->service, $factory->resolver()),
                 Lifetime::Scoped => $this->services->scoped($factory->service, $factory->resolver()),
@@ -575,6 +578,48 @@ class Application implements RequestHandlerInterface
             ['Content-Type' => mime_content_type($path) ?: 'application/octet-stream'],
             $body,
         );
+    }
+
+    /**
+     * @param list<Service\Registration> $services
+     * @param list<Service\FactoryRegistration> $factories
+     */
+    private function assertUniqueAttributedServices(array $services, array $factories): void
+    {
+        /** @var list<array{service: class-string, declaration: class-string}> $declarations */
+        $declarations = [];
+        foreach ($services as $registration) {
+            $declarations[] = [
+                'service' => $registration->service,
+                'declaration' => $registration->implementation,
+            ];
+        }
+        foreach ($factories as $registration) {
+            $declarations[] = [
+                'service' => $registration->service,
+                'declaration' => $registration->factory,
+            ];
+        }
+
+        usort(
+            $declarations,
+            fn (array $left, array $right): int => strcmp($left['service'], $right['service'])
+                ?: strcmp($left['declaration'], $right['declaration']),
+        );
+
+        $previous = null;
+        foreach ($declarations as $declaration) {
+            if ($previous !== null && $previous['service'] === $declaration['service']) {
+                throw new LogicException(sprintf(
+                    "Service '%s' is declared by both %s and %s",
+                    $declaration['service'],
+                    $previous['declaration'],
+                    $declaration['declaration'],
+                ));
+            }
+
+            $previous = $declaration;
+        }
     }
 
     private function exceptionStatus(Throwable $throwable): int
