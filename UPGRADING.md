@@ -78,6 +78,15 @@ final readonly class Users
 Controller arguments and return values must be typed. Gustav validates route
 signatures during application startup.
 
+Middleware attributes now receive a PSR-15 middleware class name instead of an
+already constructed middleware object:
+
+```php
+#[Middleware(AuthenticationMiddleware::class)]
+```
+
+Middleware dependencies are resolved through constructor injection.
+
 ## 4. Move service setup into application classes
 
 Use `#[Service]` for discoverable implementations and `#[Factory]` when a
@@ -113,6 +122,19 @@ Rename templates to `.phtml` and use Gustav's native layouts, sections,
 partials, escaping helper, and `SafeHtml` wrapper. Templates execute PHP
 directly: escape every untrusted value with `$view->escape()` or `$view->e()`.
 Use `SafeHtml` or `$view->raw()` only for deliberately trusted markup.
+
+`View::render()` is no longer static. Return view metadata and let the response
+pipeline render it:
+
+```php
+public function page(): View
+{
+    return new View('page', ['title' => 'Welcome']);
+}
+```
+
+The optional controller helper now also returns `View`. Change handlers that
+return `$this->view(...)` from `Controller\Response` to `View`.
 
 ## 8. Replace legacy events
 
