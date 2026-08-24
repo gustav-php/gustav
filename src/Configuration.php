@@ -93,6 +93,12 @@ readonly class Configuration
          * Server-side session configuration, or null to disable sessions.
          */
         public ?SessionOptions $session = null,
+        /**
+         * Namespace containing additional application exception handlers.
+         *
+         * @var array<string>
+         */
+        public array $exceptionHandlerNamespaces = [],
     ) {
     }
 
@@ -108,6 +114,7 @@ readonly class Configuration
      * @param array<string> $configurationNamespaces
      * @param array<string> $commandNamespaces
      * @param null|SessionOptions $session
+     * @param array<string> $exceptionHandlerNamespaces
      * @throws ConfigurationException
      */
     public static function forProject(
@@ -122,6 +129,7 @@ readonly class Configuration
         array $configurationNamespaces = [],
         array $commandNamespaces = [],
         ?SessionOptions $session = null,
+        array $exceptionHandlerNamespaces = [],
     ): self {
         $environment ??= Environment::load($root);
         $mode = match ($environment->get('MODE')) {
@@ -152,6 +160,7 @@ readonly class Configuration
             middlewareNamespaces: $middlewareNamespaces,
             configurationNamespaces: $configurationNamespaces,
             commandNamespaces: $commandNamespaces,
+            exceptionHandlerNamespaces: $exceptionHandlerNamespaces,
             session: $session ?? new SessionOptions(
                 directory: $root . 'storage' . DIRECTORY_SEPARATOR . 'sessions' . DIRECTORY_SEPARATOR,
             ),
