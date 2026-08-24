@@ -11,7 +11,7 @@ Require Gustav 1.0 and refresh the complete dependency graph:
 {
     "require": {
         "php": "^8.2",
-        "gustav-php/gustav": "^1.0"
+        "gustav-php/gustav": "^1.0@RC"
     }
 }
 ```
@@ -19,6 +19,9 @@ Require Gustav 1.0 and refresh the complete dependency graph:
 ```bash
 composer update --with-all-dependencies
 ```
+
+The `@RC` stability flag is required while 1.0 is a release candidate. Remove
+it after the stable 1.0.0 release is available.
 
 PHP-DI and Latte are no longer framework dependencies. Remove application code
 that configures either package unless you use it independently.
@@ -107,8 +110,9 @@ when status codes or headers need to be customized.
 ## 7. Replace Latte templates
 
 Rename templates to `.phtml` and use Gustav's native layouts, sections,
-partials, escaping helper, and `SafeHtml` wrapper. Templates are PHP files, but
-application data remains escaped unless explicitly marked safe.
+partials, escaping helper, and `SafeHtml` wrapper. Templates execute PHP
+directly: escape every untrusted value with `$view->escape()` or `$view->e()`.
+Use `SafeHtml` or `$view->raw()` only for deliberately trusted markup.
 
 ## 8. Replace legacy events
 
