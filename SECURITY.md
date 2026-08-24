@@ -8,9 +8,10 @@ is available.
 
 ## Reporting a vulnerability
 
-Please do not open a public issue for a suspected vulnerability. Email
-torsten.dittmann@googlemail.com with a description, reproduction steps, and the
-affected version. You can expect an acknowledgement within seven days.
+Please do not open a public issue for a suspected vulnerability. Use GitHub's
+private vulnerability reporting from the repository's Security tab. Include a
+description, reproduction steps, and the affected version. You can expect an
+acknowledgement within seven days.
 
 After the report is confirmed, a fix and coordinated disclosure timeline will
 be agreed with the reporter. Please allow time for supported users to update
