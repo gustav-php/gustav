@@ -1,7 +1,11 @@
 <?php
 
 use GustavPHP\Gustav\{Application, Configuration, Mode};
+use GustavPHP\Gustav\Session\SessionOptions;
 use GustavPHP\Tests\Fixtures\Observability\Services\RecordingLogger;
+
+use function GustavPHP\Tests\Integration\integrationSessionDirectory;
+
 use Nyholm\Psr7\ServerRequest;
 use Psr\Log\LogLevel;
 
@@ -13,6 +17,7 @@ function observabilityApplication(
         mode: $mode,
         namespace: $namespace,
         routeNamespaces: ['GustavPHP\\Tests\\Integration\\Routes'],
+        session: new SessionOptions(directory: integrationSessionDirectory()),
     ));
 }
 

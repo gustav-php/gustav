@@ -2,7 +2,7 @@
 
 namespace GustavPHP\Gustav\Router;
 
-use GustavPHP\Gustav\Attribute\{Controller, Middleware, Route};
+use GustavPHP\Gustav\Attribute\{Controller, Csrf, Middleware, Route};
 use GustavPHP\Gustav\Http\Binding\RequestBinder;
 use GustavPHP\Gustav\Http\ResponseHandler;
 use LogicException;
@@ -31,6 +31,10 @@ final class RouteCompiler
         }
         $controller = $controllerAttributes[0]->newInstance();
         $controllerMiddlewares = self::middlewares($reflection->getAttributes(Middleware::class));
+        $controllerCsrf = self::csrf(
+            $reflection->getAttributes(Csrf::class),
+            "Controller '{$class}'",
+        );
         $definitions = [];
 
         foreach ($reflection->getMethods() as $method) {
@@ -43,6 +47,11 @@ final class RouteCompiler
                 ...$controllerMiddlewares,
                 ...self::middlewares($method->getAttributes(Middleware::class)),
             ];
+            $methodCsrf = self::csrf(
+                $method->getAttributes(Csrf::class),
+                "Controller method {$class}::{$method->getName()}()",
+            );
+            $csrf = $controllerCsrf || $methodCsrf;
 
             foreach ($routes as $routeAttribute) {
                 $route = $routeAttribute->newInstance();
@@ -56,6 +65,7 @@ final class RouteCompiler
                     requestBinder: RequestBinder::compile($method, $path->template),
                     responseHandler: ResponseHandler::compile($method),
                     middlewares: $middlewares,
+                    csrfProtected: $csrf && !$route->getMethod()->isSafe(),
                 );
             }
         }
@@ -77,6 +87,22 @@ final class RouteCompiler
         if ($method->isStatic()) {
             throw new LogicException("{$location} cannot be static");
         }
+    }
+
+    /**
+     * @param array<ReflectionAttribute<Csrf>> $attributes
+     */
+    private static function csrf(array $attributes, string $location): bool
+    {
+        if (count($attributes) > 1) {
+            throw new LogicException("{$location} cannot repeat the #[Csrf] attribute");
+        }
+        if ($attributes === []) {
+            return false;
+        }
+        $attributes[0]->newInstance();
+
+        return true;
     }
 
     /**
