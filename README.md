@@ -37,9 +37,8 @@ final readonly class DogsController
 }
 ```
 
-Routes, request binders, response handlers, and middleware metadata are
-compiled once during startup. Inject `Router\UrlGeneratorInterface` to generate
-paths for named routes.
+Inject `Router\UrlGeneratorInterface` when you need to generate paths for named
+routes.
 
 Application commands are discovered from `src/Commands` and use typed
 arguments, options, validation, and constructor injection. List every built-in
@@ -50,8 +49,8 @@ php gustav list
 ```
 
 Typed event objects are dispatched through PSR-14. Invokable `#[Listener]`
-classes under `src/Events` are discovered automatically, receive constructor
-dependencies, and live only for the current request or command scope.
+classes under `src/Events` are discovered automatically and may receive
+constructor dependencies.
 
 ## Development
 
@@ -76,3 +75,10 @@ recovery after a failed request.
 ## Documentation
 
 - https://gustav-php.github.io
+
+## Versioning
+
+Gustav follows [Semantic Versioning](https://semver.org/) from version 1.0.
+Public and protected APIs that are not marked `@internal`, together with
+documented configuration and command behavior, are covered by that promise.
+Breaking changes are reserved for major releases.
