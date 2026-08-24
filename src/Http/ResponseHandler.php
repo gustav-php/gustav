@@ -26,30 +26,14 @@ final readonly class ResponseHandler
     public static function compile(ReflectionMethod $method): self
     {
         $location = "Controller method {$method->getDeclaringClass()->getName()}::{$method->getName()}()";
-        $type = $method->getReturnType();
-        if (!$type instanceof ReflectionNamedType) {
-            throw new LogicException("{$location} must declare one response type");
-        }
 
-        if (self::isView($type)) {
-            if ($type->allowsNull()) {
-                throw new LogicException("{$location} must return a non-null view");
-            }
+        return self::compileMethod($method, $location, true);
+    }
 
-            return new self(false, true);
-        }
-
-        if (self::isResponseObject($type)) {
-            if ($type->allowsNull()) {
-                throw new LogicException("{$location} must return a non-null response object");
-            }
-
-            return new self(false, false);
-        }
-
-        self::assertJsonType($type, $location);
-
-        return new self(true, false);
+    /** @internal */
+    public static function compileExplicit(ReflectionMethod $method, string $location): self
+    {
+        return self::compileMethod($method, $location, false);
     }
 
     public function requiresViewRenderer(): bool
@@ -113,6 +97,45 @@ final readonly class ResponseHandler
 
         /** @var class-string<object> $name */
         Manager::prepare($name);
+    }
+
+    private static function compileMethod(
+        ReflectionMethod $method,
+        string $location,
+        bool $inferJson,
+    ): self {
+        $type = $method->getReturnType();
+        if (!$type instanceof ReflectionNamedType) {
+            $response = $inferJson ? 'response' : 'explicit response';
+
+            throw new LogicException("{$location} must declare one {$response} type");
+        }
+
+        if (self::isView($type)) {
+            if ($type->allowsNull()) {
+                throw new LogicException("{$location} must return a non-null view");
+            }
+
+            return new self(false, true);
+        }
+
+        if (self::isResponseObject($type)) {
+            if ($type->allowsNull()) {
+                throw new LogicException("{$location} must return a non-null response object");
+            }
+
+            return new self(false, false);
+        }
+
+        if (!$inferJson) {
+            throw new LogicException(
+                "{$location} must return Response, ResponseInterface, or View",
+            );
+        }
+
+        self::assertJsonType($type, $location);
+
+        return new self(true, false);
     }
 
     private static function isResponseObject(ReflectionNamedType $type): bool
