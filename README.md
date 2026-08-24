@@ -52,29 +52,11 @@ Typed event objects are dispatched through PSR-14. Invokable `#[Listener]`
 classes under `src/Events` are discovered automatically and may receive
 constructor dependencies.
 
-## Development
-
-Run the fast in-process test suite with:
-
-```bash
-composer test
-```
-
-Run the focused RoadRunner boundary contract locally with:
-
-```bash
-composer test:transport
-```
-
-The transport command downloads the ignored local RoadRunner binary when it is
-missing, selects free ports, starts and stops the worker automatically, and
-prints its logs if the contract fails. It covers JSON binding, malformed JSON,
-request-scope isolation, structured `5xx` reporting, request IDs, and worker
-recovery after a failed request.
-
 ## Documentation
 
 - https://gustav-php.github.io
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) to work on the framework itself.
 
 ## Versioning
 
