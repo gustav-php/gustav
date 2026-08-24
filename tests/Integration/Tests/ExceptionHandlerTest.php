@@ -172,6 +172,22 @@ it('does not recursively handle handler failures and keeps serving after releasi
         ->and(json_decode((string) $next->getBody(), true, flags: JSON_THROW_ON_ERROR))->toBe(['ok' => true]);
 });
 
+it('reports a later handler failure after an earlier mapped server failure', function () {
+    $response = applicationWithExceptionHandlers()
+        ->handle(new ServerRequest('GET', '/handlers/chained-handler-failure'));
+
+    expect($response->getStatusCode())->toBe(500)
+        ->and((string) $response->getBody())->not->toContain('handler secret')
+        ->and((string) $response->getBody())->not->toContain('outer domain secret')
+        ->and((string) $response->getBody())->not->toContain('first server secret')
+        ->and(RecordingLogger::$records)->toHaveCount(2)
+        ->and(RecordingLogger::$records[0]['context']['http.status_code'])->toBe(503)
+        ->and(RecordingLogger::$records[0]['context']['exception'])->toBeInstanceOf(ServerFailure::class)
+        ->and(RecordingLogger::$records[1]['context']['http.status_code'])->toBe(500)
+        ->and(RecordingLogger::$records[1]['context']['exception']::class)->toBe(RuntimeException::class)
+        ->and(ScopeProbe::alive())->toBeFalse();
+});
+
 it('preserves the production-safe response for unmatched unexpected failures', function () {
     $response = applicationWithExceptionHandlers()
         ->handle(new ServerRequest('GET', '/handlers/unmatched'));

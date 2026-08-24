@@ -44,6 +44,58 @@ it('accepts custom conventional session options', function () {
     )->session)->toBe($session);
 });
 
+it('preserves the legacy positional constructor argument order', function () {
+    $environment = Environment::fromArray(['MODE' => 'production']);
+    $session = new SessionOptions(directory: '/var/run/legacy-sessions');
+
+    $configuration = new Configuration(
+        Mode::Production,
+        'LegacyApp',
+        '/srv/legacy/public',
+        '/srv/legacy/views',
+        '127.0.0.1',
+        8080,
+        ['Legacy\\Routes'],
+        ['Legacy\\Events'],
+        ['Legacy\\Serializers'],
+        ['Legacy\\Services'],
+        ['Legacy\\Middleware'],
+        ['Legacy\\Config'],
+        ['Legacy\\Commands'],
+        $environment,
+        $session,
+    );
+
+    expect($configuration->session)->toBe($session)
+        ->and($configuration->getEnvironment())->toBe($environment)
+        ->and($configuration->commandNamespaces)->toBe(['Legacy\\Commands'])
+        ->and($configuration->exceptionHandlerNamespaces)->toBe([]);
+});
+
+it('preserves the legacy positional forProject argument order', function () {
+    $environment = Environment::fromArray(['MODE' => 'production']);
+    $session = new SessionOptions(directory: '/var/run/legacy-project-sessions');
+
+    $configuration = Configuration::forProject(
+        'LegacyApp',
+        '/srv/legacy-project',
+        $environment,
+        ['Legacy\\Routes'],
+        ['Legacy\\Events'],
+        ['Legacy\\Serializers'],
+        ['Legacy\\Services'],
+        ['Legacy\\Middleware'],
+        ['Legacy\\Config'],
+        ['Legacy\\Commands'],
+        $session,
+    );
+
+    expect($configuration->mode)->toBe(Mode::Production)
+        ->and($configuration->session)->toBe($session)
+        ->and($configuration->commandNamespaces)->toBe(['Legacy\\Commands'])
+        ->and($configuration->exceptionHandlerNamespaces)->toBe([]);
+});
+
 it('rejects invalid modes without exposing the supplied value', function () {
     try {
         Configuration::forProject(

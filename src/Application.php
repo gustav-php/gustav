@@ -29,6 +29,7 @@ use RecursiveIteratorIterator;
 use Spiral\RoadRunner\Http\PSR7Worker;
 use Spiral\RoadRunner\Worker;
 use SplFileInfo;
+use SplObjectStorage;
 use stdClass;
 use Throwable;
 
@@ -234,7 +235,8 @@ class Application implements RequestHandlerInterface
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
         $scope = null;
-        $serverFailureReported = false;
+        /** @var SplObjectStorage<Throwable, null> $reportedFailures */
+        $reportedFailures = new SplObjectStorage();
         $requestId = RequestId::fromRequest($request);
         $request = $request->withAttribute(RequestId::ATTRIBUTE, $requestId);
 
@@ -256,18 +258,12 @@ class Application implements RequestHandlerInterface
             $response = (new Pipeline(
                 $middlewares,
                 new CallableRequestHandler(
-                    function (ServerRequestInterface $nextRequest) use (
+                    fn (ServerRequestInterface $nextRequest): ResponseInterface => $this->handleRoutedRequestSafely(
+                        $nextRequest,
                         $scope,
                         $requestId,
-                        &$serverFailureReported,
-                    ): ResponseInterface {
-                        return $this->handleRoutedRequestSafely(
-                            $nextRequest,
-                            $scope,
-                            $requestId,
-                            $serverFailureReported,
-                        );
-                    },
+                        $reportedFailures,
+                    ),
                 ),
             ))->handle($request);
         } catch (Throwable $th) {
@@ -276,7 +272,7 @@ class Application implements RequestHandlerInterface
                 $request,
                 $requestId,
                 $scope,
-                $serverFailureReported,
+                $reportedFailures,
             );
         } finally {
             $scope?->release();
@@ -453,12 +449,14 @@ class Application implements RequestHandlerInterface
     /**
      * Convert route and controller exceptions inside the application middleware
      * pipeline so outer middleware can inspect the resulting error response.
+     *
+     * @param SplObjectStorage<Throwable, null> $reportedFailures
      */
     protected function handleRoutedRequestSafely(
         ServerRequestInterface $request,
         Container $scope,
         RequestId $requestId,
-        bool &$serverFailureReported,
+        SplObjectStorage $reportedFailures,
     ): ResponseInterface {
         try {
             return $this->handleRoutedRequest($request, $scope);
@@ -468,7 +466,7 @@ class Application implements RequestHandlerInterface
                 $request,
                 $requestId,
                 $scope,
-                $serverFailureReported,
+                $reportedFailures,
             );
         }
     }
@@ -629,12 +627,13 @@ class Application implements RequestHandlerInterface
             : 500;
     }
 
+    /** @param SplObjectStorage<Throwable, null> $reportedFailures */
     private function mapException(
         Throwable $throwable,
         ServerRequestInterface $request,
         RequestId $requestId,
         ?Container $scope,
-        bool &$serverFailureReported,
+        SplObjectStorage $reportedFailures,
     ): ResponseInterface {
         if (!$throwable instanceof HttpException && $scope !== null) {
             try {
@@ -645,7 +644,7 @@ class Application implements RequestHandlerInterface
                     $request,
                     $requestId,
                     $scope,
-                    $serverFailureReported,
+                    $reportedFailures,
                     500,
                 );
 
@@ -658,7 +657,7 @@ class Application implements RequestHandlerInterface
                     $request,
                     $requestId,
                     $scope,
-                    $serverFailureReported,
+                    $reportedFailures,
                     $response->getStatusCode(),
                 );
 
@@ -671,25 +670,26 @@ class Application implements RequestHandlerInterface
             $request,
             $requestId,
             $scope,
-            $serverFailureReported,
+            $reportedFailures,
         );
 
         return $this->renderException($throwable);
     }
 
+    /** @param SplObjectStorage<Throwable, null> $reportedFailures */
     private function reportExceptionOnce(
         Throwable $throwable,
         ServerRequestInterface $request,
         RequestId $requestId,
         ?Container $scope,
-        bool &$serverFailureReported,
+        SplObjectStorage $reportedFailures,
         ?int $status = null,
     ): void {
         $status ??= $this->exceptionStatus($throwable);
-        if ($status < 500 || $serverFailureReported) {
+        if ($status < 500 || $reportedFailures->offsetExists($throwable)) {
             return;
         }
-        $serverFailureReported = true;
+        $reportedFailures[$throwable] = null;
 
         if ($scope === null) {
             $this->fallbackReporter->report($throwable, $request, $requestId, $status);

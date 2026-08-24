@@ -21,6 +21,11 @@ use GustavPHP\Tests\ExceptionHandlerFixtures\ValidApplication\Exceptions\{
 #[Controller('/handlers')]
 final readonly class HandlerRoutes
 {
+    #[Get('/chained-handler-failure')]
+    public function chainedHandlerFailure(): Response
+    {
+        throw new ServerFailure('first server secret');
+    }
     #[Get('/child')]
     public function child(): Response
     {
