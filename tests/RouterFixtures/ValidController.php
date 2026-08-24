@@ -2,9 +2,10 @@
 
 namespace GustavPHP\Tests\RouterFixtures;
 
-use GustavPHP\Gustav\Attribute\{Controller, Get, Param, Post};
+use GustavPHP\Gustav\Attribute\{Controller, Csrf, Get, Param, Post};
 
 #[Controller('/blog')]
+#[Csrf]
 final class ValidController
 {
     /** @return array{} */

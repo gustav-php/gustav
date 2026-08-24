@@ -4,6 +4,7 @@ namespace GustavPHP\Gustav;
 
 use GustavPHP\Gustav\Config\{Environment, Violation};
 use GustavPHP\Gustav\Config\Exception\ConfigurationException;
+use GustavPHP\Gustav\Session\SessionOptions;
 
 readonly class Configuration
 {
@@ -88,6 +89,10 @@ readonly class Configuration
          * Captured environment used to hydrate typed application configuration.
          */
         private ?Environment $environment = null,
+        /**
+         * Server-side session configuration, or null to disable sessions.
+         */
+        public ?SessionOptions $session = null,
     ) {
     }
 
@@ -102,6 +107,7 @@ readonly class Configuration
      * @param array<string> $middlewareNamespaces
      * @param array<string> $configurationNamespaces
      * @param array<string> $commandNamespaces
+     * @param null|SessionOptions $session
      * @throws ConfigurationException
      */
     public static function forProject(
@@ -115,6 +121,7 @@ readonly class Configuration
         array $middlewareNamespaces = [],
         array $configurationNamespaces = [],
         array $commandNamespaces = [],
+        ?SessionOptions $session = null,
     ): self {
         $environment ??= Environment::load($root);
         $mode = match ($environment->get('MODE')) {
@@ -145,6 +152,9 @@ readonly class Configuration
             middlewareNamespaces: $middlewareNamespaces,
             configurationNamespaces: $configurationNamespaces,
             commandNamespaces: $commandNamespaces,
+            session: $session ?? new SessionOptions(
+                directory: $root . 'storage' . DIRECTORY_SEPARATOR . 'sessions' . DIRECTORY_SEPARATOR,
+            ),
             environment: $environment,
         );
     }

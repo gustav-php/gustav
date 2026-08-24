@@ -12,7 +12,9 @@ use GustavPHP\Gustav\Http\Exception\{HttpException, RequestInputException, Valid
 use GustavPHP\Gustav\Logger\{ExceptionReporter, JsonLogger};
 use GustavPHP\Gustav\Middleware\Pipeline;
 use GustavPHP\Gustav\Router\{Method, RouteCompiler, RouteMatch, Router, UrlGeneratorInterface};
+use GustavPHP\Gustav\Security\{CsrfMiddleware, CsrfTokenManager};
 use GustavPHP\Gustav\Service\Container;
+use GustavPHP\Gustav\Session\{FileSessionStore, SessionMiddleware, SessionOptions, SessionStoreInterface};
 use GustavPHP\Gustav\View\{PhpViewRenderer, ViewRendererInterface};
 use InvalidArgumentException;
 use LogicException;
@@ -55,6 +57,8 @@ class Application implements RequestHandlerInterface
 
     private Router $router;
 
+    private bool $sessionsEnabled;
+
     /**
      * Creates a new application instance.
      *
@@ -74,6 +78,16 @@ class Application implements RequestHandlerInterface
         $routes = [];
         foreach (Discovery::discoverControllers() as $class) {
             array_push($routes, ...RouteCompiler::compile($class));
+        }
+        $this->sessionsEnabled = $configuration->session !== null;
+        if (!$this->sessionsEnabled) {
+            foreach ($routes as $route) {
+                if ($route->csrfProtected) {
+                    throw new LogicException(
+                        "CSRF-protected route {$route->location()} requires session configuration",
+                    );
+                }
+            }
         }
         $this->router = new Router($routes);
         $this->services = new Container();
@@ -106,6 +120,15 @@ class Application implements RequestHandlerInterface
                 EventDispatcherInterface::class,
                 Event\Dispatcher::class,
             );
+        if ($configuration->session !== null) {
+            $this->services
+                ->singleton(SessionOptions::class, $configuration->session)
+                ->singleton(SessionStoreInterface::class, FileSessionStore::class)
+                ->scoped(Session::class)
+                ->scoped(SessionMiddleware::class)
+                ->scoped(CsrfTokenManager::class)
+                ->scoped(CsrfMiddleware::class);
+        }
         $environment = $configuration->getEnvironment() ?? Environment::system();
         foreach ((new Loader($environment))->load(Discovery::discoverConfigurations()) as $class => $instance) {
             $this->services->singleton($class, $instance);
@@ -212,8 +235,13 @@ class Application implements RequestHandlerInterface
             $request = $request->withAttribute('Gustav-Path', $path);
             $scope->setRequest($request);
 
+            $middlewares = $this->resolveMiddlewares($this->middlewares, $scope);
+            if ($this->sessionsEnabled) {
+                array_unshift($middlewares, $this->resolveSessionMiddleware($scope));
+            }
+
             $response = (new Pipeline(
-                $this->resolveMiddlewares($this->middlewares, $scope),
+                $middlewares,
                 new CallableRequestHandler(
                     function (ServerRequestInterface $nextRequest) use (
                         $scope,
@@ -391,6 +419,9 @@ class Application implements RequestHandlerInterface
 
         $match = $this->router->match($method, $path);
         $middlewares = $this->resolveMiddlewares($match->route->middlewares, $scope);
+        if ($match->route->csrfProtected) {
+            array_unshift($middlewares, $this->resolveCsrfMiddleware($scope));
+        }
         $request = $request
             ->withAttribute('Gustav-Route', $match->route)
             ->withAttribute('Gustav-Route-Parameters', $match->parameters);
@@ -576,6 +607,16 @@ class Application implements RequestHandlerInterface
         }
     }
 
+    private function resolveCsrfMiddleware(Container $scope): CsrfMiddleware
+    {
+        $middleware = $scope->get(CsrfMiddleware::class);
+        if (!$middleware instanceof CsrfMiddleware) {
+            throw new LogicException('CSRF middleware service is invalid');
+        }
+
+        return $middleware;
+    }
+
     /**
      * @param array<class-string<MiddlewareInterface>> $classes
      * @return array<MiddlewareInterface>
@@ -592,5 +633,15 @@ class Application implements RequestHandlerInterface
 
             return $middleware;
         }, $classes);
+    }
+
+    private function resolveSessionMiddleware(Container $scope): SessionMiddleware
+    {
+        $middleware = $scope->get(SessionMiddleware::class);
+        if (!$middleware instanceof SessionMiddleware) {
+            throw new LogicException('Session middleware service is invalid');
+        }
+
+        return $middleware;
     }
 }

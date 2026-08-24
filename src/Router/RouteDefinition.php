@@ -22,6 +22,7 @@ final readonly class RouteDefinition
         public RequestBinder $requestBinder,
         public ResponseHandler $responseHandler,
         public array $middlewares,
+        public bool $csrfProtected,
     ) {
     }
 

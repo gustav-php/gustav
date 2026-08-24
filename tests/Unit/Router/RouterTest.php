@@ -2,7 +2,7 @@
 
 use GustavPHP\Gustav\Http\Exception\HttpException;
 use GustavPHP\Gustav\Router\{Method, RouteCompiler, Router};
-use GustavPHP\Tests\RouterFixtures\{AmbiguousController, DuplicateNameController, ValidController};
+use GustavPHP\Tests\RouterFixtures\{AmbiguousController, DuplicateCsrfController, DuplicateNameController, ValidController};
 
 function compiledRouter(): Router
 {
@@ -36,6 +36,15 @@ it('matches the declared HTTP method and lets HEAD fall back to GET', function (
             fn (Method $method): string => $method->value,
             $router->allowedMethods('/blog/authors'),
         ))->toBe(['GET', 'HEAD', 'OPTIONS']);
+});
+
+it('compiles CSRF protection only for unsafe controller routes', function () {
+    $router = compiledRouter();
+
+    expect($router->match(Method::POST, '/blog')->route->csrfProtected)->toBeTrue()
+        ->and($router->match(Method::GET, '/blog')->route->csrfProtected)->toBeFalse()
+        ->and(Method::OPTIONS->isSafe())->toBeTrue()
+        ->and(Method::DELETE->isSafe())->toBeFalse();
 });
 
 it('distinguishes missing paths from unsupported methods', function () {
@@ -82,3 +91,7 @@ it('rejects ambiguous route patterns during compilation', function () {
 it('rejects duplicate route names during compilation', function () {
     new Router(RouteCompiler::compile(DuplicateNameController::class));
 })->throws(InvalidArgumentException::class, "Route name 'duplicate' is declared by both");
+
+it('rejects repeated CSRF metadata during compilation', function () {
+    RouteCompiler::compile(DuplicateCsrfController::class);
+})->throws(LogicException::class, 'cannot repeat the #[Csrf] attribute');

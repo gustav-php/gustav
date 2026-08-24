@@ -26,4 +26,15 @@ enum Method: string
     {
         return Method::from($request->getMethod());
     }
+
+    /**
+     * Whether this method is defined as safe by HTTP semantics.
+     */
+    public function isSafe(): bool
+    {
+        return match ($this) {
+            self::GET, self::HEAD, self::OPTIONS, self::TRACE => true,
+            default => false,
+        };
+    }
 }

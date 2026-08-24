@@ -158,6 +158,19 @@ function responseHeader(array $response, string $name): string
 }
 
 /**
+ * @param array{status: int, body: string, headers: array<int, string>} $response
+ */
+function responseCookiePair(array $response): string
+{
+    $setCookie = responseHeader($response, 'Set-Cookie');
+    if ($setCookie === '' || !str_contains($setCookie, '=')) {
+        throw new RuntimeException('Response did not contain a session cookie');
+    }
+
+    return explode(';', $setCookie, 2)[0];
+}
+
+/**
  * @return array{request: int, singleton: int}
  */
 function serviceLifecycle(int $port): array
@@ -239,6 +252,50 @@ try {
     );
     assertStatus($malformed, 400, 'Malformed JSON request');
 
+    $csrfSeed = request($httpPort, 'GET', '/sessions/token');
+    assertStatus($csrfSeed, 200, 'CSRF token request');
+    $csrfBody = decodeJson($csrfSeed['body'], 'CSRF token response');
+    $csrfToken = $csrfBody['token'] ?? null;
+    if (!is_string($csrfToken)) {
+        throw new RuntimeException('CSRF token response did not contain a token');
+    }
+    $sessionCookie = responseCookiePair($csrfSeed);
+
+    $csrfRejected = request(
+        $httpPort,
+        'POST',
+        '/sessions/value',
+        '{"value":"blocked"}',
+        [
+            'Content-Type' => 'application/json',
+            'Cookie' => $sessionCookie,
+        ],
+    );
+    assertStatus($csrfRejected, 403, 'Missing CSRF token request');
+
+    $csrfAccepted = request(
+        $httpPort,
+        'POST',
+        '/sessions/value',
+        '{"value":"transport"}',
+        [
+            'Content-Type' => 'application/json',
+            'Cookie' => $sessionCookie,
+            'X-CSRF-Token' => $csrfToken,
+        ],
+    );
+    assertStatus($csrfAccepted, 200, 'Valid CSRF JSON request');
+    $sessionValue = request(
+        $httpPort,
+        'GET',
+        '/sessions/value',
+        headers: ['Cookie' => $sessionCookie],
+    );
+    assertStatus($sessionValue, 200, 'Session request after rejected CSRF request');
+    if ((decodeJson($sessionValue['body'], 'Session value response')['value'] ?? null) !== 'transport') {
+        throw new RuntimeException('Session state did not survive the RoadRunner request sequence');
+    }
+
     $view = request($httpPort, 'GET', '/responses/direct-view');
     assertStatus($view, 202, 'Native view request');
     if (
@@ -303,6 +360,7 @@ try {
     echo "RoadRunner transport contract passed\n";
     echo "  JSON request: 200\n";
     echo "  Malformed JSON: 400\n";
+    echo "  Session/CSRF: 200 -> 403 -> 200 -> 200\n";
     echo "  Native views: 202 -> 500 -> 200\n";
     echo "  Worker sequence: 200 -> 418 -> 200\n";
     echo "  Server failure: 500 -> 200 (transport-request-500 logged)\n";
