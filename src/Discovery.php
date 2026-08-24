@@ -3,7 +3,7 @@
 namespace GustavPHP\Gustav;
 
 use Exception;
-use GustavPHP\Gustav\Service\{Provider, Registration};
+use GustavPHP\Gustav\Service\{FactoryRegistration, Provider, Registration};
 use HaydenPierce\ClassFinder\ClassFinder;
 use InvalidArgumentException;
 use LogicException;
@@ -145,6 +145,22 @@ class Discovery
              * @var class-string<Serializer\Base> $serializer
              */
             yield $serializer;
+        }
+    }
+
+    /**
+     * @return iterable<FactoryRegistration>
+     * @throws Exception
+     */
+    public static function discoverServiceFactories(): iterable
+    {
+        foreach (self::discoverClasses('Services', 'serviceNamespaces') as $class) {
+            $reflection = new ReflectionClass($class);
+            if ($reflection->getAttributes(Attribute\Factory::class) === []) {
+                continue;
+            }
+
+            yield FactoryRegistration::compile($class);
         }
     }
 

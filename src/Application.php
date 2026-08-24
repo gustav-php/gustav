@@ -13,7 +13,7 @@ use GustavPHP\Gustav\Logger\{ExceptionReporter, JsonLogger};
 use GustavPHP\Gustav\Middleware\Pipeline;
 use GustavPHP\Gustav\Router\{Method, RouteCompiler, RouteMatch, Router, UrlGeneratorInterface};
 use GustavPHP\Gustav\Security\{CsrfMiddleware, CsrfTokenManager};
-use GustavPHP\Gustav\Service\Container;
+use GustavPHP\Gustav\Service\{Container, Lifetime};
 use GustavPHP\Gustav\Session\{FileSessionStore, SessionMiddleware, SessionOptions, SessionStoreInterface};
 use GustavPHP\Gustav\View\{PhpViewRenderer, ViewRendererInterface};
 use InvalidArgumentException;
@@ -139,6 +139,13 @@ class Application implements RequestHandlerInterface
                 $service->implementation,
                 $service->lifetime,
             );
+        }
+        foreach (Discovery::discoverServiceFactories() as $factory) {
+            match ($factory->lifetime) {
+                Lifetime::Singleton => $this->services->singleton($factory->service, $factory->resolver()),
+                Lifetime::Scoped => $this->services->scoped($factory->service, $factory->resolver()),
+                Lifetime::Transient => $this->services->transient($factory->service, $factory->resolver()),
+            };
         }
         foreach (Discovery::discoverServiceProviders() as $provider) {
             (new $provider())->register($this->services);
